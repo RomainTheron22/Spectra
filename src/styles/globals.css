@@ -1,0 +1,51 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+/* Petit effet "Lovable" sur les gros titres (optionnel mais joli) */
+h1 {
+  font-size: 32px;
+  line-height: 1.15;
+  background: linear-gradient(
+    90deg,
+    var(--brand-blue-700),
+    var(--brand-blue-600),
+    #4f46e5
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+::selection {
+  background: rgba(14, 165, 233, 0.25);
+}

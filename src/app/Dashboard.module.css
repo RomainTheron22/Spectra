@@ -1,0 +1,336 @@
+.page {
+  width: 100%;
+  min-width: 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+  max-width: 1600px;
+}
+
+
+
+.main {
+  min-width: 0;
+}
+
+.sidebar {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: #ffffff;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+  background: linear-gradient(90deg, var(--active-from), var(--active-to));
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.cardBody {
+  padding: 12px;
+  background: #ffffff;
+  color: var(--color-text);
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.planWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.planStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.planStat {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.planStatLabel {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.planStatValue {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--color-text);
+}
+
+.planList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.planItem {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 8px 10px;
+}
+
+.planItemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.planTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text);
+  min-width: 0;
+}
+
+.planTime {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alertItem {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.alertTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.alertName {
+  font-weight: 900;
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.alertQty {
+  font-weight: 900;
+  font-size: 12px;
+  color: #dc2626;
+  white-space: nowrap;
+}
+
+.alertMeta {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.alertLink {
+  display: inline-flex;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--active-from);
+  text-decoration: none;
+}
+
+.alertLink:hover {
+  text-decoration: underline;
+}
+
+.assignedItemRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doneBtn {
+  appearance: none;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.08);
+  border-radius: 7px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 13px;
+  color: #166534;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.doneBtn:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+.doneBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.badgeWarn {
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+  background: #f59e0b;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.docAlertItem {
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  padding: 10px;
+  background: #fffbeb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contractBadge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.docMissingList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.docCheckLabel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.docCheckLabel input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: #f59e0b;
+}
+
+.docMissingHint {
+  font-size: 11px;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.fileShortcutBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+.fileShortcutBtn:hover {
+  background: rgba(245, 158, 11, 0.25);
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .planStats {
+    grid-template-columns: 1fr;
+  }
+
+  .planItemTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

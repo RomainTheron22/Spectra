@@ -1,0 +1,61 @@
+.shell {
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 224px 1fr;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+
+.content {
+  flex: 1;
+  width: 100%;
+  padding: 24px;
+  min-width: 0;
+  background: #ffffff;
+}
+
+.statusWrap {
+  min-height: 60vh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.statusCard {
+  width: min(620px, 100%);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 24px;
+  background: var(--color-surface);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}
+
+.statusTitle {
+  margin: 0;
+  font-size: 28px;
+  color: var(--color-text);
+}
+
+.statusText {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.statusBtn {
+  margin-top: 12px;
+  display: inline-flex;
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--active-from), var(--active-to));
+}

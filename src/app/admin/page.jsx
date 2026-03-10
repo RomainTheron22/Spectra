@@ -1,0 +1,530 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import styles from "./AdminPage.module.css";
+import {
+  PERMISSION_ACTIONS,
+  PERMISSION_RESOURCES,
+  ROLE_NAMES,
+  isActionSupportedForResource,
+} from "../../lib/rbac";
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("fr-FR");
+}
+
+export default function AdminPage() {
+  const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const [envVars, setEnvVars] = useState([]);
+  const [envLoading, setEnvLoading] = useState(true);
+  const [envError, setEnvError] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterActive, setFilterActive] = useState("all");
+
+  const [newRoleName, setNewRoleName] = useState("");
+  const [newRoleLabel, setNewRoleLabel] = useState("");
+
+  const loadData = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const [usersRes, rolesRes] = await Promise.all([
+        fetch("/api/admin/users", { cache: "no-store" }),
+        fetch("/api/admin/roles", { cache: "no-store" }),
+      ]);
+
+      const usersPayload = await usersRes.json().catch(() => ({}));
+      if (!usersRes.ok) {
+        throw new Error(usersPayload?.error || "Erreur chargement utilisateurs.");
+      }
+
+      const rolesPayload = await rolesRes.json().catch(() => ({}));
+      if (!rolesRes.ok) {
+        throw new Error(rolesPayload?.error || "Erreur chargement roles.");
+      }
+
+      setUsers(Array.isArray(usersPayload.items) ? usersPayload.items : []);
+      setRoles(Array.isArray(rolesPayload.items) ? rolesPayload.items : []);
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadEnvVars = async () => {
+    setEnvError("");
+    setEnvLoading(true);
+    try {
+      const res = await fetch("/api/admin/env", { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Erreur chargement config.");
+      setEnvVars(Array.isArray(data.items) ? data.items : []);
+    } catch (e) {
+      setEnvError(String(e?.message || e));
+    } finally {
+      setEnvLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    loadEnvVars();
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    const q = String(search || "").trim().toLowerCase();
+    return users.filter((user) => {
+      const bySearch =
+        !q ||
+        `${user.name || ""} ${user.email || ""}`.toLowerCase().includes(q);
+      const byRole = filterRole === "all" || user.role === filterRole;
+      const byActive =
+        filterActive === "all" ||
+        (filterActive === "active" ? user.isActive : !user.isActive);
+      return bySearch && byRole && byActive;
+    });
+  }, [users, search, filterRole, filterActive]);
+
+  const updateUser = async (userId, payload) => {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Erreur mise a jour utilisateur.");
+      setUsers((prev) => prev.map((item) => (item.id === userId ? data.item : item)));
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    const ok = window.confirm("Supprimer cet utilisateur ? Cette action est irreversible.");
+    if (!ok) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Erreur suppression utilisateur.");
+      setUsers((prev) => prev.filter((item) => item.id !== userId));
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const createRole = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newRoleName,
+          label: newRoleLabel || newRoleName,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Erreur creation role.");
+
+      setRoles((prev) => [
+        ...prev,
+        {
+          ...data.item,
+          id: data.item.id || data.item._id,
+        },
+      ]);
+      setNewRoleName("");
+      setNewRoleLabel("");
+      await loadData();
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateRole = async (roleId, payload) => {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/roles/${encodeURIComponent(roleId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Erreur mise a jour role.");
+      setRoles((prev) =>
+        prev.map((role) => (role.id === roleId ? { ...role, ...data.item } : role))
+      );
+      if ("name" in payload) {
+        await loadData();
+      }
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteRole = async (roleId) => {
+    const ok = window.confirm("Supprimer ce role ?");
+    if (!ok) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/roles/${encodeURIComponent(roleId)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Erreur suppression role.");
+      setRoles((prev) => prev.filter((role) => role.id !== roleId));
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const togglePermission = async (role, resourceKey, action, checked) => {
+    const nextPermissions = {
+      ...(role.permissions || {}),
+      [resourceKey]: {
+        ...(role.permissions?.[resourceKey] || {}),
+        [action]: checked,
+      },
+    };
+
+    setRoles((prev) =>
+      prev.map((item) =>
+        item.id === role.id
+          ? {
+              ...item,
+              permissions: nextPermissions,
+            }
+          : item
+      )
+    );
+
+    await updateRole(role.id, { permissions: nextPermissions });
+  };
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.headerRow}>
+        <h1 className={styles.pageTitle}>Admin</h1>
+      </div>
+
+      {error ? <div className={styles.errorBox}>{error}</div> : null}
+
+      <section className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={styles.cardTitle}>Gestion des utilisateurs</h2>
+        </div>
+
+        <div className={styles.toolbar}>
+          <input
+            className={styles.input}
+            type="text"
+            placeholder="Rechercher nom / email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <select
+            className={styles.select}
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+          >
+            <option value="all">Tous les roles</option>
+            {roles.map((role) => (
+              <option key={role.id} value={role.name}>
+                {role.label}
+              </option>
+            ))}
+          </select>
+          <select
+            className={styles.select}
+            value={filterActive}
+            onChange={(e) => setFilterActive(e.target.value)}
+          >
+            <option value="all">Tous les statuts</option>
+            <option value="active">Actifs</option>
+            <option value="disabled">Desactives</option>
+          </select>
+        </div>
+
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Derniere connexion</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className={styles.emptyCell}>
+                    Chargement...
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className={styles.emptyCell}>
+                    Aucun utilisateur.
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.name || "-"}</td>
+                    <td>{user.email || "-"}</td>
+                    <td>
+                      <select
+                        className={styles.inlineSelect}
+                        value={user.role || ROLE_NAMES.INVITE}
+                        disabled={saving}
+                        onChange={(e) => updateUser(user.id, { role: e.target.value })}
+                      >
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.name}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>{formatDateTime(user.lastLoginAt)}</td>
+                    <td>
+                      <span className={user.isActive ? styles.badgeActive : styles.badgeDisabled}>
+                        {user.isActive ? "Actif" : "Desactive"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className={styles.rowActions}>
+                        <button
+                          type="button"
+                          className={styles.secondaryBtn}
+                          disabled={saving}
+                          onClick={() => updateUser(user.id, { isActive: !user.isActive })}
+                        >
+                          {user.isActive ? "Desactiver" : "Activer"}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.deleteBtn}
+                          disabled={saving}
+                          onClick={() => deleteUser(user.id)}
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={styles.cardTitle}>Gestion des roles</h2>
+        </div>
+
+        <form className={styles.roleForm} onSubmit={createRole}>
+          <input
+            className={styles.input}
+            type="text"
+            placeholder="Nom technique (ex: manager)"
+            value={newRoleName}
+            onChange={(e) => setNewRoleName(e.target.value)}
+            required
+          />
+          <input
+            className={styles.input}
+            type="text"
+            placeholder="Label (ex: Manager)"
+            value={newRoleLabel}
+            onChange={(e) => setNewRoleLabel(e.target.value)}
+          />
+          <button type="submit" className={styles.primaryBtn} disabled={saving}>
+            Creer le role
+          </button>
+        </form>
+
+        <div className={styles.rolesGrid}>
+          {roles.map((role) => {
+            const lockPermissions = role.name === ROLE_NAMES.ADMIN;
+            return (
+              <article key={role.id} className={styles.roleCard}>
+                <div className={styles.roleHeader}>
+                  <div>
+                    <div className={styles.roleName}>
+                      {role.label} <span className={styles.roleCode}>({role.name})</span>
+                    </div>
+                    {role.isSystem ? <div className={styles.systemHint}>Role systeme</div> : null}
+                  </div>
+                  <div className={styles.rowActions}>
+                    {!role.isSystem ? (
+                      <button
+                        type="button"
+                        className={styles.deleteBtn}
+                        disabled={saving}
+                        onClick={() => deleteRole(role.id)}
+                      >
+                        Supprimer
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className={styles.permissionsWrap}>
+                  <table className={styles.permissionsTable}>
+                    <thead>
+                      <tr>
+                        <th>Module</th>
+                        {PERMISSION_ACTIONS.map((action) => (
+                          <th key={`${role.id}-${action}`}>{action}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {PERMISSION_RESOURCES.map((resource) => (
+                        <tr key={`${role.id}-${resource.key}`}>
+                          <td>{resource.label}</td>
+                          {PERMISSION_ACTIONS.map((action) => {
+                            const isSupported = isActionSupportedForResource(resource.key, action);
+                            const checked =
+                              isSupported && Boolean(role.permissions?.[resource.key]?.[action]);
+                            return (
+                              <td key={`${role.id}-${resource.key}-${action}`}>
+                                {isSupported ? (
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    disabled={saving || lockPermissions}
+                                    onChange={(e) =>
+                                      togglePermission(role, resource.key, action, e.target.checked)
+                                    }
+                                  />
+                                ) : (
+                                  <span className={styles.notAvailable}>-</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHeader}>
+          <div className={styles.cardHeaderRow}>
+            <h2 className={styles.cardTitle}>Configuration & Variables d&apos;environnement</h2>
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              disabled={envLoading}
+              onClick={loadEnvVars}
+            >
+              {envLoading ? "Chargement..." : "Actualiser"}
+            </button>
+          </div>
+        </div>
+
+        {envError ? <div className={styles.errorBox} style={{ margin: "12px 16px" }}>{envError}</div> : null}
+
+        {(() => {
+          const localhostWarning =
+            !envLoading &&
+            envVars.some((v) => v.key === "BETTER_AUTH_URL" && v.value?.includes("localhost"));
+          return localhostWarning ? (
+            <div className={styles.warnBox}>
+              <strong>Attention :</strong> <code>BETTER_AUTH_URL</code> pointe sur{" "}
+              <code>localhost</code> — l&apos;authentification ne fonctionnera pas en production.
+              Mettez à jour cette variable avec votre domaine de déploiement.
+            </div>
+          ) : null;
+        })()}
+
+        {(() => {
+          const categories = [...new Set(envVars.map((v) => v.category))];
+          return envLoading ? (
+            <div className={styles.envLoadingRow}>Chargement de la configuration...</div>
+          ) : (
+            <div className={styles.envCategories}>
+              {categories.map((cat) => (
+                <div key={cat} className={styles.envCategory}>
+                  <div className={styles.envCategoryTitle}>{cat}</div>
+                  <div className={styles.envList}>
+                    {envVars
+                      .filter((v) => v.category === cat)
+                      .map((v) => (
+                        <div key={v.key} className={styles.envRow}>
+                          <div className={styles.envLeft}>
+                            <div className={styles.envKey}>
+                              <code>{v.key}</code>
+                              {v.required && (
+                                <span className={styles.envRequired}>requis</span>
+                              )}
+                            </div>
+                            <div className={styles.envDesc}>{v.description}</div>
+                          </div>
+                          <div className={styles.envRight}>
+                            {v.isSet ? (
+                              <>
+                                <span className={styles.badgeEnvSet}>Configuré</span>
+                                <span className={styles.envValue}>{v.value}</span>
+                              </>
+                            ) : (
+                              <span className={styles.badgeEnvMissing}>Non défini</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </section>
+    </div>
+  );
+}

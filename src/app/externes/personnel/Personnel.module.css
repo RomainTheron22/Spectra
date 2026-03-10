@@ -1,0 +1,1279 @@
+.page {
+    width: 100%;
+    min-width: 0;
+}
+
+.headerBlock {
+    margin-bottom: 0;
+}
+
+.headerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+/* ── Navigation principale (Liste / Gestion RH) ────────── */
+.mainNav {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    margin-top: 10px;
+    margin-bottom: 26px;
+    border-bottom: 2px solid rgba(15, 23, 42, 0.1);
+}
+
+.navItem,
+.navItemActive {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 0;
+    color: var(--color-text-muted);
+}
+
+.navItemActive {
+    color: var(--active-from);
+}
+
+.navItemActive::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--active-from);
+    border-radius: 2px 2px 0 0;
+}
+
+.navItem:hover {
+    color: var(--color-text);
+    background: rgba(15, 23, 42, 0.04);
+}
+
+.navIcon {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.pageTitle {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    color: var(--color-text);
+}
+
+.searchRow {
+    margin-bottom: 22px;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    outline: none;
+    font-size: 14px;
+    color: var(--color-text);
+    background: #ffffff;
+}
+
+.searchInput:focus {
+    border-color: rgba(2, 132, 199, 0.45);
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+}
+
+@media (max-width: 1200px) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.addCard {
+    appearance: none;
+    border: 1px dashed rgba(2, 132, 199, 0.45);
+    background: rgba(2, 132, 199, 0.05);
+    border-radius: 14px;
+    cursor: pointer;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 240px;
+}
+
+.addCard:hover {
+    background: rgba(2, 132, 199, 0.08);
+    border-color: rgba(2, 132, 199, 0.7);
+}
+
+.plus {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    font-size: 42px;
+    font-weight: 900;
+    color: #ffffff;
+    background: linear-gradient(90deg, var(--active-from), var(--active-to));
+    box-shadow: 0 10px 20px rgba(2, 132, 199, 0.18);
+}
+
+.addLabel {
+    font-weight: 900;
+    color: var(--color-text);
+}
+
+/* Card Button Wrapper */
+.cardButton {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+}
+
+.cardButton:focus {
+    outline: none;
+}
+
+.cardButton:hover .card {
+    border-color: rgba(2, 132, 199, 0.35);
+    box-shadow: 0 10px 20px rgba(2, 132, 199, 0.08);
+}
+
+/* Profile Card */
+.card {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 16px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Card footer actions (bouton retard) */
+.cardFooterActions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+}
+
+.retardBtn {
+    appearance: none;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.retardBtn:hover {
+    background: rgba(251, 146, 60, 0.1);
+    border-color: rgba(251, 146, 60, 0.4);
+}
+
+.cardTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.cardTitle {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--color-text);
+    margin-bottom: 2px;
+}
+
+.cardRole {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--active-from);
+    background: rgba(2, 132, 199, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.statusIndicator {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 6px;
+    border-radius: 6px;
+    border: 1px solid;
+}
+
+.statusIndicator.actif {
+    background: rgba(34, 197, 94, 0.1);
+    color: #166534;
+    border-color: #22c55e;
+}
+
+.statusIndicator.termine {
+    background: rgba(100, 116, 139, 0.1);
+    color: #334155;
+    border-color: #94a3b8;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+}
+
+.k {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--color-text-muted);
+}
+
+.v {
+    font-size: 13px;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.refBlock {
+    margin-top: auto;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.refEmail,
+.refPhone {
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+/* Modal Form */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.field,
+.fieldWide {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fieldWide {
+    grid-column: 1 / -1;
+}
+
+.label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--color-text);
+}
+
+.input,
+.select,
+.textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    background: #ffffff;
+    color: var(--color-text);
+    outline: none;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+    border-color: rgba(2, 132, 199, 0.45);
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+}
+
+.footer {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 0 0 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), #ffffff);
+    border-top: 1px solid rgba(15, 23, 42, 0.06);
+    margin-top: 6px;
+}
+
+.secondaryBtn {
+    appearance: none;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 800;
+    color: var(--color-text);
+}
+
+.secondaryBtn:hover {
+    background: rgba(2, 132, 199, 0.06);
+    border-color: rgba(2, 132, 199, 0.18);
+}
+
+.submitBtn {
+    appearance: none;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 800;
+    color: #ffffff;
+    background: linear-gradient(90deg, var(--active-from), var(--active-to));
+    box-shadow: 0 10px 20px rgba(2, 132, 199, 0.18);
+}
+
+.submitBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Detail tabs / Wrap */
+.detailTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    margin-bottom: 16px;
+}
+
+.tabs {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.tab,
+.tabActive {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 900;
+    padding: 8px 10px;
+    border-radius: 10px;
+}
+
+.tab {
+    color: rgba(15, 23, 42, 0.45);
+}
+
+.tabActive {
+    color: var(--color-text);
+    background: rgba(2, 132, 199, 0.08);
+}
+
+.detailActions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.iconButton {
+    appearance: none;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 6px 10px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.iconButton:hover {
+    background: rgba(2, 132, 199, 0.06);
+    border-color: rgba(2, 132, 199, 0.18);
+}
+
+.deleteButton {
+    appearance: none;
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 6px 10px;
+    cursor: pointer;
+    line-height: 1;
+    color: #dc2626;
+    font-weight: 900;
+}
+
+.deleteButton:hover {
+    background: rgba(220, 38, 38, 0.06);
+    border-color: rgba(220, 38, 38, 0.45);
+}
+
+/* Info section list */
+.infoGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.infoRow {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+}
+
+/* Absences Section */
+.absencesWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.absenceItem {
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 10px;
+    padding: 12px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.absenceType {
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.absenceDates {
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+.absenceComment {
+    font-size: 12px;
+    margin-top: 6px;
+    padding-left: 10px;
+    border-left: 2px solid rgba(15, 23, 42, 0.1);
+    color: var(--color-text);
+    font-style: italic;
+}
+
+.muted {
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+
+.btnSm {
+    appearance: none;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* Costs Admin View */
+.costsWrap {
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    background: #f8fafc;
+}
+
+.costHeader {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: var(--color-text);
+}
+
+.costCard {
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.costLabel {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+}
+
+.costValue {
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--active-from);
+}
+
+/* ── View tabs (Liste / Coût Admin) ───────────────────────── */
+.viewTabs {
+    display: inline-flex;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.05);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.viewTab,
+.viewTabActive {
+    appearance: none;
+    border: 0;
+    border-radius: 9px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.viewTab {
+    background: transparent;
+    color: var(--color-text-muted);
+}
+
+.viewTabActive {
+    background: #ffffff;
+    color: var(--color-text);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+/* ── Admin Cost Section ───────────────────────────────────── */
+.adminCostSection {
+    margin-top: 4px;
+}
+
+.adminCostHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.adminCostTitle {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--color-text);
+}
+
+.monthPickerRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ── Sélecteur de mois – popover compact ─────────────────── */
+.monthPickerWrap {
+    position: relative;
+    display: inline-block;
+}
+
+.monthPickerTrigger {
+    appearance: none;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    background: #fff;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.monthPickerTrigger:hover {
+    background: rgba(2, 132, 199, 0.05);
+    border-color: rgba(2, 132, 199, 0.35);
+    color: var(--active-from);
+}
+
+.monthPickerPopover {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 200;
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.13);
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.yearRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.yearLabel {
+    font-size: 17px;
+    font-weight: 900;
+    color: var(--color-text);
+    min-width: 60px;
+    text-align: center;
+    letter-spacing: -0.02em;
+}
+
+.yearArrow {
+    appearance: none;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    background: #f8fafc;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--color-text);
+    line-height: 1;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.yearArrow:hover {
+    background: rgba(2, 132, 199, 0.08);
+    border-color: rgba(2, 132, 199, 0.35);
+    color: var(--active-from);
+}
+
+.monthGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.monthCell,
+.monthCellActive {
+    appearance: none;
+    border-radius: 9px;
+    padding: 8px 4px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.12s, color 0.12s;
+}
+
+.monthCell {
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    background: #f8fafc;
+    color: var(--color-text-muted);
+}
+
+.monthCell:hover {
+    background: rgba(2, 132, 199, 0.07);
+    border-color: rgba(2, 132, 199, 0.3);
+    color: var(--active-from);
+}
+
+.monthCellActive {
+    border: 0;
+    background: linear-gradient(90deg, var(--active-from), var(--active-to));
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(2, 132, 199, 0.25);
+}
+
+/* ── Admin Table ──────────────────────────────────────────── */
+.tableWrapper {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.adminTable {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 13px;
+    min-width: 700px;
+}
+
+.adminTable thead th {
+    background: rgba(2, 132, 199, 0.06);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.adminTable tbody tr {
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    transition: background 0.12s;
+}
+
+.adminTable tbody tr:last-child {
+    border-bottom: 0;
+}
+
+.adminTable tbody tr:hover {
+    background: rgba(2, 132, 199, 0.03);
+}
+
+.adminTable td {
+    padding: 12px 14px;
+    vertical-align: top;
+}
+
+.adminTable tfoot td {
+    background: rgba(2, 132, 199, 0.04);
+    border-top: 2px solid rgba(2, 132, 199, 0.15);
+}
+
+.empName {
+    font-weight: 800;
+    color: var(--color-text);
+    margin-bottom: 2px;
+}
+
+.empContract {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.poleBadge {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(2, 132, 199, 0.1);
+    color: var(--active-from);
+    border-radius: 5px;
+    padding: 2px 7px;
+}
+
+.numCell {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.subInfo {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.paymentCol {
+    text-align: right !important;
+}
+
+.paymentCell {
+    font-size: 15px;
+    font-weight: 900;
+    color: #166534;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Absence chips in admin table */
+.absChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 6px;
+    padding: 3px 7px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #b91c1c;
+}
+
+.absChipNoDeduct {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.25);
+    color: #166534;
+}
+
+.noDeductBadge {
+    font-size: 10px;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+
+.totalDeduct {
+    font-size: 11px;
+    font-weight: 800;
+    color: #b91c1c;
+    margin-top: 2px;
+}
+
+/* ── Checkbox cost field ──────────────────────────────────── */
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text);
+    padding: 10px 14px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    border-radius: 10px;
+    background: #f8fafc;
+    user-select: none;
+}
+
+.checkboxLabel:hover {
+    background: rgba(2, 132, 199, 0.04);
+    border-color: rgba(2, 132, 199, 0.3);
+}
+
+.checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--active-from);
+    flex-shrink: 0;
+}
+
+/* ── Cost separator ───────────────────────────────────────── */
+.costSeparator {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 0 2px;
+    border-top: 1px dashed rgba(15, 23, 42, 0.12);
+}
+
+/* ── Paid absence badge (liste absences employé) ─────────── */
+.absencePaid {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.04);
+}
+
+.paidBadge {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #166534;
+    background: #dcfce7;
+    border-radius: 5px;
+    padding: 1px 6px;
+}
+
+/* ── Info tip ─────────────────────────────────────────────── */
+.infoTip {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 7px;
+    padding: 6px 10px;
+}
+
+/* ── Chip days count ──────────────────────────────────────── */
+.absChipDays {
+    font-weight: 900;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    padding: 0 4px;
+}
+
+/* ── Justified absences badge ─────────────────────────────── */
+.justifiedBadge {
+    display: inline-block;
+    background: rgba(99, 102, 241, 0.1);
+    color: #4338ca;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+/* ── Retard badge in table ─────────────────────────────────── */
+.retardBadgeTable {
+    display: inline-block;
+    background: rgba(251, 146, 60, 0.1);
+    color: #c2410c;
+    transition: background 0.12s;
+}
+
+.adminTable tbody tr:last-child {
+    border-bottom: 0;
+}
+
+.adminTable tbody tr:hover {
+    background: rgba(2, 132, 199, 0.03);
+}
+
+.adminTable td {
+    padding: 12px 14px;
+    vertical-align: top;
+}
+
+.adminTable tfoot td {
+    background: rgba(2, 132, 199, 0.04);
+    border-top: 2px solid rgba(2, 132, 199, 0.15);
+}
+
+.empName {
+    font-weight: 800;
+    color: var(--color-text);
+    margin-bottom: 2px;
+}
+
+.empContract {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.poleBadge {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(2, 132, 199, 0.1);
+    color: var(--active-from);
+    border-radius: 5px;
+    padding: 2px 7px;
+}
+
+.numCell {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.subInfo {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.paymentCol {
+    text-align: right !important;
+}
+
+.paymentCell {
+    font-size: 15px;
+    font-weight: 900;
+    color: #166534;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Absence chips in admin table */
+.absChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 6px;
+    padding: 3px 7px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #b91c1c;
+}
+
+.absChipNoDeduct {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.25);
+    color: #166534;
+}
+
+.noDeductBadge {
+    font-size: 10px;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+
+.totalDeduct {
+    font-size: 11px;
+    font-weight: 800;
+    color: #b91c1c;
+    margin-top: 2px;
+}
+
+/* ── Checkbox cost field ──────────────────────────────────── */
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text);
+    padding: 10px 14px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    border-radius: 10px;
+    background: #f8fafc;
+    user-select: none;
+}
+
+.checkboxLabel:hover {
+    background: rgba(2, 132, 199, 0.04);
+    border-color: rgba(2, 132, 199, 0.3);
+}
+
+.checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--active-from);
+    flex-shrink: 0;
+}
+
+/* ── Cost separator ───────────────────────────────────────── */
+.costSeparator {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 0 2px;
+    border-top: 1px dashed rgba(15, 23, 42, 0.12);
+}
+
+/* ── Paid absence badge (liste absences employé) ─────────── */
+.absencePaid {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.04);
+}
+
+.paidBadge {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #166534;
+    background: #dcfce7;
+    border-radius: 5px;
+    padding: 1px 6px;
+}
+
+/* ── Info tip ─────────────────────────────────────────────── */
+.infoTip {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 7px;
+    padding: 6px 10px;
+}
+
+/* ── Chip days count ──────────────────────────────────────── */
+.absChipDays {
+    font-weight: 900;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    padding: 0 4px;
+}
+
+/* ── Justified absences badge ─────────────────────────────── */
+.justifiedBadge {
+    display: inline-block;
+    background: rgba(99, 102, 241, 0.1);
+    color: #4338ca;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+/* ── Retard badge in table ─────────────────────────────────── */
+.retardBadgeTable {
+    display: inline-block;
+    background: rgba(251, 146, 60, 0.1);
+    color: #c2410c;
+    border: 1px solid rgba(251, 146, 60, 0.35);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.fichiersWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.uploadZone {
+    border: 2px dashed rgba(2, 132, 199, 0.4);
+    background: rgba(2, 132, 199, 0.03);
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.uploadZone:hover,
+.uploadZone.dragActive {
+    background: rgba(2, 132, 199, 0.08);
+    border-color: rgba(2, 132, 199, 0.8);
+}
+
+.uploadIcon {
+    font-size: 32px;
+    color: var(--active-from);
+}
+
+.uploadText {
+    font-weight: 800;
+    color: var(--color-text);
+}
+
+.uploadSubtext {
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+.fileList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fileItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 10px;
+}
+
+.fileInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fileIcon {
+    font-size: 20px;
+    color: var(--active-from);
+}
+
+.fileName {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.fileExt {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
+.docChecks {
+    display: flex;
+    gap: 20px;
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.checkRef {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    color: var(--color-text);
+}
+
+.checkBox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--active-from);
+    cursor: pointer;
+}

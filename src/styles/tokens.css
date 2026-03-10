@@ -1,0 +1,41 @@
+:root {
+  /* Typo */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Noto Sans", "Liberation Sans", sans-serif;
+
+  /* Radius (Lovable ~ 8px) */
+  --radius: 8px;
+
+  /* Base */
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-2: #fbfdff;
+
+  --color-text: #0f172a;
+  --color-text-muted: #5b6b86;
+
+  /* Borders */
+  --color-border: #e5e7eb;
+
+  /* Brand (extrait du tailwind Lovable) */
+  --brand-blue-500: #0ea5e9;
+  --brand-blue-600: #0284c7;
+  --brand-blue-700: #0369a1;
+
+  --brand-navy-700: #10204d;
+  --brand-navy-800: #0b1733;
+
+  /* Sidebar tokens (Lovable-style) */
+  --sidebar-bg: var(--brand-navy-800);
+  --sidebar-border: var(--brand-navy-700);
+  --sidebar-text: #ffffff;
+  --sidebar-text-soft: rgba(191, 219, 254, 0.9); /* proche "blue-100" */
+  --sidebar-icon: rgba(147, 197, 253, 0.9);      /* proche "blue-300" */
+
+  /* Active gradient */
+  --active-from: var(--brand-blue-600);
+  --active-to: var(--brand-blue-500);
+
+  /* Hover */
+  --hover-bg: rgba(255, 255, 255, 0.06);
+}
