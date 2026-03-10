@@ -10,6 +10,9 @@ let clientPromise = null;
 function buildClient() {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
+    // Pendant le build Next.js, les routes API sont évaluées mais pas exécutées.
+    // On retourne silencieusement pour ne pas faire échouer le build.
+    if (process.env.NEXT_PHASE === "phase-production-build") return;
     throw new Error(
       "MONGODB_URI manquant. Configurez-le dans les variables d'environnement de la plateforme (Railway, Vercel…)."
     );
