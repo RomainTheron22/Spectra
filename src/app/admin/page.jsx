@@ -23,10 +23,6 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const [envVars, setEnvVars] = useState([]);
-  const [envLoading, setEnvLoading] = useState(true);
-  const [envError, setEnvError] = useState("");
-
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [filterActive, setFilterActive] = useState("all");
@@ -62,24 +58,8 @@ export default function AdminPage() {
     }
   };
 
-  const loadEnvVars = async () => {
-    setEnvError("");
-    setEnvLoading(true);
-    try {
-      const res = await fetch("/api/admin/env", { cache: "no-store" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Erreur chargement config.");
-      setEnvVars(Array.isArray(data.items) ? data.items : []);
-    } catch (e) {
-      setEnvError(String(e?.message || e));
-    } finally {
-      setEnvLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadData();
-    loadEnvVars();
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -451,79 +431,6 @@ export default function AdminPage() {
             );
           })}
         </div>
-      </section>
-
-      <section className={styles.card}>
-        <div className={styles.cardHeader}>
-          <div className={styles.cardHeaderRow}>
-            <h2 className={styles.cardTitle}>Configuration & Variables d&apos;environnement</h2>
-            <button
-              type="button"
-              className={styles.secondaryBtn}
-              disabled={envLoading}
-              onClick={loadEnvVars}
-            >
-              {envLoading ? "Chargement..." : "Actualiser"}
-            </button>
-          </div>
-        </div>
-
-        {envError ? <div className={styles.errorBox} style={{ margin: "12px 16px" }}>{envError}</div> : null}
-
-        {(() => {
-          const localhostWarning =
-            !envLoading &&
-            envVars.some((v) => v.key === "BETTER_AUTH_URL" && v.value?.includes("localhost"));
-          return localhostWarning ? (
-            <div className={styles.warnBox}>
-              <strong>Attention :</strong> <code>BETTER_AUTH_URL</code> pointe sur{" "}
-              <code>localhost</code> — l&apos;authentification ne fonctionnera pas en production.
-              Mettez à jour cette variable avec votre domaine de déploiement.
-            </div>
-          ) : null;
-        })()}
-
-        {(() => {
-          const categories = [...new Set(envVars.map((v) => v.category))];
-          return envLoading ? (
-            <div className={styles.envLoadingRow}>Chargement de la configuration...</div>
-          ) : (
-            <div className={styles.envCategories}>
-              {categories.map((cat) => (
-                <div key={cat} className={styles.envCategory}>
-                  <div className={styles.envCategoryTitle}>{cat}</div>
-                  <div className={styles.envList}>
-                    {envVars
-                      .filter((v) => v.category === cat)
-                      .map((v) => (
-                        <div key={v.key} className={styles.envRow}>
-                          <div className={styles.envLeft}>
-                            <div className={styles.envKey}>
-                              <code>{v.key}</code>
-                              {v.required && (
-                                <span className={styles.envRequired}>requis</span>
-                              )}
-                            </div>
-                            <div className={styles.envDesc}>{v.description}</div>
-                          </div>
-                          <div className={styles.envRight}>
-                            {v.isSet ? (
-                              <>
-                                <span className={styles.badgeEnvSet}>Configuré</span>
-                                <span className={styles.envValue}>{v.value}</span>
-                              </>
-                            ) : (
-                              <span className={styles.badgeEnvMissing}>Non défini</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
       </section>
     </div>
   );

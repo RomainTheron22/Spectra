@@ -148,7 +148,7 @@ export function hasPermission(permissions, resource, action = "view") {
 
 export function isPublicPath(pathname) {
   const path = String(pathname || "");
-  return path.startsWith("/auth") || path === "/403" || path.startsWith("/cle");
+  return path.startsWith("/auth") || path === "/403";
 }
 
 export function getResourceFromPath(pathname) {
