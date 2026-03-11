@@ -21,6 +21,9 @@ function createAuthInstance() {
       transaction: false,
     }),
     plugins: [nextCookies()],
+    emailAndPassword: {
+      enabled: true,
+    },
     socialProviders: {
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID,
@@ -82,19 +85,25 @@ function createAuthInstance() {
             const db = await getDb();
             await ensureBaseRoles(db);
 
-            // Pour les users Google, on marque TOUJOURS needsProfile = true
-            // car on veut qu'ils saisissent leur nom/prenom manuellement.
             const requestedRole = normalizeRoleName(candidate.role || ROLE_NAMES.INVITE);
             const roleDoc = await getRoleByName(db, requestedRole);
             const role = roleDoc?.name || ROLE_NAMES.INVITE;
 
+            // Inscription email : firstName/lastName fournis → profil complet d'emblée.
+            // Inscription Google : on les vide et on demandera la complétion après.
+            const firstName = String(candidate.firstName || "").trim();
+            const lastName = String(candidate.lastName || "").trim();
+            const hasName = firstName && lastName;
+
             return {
               data: {
                 ...candidate,
-                firstName: "",
-                lastName: "",
-                name: String(candidate.name || candidate.email || "").trim(),
-                needsProfile: true,
+                firstName: hasName ? firstName : "",
+                lastName: hasName ? lastName : "",
+                name: hasName
+                  ? `${firstName} ${lastName}`
+                  : String(candidate.name || candidate.email || "").trim(),
+                needsProfile: !hasName,
                 role,
                 isActive: candidate.isActive !== false,
               },
