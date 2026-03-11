@@ -434,15 +434,38 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {PERMISSION_RESOURCES.map((resource) => {
+                      {(() => {
+                        const GROUP_LABELS = {
+                          general:  "Général",
+                          projets:  "Projets",
+                          materiel: "Stock & Matériel",
+                          externes: "Externes",
+                          rh:       "RH",
+                          finances: "Finances",
+                          admin:    "Admin",
+                        };
+                        let lastGroup = null;
+                        return PERMISSION_RESOURCES.flatMap((resource) => {
                         const fields = getResourceFields(resource.key);
                         const hasFields = fields.length > 0;
                         const expanded = isExpanded(role.id, resource.key);
+                        const rows = [];
 
-                        return (
+                        if (resource.group !== lastGroup) {
+                          lastGroup = resource.group;
+                          rows.push(
+                            <tr key={`group-${role.id}-${resource.group}`} className={styles.groupHeaderRow}>
+                              <td colSpan={PERMISSION_ACTIONS.length + 2}>
+                                {GROUP_LABELS[resource.group] || resource.group}
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        rows.push(
                           <>
                             <tr key={`${role.id}-${resource.key}`}>
-                              <td>{resource.label}</td>
+                              <td className={styles.resourceLabel}>{resource.label}</td>
                               {PERMISSION_ACTIONS.map((action) => {
                                 const isSupported = isActionSupportedForResource(resource.key, action);
                                 const checked =
@@ -525,7 +548,10 @@ export default function AdminPage() {
                             )}
                           </>
                         );
-                      })}
+
+                        return rows;
+                        });
+                      })()}
                     </tbody>
                   </table>
                 </div>

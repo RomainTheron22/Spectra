@@ -12,65 +12,78 @@ export const PERMISSION_ACTIONS = Object.freeze([
 ]);
 
 export const PERMISSION_RESOURCES = Object.freeze([
-  { key: "dashboard", label: "Tableau de bord" },
-  { key: "calendrier", label: "Calendrier Projets" },
-  { key: "planningPerso", label: "Planning Perso" },
-  { key: "drive", label: "Drive" },
-  { key: "contrats", label: "Contrats / Projets" },
-  { key: "commandes", label: "Commandes" },
-  { key: "inventaire", label: "Inventaire" },
-  { key: "equipements", label: "Equipements" },
-  { key: "personnel", label: "Personnel" },
-  { key: "fournisseurs", label: "Fournisseurs" },
-  { key: "prestataires", label: "Prestataires" },
-  { key: "coutsPersonnel", label: "Coûts Personnel" },
-  { key: "suiviActivite", label: "Suivi d'Activité" },
-  { key: "comptabiliteProjet", label: "Comptabilite Projet" },
-  { key: "pilotageBudgetaire", label: "Pilotage Budgetaire" },
-  { key: "facturationRevenus", label: "Facturation & Revenus" },
-  { key: "admin", label: "Admin" },
+  // ── Général ──
+  { key: "dashboard",          label: "Tableau de bord",           group: "general" },
+  { key: "calendrier",         label: "Calendrier Projets",         group: "general" },
+  { key: "planningPerso",      label: "Planning Perso",             group: "general" },
+  { key: "drive",              label: "Drive",                      group: "general" },
+  // ── Projets ──
+  { key: "brief",              label: "Brief",                      group: "projets" },
+  { key: "contrats",           label: "Contrats / Projets",         group: "projets" },
+  { key: "commandes",          label: "Commandes",                  group: "projets" },
+  // ── Stock & Matériel ──
+  { key: "inventaire",         label: "Inventaire",                 group: "materiel" },
+  { key: "equipements",        label: "Equipements",                group: "materiel" },
+  { key: "checklistsEpi",      label: "Checklists EPI",             group: "materiel" },
+  { key: "kitsMachines",       label: "Kits Machines",              group: "materiel" },
+  { key: "historiqueEquip",    label: "Historique Equipements",     group: "materiel" },
+  // ── Externes ──
+  { key: "personnel",          label: "Personnel",                  group: "externes" },
+  { key: "fournisseurs",       label: "Fournisseurs",               group: "externes" },
+  { key: "prestataires",       label: "Prestataires",               group: "externes" },
+  // ── RH ──
+  { key: "suiviActivite",      label: "Suivi d'Activité",           group: "rh" },
+  // ── Finances ──
+  { key: "comptabiliteProjet", label: "Comptabilité Projet",        group: "finances" },
+  { key: "pilotageBudgetaire", label: "Pilotage Budgétaire",        group: "finances" },
+  // ── Admin ──
+  { key: "admin",              label: "Admin",                      group: "admin" },
 ]);
 
 const SUPPORTED_ACTIONS_BY_RESOURCE = Object.freeze({
-  dashboard: ["view"],
-  calendrier: ["view", "create", "edit", "delete"],
-  planningPerso: ["view", "create", "edit", "delete"],
-  drive: ["view", "create", "edit", "delete"],
-  contrats: ["view", "create", "edit", "delete"],
-  commandes: ["view", "create", "edit", "delete"],
-  inventaire: ["view", "create", "edit", "delete"],
-  equipements: ["view", "create", "edit", "delete"],
-  personnel: ["view", "create", "edit", "delete"],
-  fournisseurs: ["view", "create", "edit", "delete"],
-  prestataires: ["view", "create", "edit", "delete"],
-  coutsPersonnel: ["view", "create", "edit", "delete"],
-  suiviActivite: ["view", "create", "edit", "delete"],
+  dashboard:          ["view"],
+  calendrier:         ["view", "create", "edit", "delete"],
+  planningPerso:      ["view", "create", "edit", "delete"],
+  drive:              ["view", "create", "edit", "delete"],
+  brief:              ["view", "create", "edit", "delete"],
+  contrats:           ["view", "create", "edit", "delete"],
+  commandes:          ["view", "create", "edit", "delete"],
+  inventaire:         ["view", "create", "edit", "delete"],
+  equipements:        ["view", "create", "edit", "delete"],
+  checklistsEpi:      ["view", "create", "edit", "delete"],
+  kitsMachines:       ["view", "create", "edit", "delete"],
+  historiqueEquip:    ["view"],
+  personnel:          ["view", "create", "edit", "delete"],
+  fournisseurs:       ["view", "create", "edit", "delete"],
+  prestataires:       ["view", "create", "edit", "delete"],
+  suiviActivite:      ["view", "create", "edit", "delete"],
   comptabiliteProjet: ["view"],
   pilotageBudgetaire: ["view"],
-  facturationRevenus: ["view"],
-  admin: ["view", "create", "edit", "delete"],
+  admin:              ["view", "create", "edit", "delete"],
 });
 
 const PATH_RESOURCE_RULES = [
-  { test: (pathname) => pathname === "/", resource: "dashboard" },
-  { test: (pathname) => pathname.startsWith("/calendrier-projets"), resource: "calendrier" },
-  { test: (pathname) => pathname.startsWith("/calendrier"), resource: "calendrier" },
-  { test: (pathname) => pathname.startsWith("/planning-perso"), resource: "planningPerso" },
-  { test: (pathname) => pathname.startsWith("/drive"), resource: "drive" },
-  { test: (pathname) => pathname.startsWith("/commandes"), resource: "commandes" },
-  { test: (pathname) => pathname.startsWith("/inventaire"), resource: "inventaire" },
-  { test: (pathname) => pathname.startsWith("/equipements"), resource: "equipements" },
-  { test: (pathname) => pathname.startsWith("/contrats-projets"), resource: "contrats" },
-  { test: (pathname) => pathname.startsWith("/brief"), resource: "contrats" },
-  { test: (pathname) => pathname.startsWith("/contrats"), resource: "contrats" },
-  { test: (pathname) => pathname.startsWith("/externes/personnel"), resource: "personnel" },
-  { test: (pathname) => pathname.startsWith("/externes/fournisseurs"), resource: "fournisseurs" },
-  { test: (pathname) => pathname.startsWith("/externes/prestataires"), resource: "prestataires" },
-  { test: (pathname) => pathname.startsWith("/rh/suivi-activite"), resource: "suiviActivite" },
-  { test: (pathname) => pathname.startsWith("/finances/comptabilite-projet"), resource: "comptabiliteProjet" },
-  { test: (pathname) => pathname.startsWith("/finances/pilotage_budgetaire"), resource: "pilotageBudgetaire" },
-  { test: (pathname) => pathname.startsWith("/finances/facturation-revenus"), resource: "facturationRevenus" },
-  { test: (pathname) => pathname.startsWith("/admin"), resource: "admin" },
+  { test: (pathname) => pathname === "/",                                           resource: "dashboard" },
+  { test: (pathname) => pathname.startsWith("/calendrier-projets"),                 resource: "calendrier" },
+  { test: (pathname) => pathname.startsWith("/calendrier"),                         resource: "calendrier" },
+  { test: (pathname) => pathname.startsWith("/planning-perso"),                     resource: "planningPerso" },
+  { test: (pathname) => pathname.startsWith("/drive"),                              resource: "drive" },
+  { test: (pathname) => pathname.startsWith("/brief"),                              resource: "brief" },
+  { test: (pathname) => pathname.startsWith("/contrats-projets"),                   resource: "contrats" },
+  { test: (pathname) => pathname.startsWith("/contrats"),                           resource: "contrats" },
+  { test: (pathname) => pathname.startsWith("/commandes"),                          resource: "commandes" },
+  { test: (pathname) => pathname.startsWith("/inventaire"),                         resource: "inventaire" },
+  { test: (pathname) => pathname.startsWith("/equipements/checklists-epi"),         resource: "checklistsEpi" },
+  { test: (pathname) => pathname.startsWith("/equipements/kits-machines"),          resource: "kitsMachines" },
+  { test: (pathname) => pathname.startsWith("/equipements/historique"),             resource: "historiqueEquip" },
+  { test: (pathname) => pathname.startsWith("/equipements"),                        resource: "equipements" },
+  { test: (pathname) => pathname.startsWith("/externes/personnel"),                 resource: "personnel" },
+  { test: (pathname) => pathname.startsWith("/externes/fournisseurs"),              resource: "fournisseurs" },
+  { test: (pathname) => pathname.startsWith("/externes/prestataires"),              resource: "prestataires" },
+  { test: (pathname) => pathname.startsWith("/rh/suivi-activite"),                  resource: "suiviActivite" },
+  { test: (pathname) => pathname.startsWith("/finances/comptabilite-projet"),       resource: "comptabiliteProjet" },
+  { test: (pathname) => pathname.startsWith("/finances/pilotage_budgetaire"),       resource: "pilotageBudgetaire" },
+  { test: (pathname) => pathname.startsWith("/admin"),                              resource: "admin" },
 ];
 
 export function normalizeRoleName(value) {
@@ -153,65 +166,100 @@ export function isActionSupportedForResource(resourceKey, action) {
 // Par défaut tous les champs sont visibles (true).
 // L'admin peut les restreindre par rôle.
 export const RESOURCE_FIELDS = Object.freeze({
+  // ── Brief ──
+  brief: [
+    { key: "budget",        label: "Budget / Prix" },
+    { key: "clientNom",     label: "Nom du client" },
+    { key: "branche",       label: "Branche" },
+    { key: "contenuBrief",  label: "Contenu du brief" },
+    { key: "devis",         label: "Section Devis (prix estimés)" },
+    { key: "fichiers",      label: "Fichiers joints" },
+    { key: "statut",        label: "Statut" },
+  ],
+  // ── Contrats / Projets ──
   contrats: [
-    { key: "budget", label: "Budget / Prix" },
-    { key: "clientNom", label: "Nom du client" },
-    { key: "contenuBrief", label: "Contenu du brief" },
-    { key: "devis", label: "Section Devis" },
-    { key: "fichiers", label: "Fichiers joints" },
+    { key: "clientNom",     label: "Nom du client" },
+    { key: "lieu",          label: "Lieu" },
+    { key: "dateDebut",     label: "Date de début" },
+    { key: "dateFin",       label: "Date de fin" },
+    { key: "fichiers",      label: "Fichiers joints" },
   ],
+  // ── Commandes ──
   commandes: [
-    { key: "prixHT", label: "Prix HT / Totaux" },
-    { key: "fournisseur", label: "Fournisseur" },
-    { key: "qonto", label: "Paiement Qonto" },
-    { key: "commentaires", label: "Commentaires" },
-    { key: "referenceUrl", label: "URLs de référence" },
+    { key: "prixHT",        label: "Prix HT / Totaux" },
+    { key: "fournisseur",   label: "Fournisseur" },
+    { key: "qonto",         label: "Paiement Qonto" },
+    { key: "commentaires",  label: "Commentaires" },
+    { key: "referenceUrl",  label: "URLs de référence" },
   ],
+  // ── Inventaire ──
   inventaire: [
-    { key: "prix", label: "Prix / Valeur" },
-    { key: "zoneStockage", label: "Zone de stockage" },
+    { key: "prix",          label: "Prix / Valeur" },
+    { key: "zoneStockage",  label: "Zone de stockage" },
+    { key: "serialNumber",  label: "Numéro de série" },
   ],
+  // ── Equipements ──
   equipements: [
-    { key: "prix", label: "Prix / Valeur" },
+    { key: "prix",          label: "Prix / Valeur" },
+    { key: "etat",          label: "État / Condition" },
+    { key: "serialNumber",  label: "Numéro de série" },
+    { key: "notes",         label: "Notes / Observations" },
   ],
+  checklistsEpi: [
+    { key: "resultats",     label: "Résultats des contrôles" },
+    { key: "notes",         label: "Notes / Observations" },
+  ],
+  kitsMachines: [
+    { key: "contenu",       label: "Contenu du kit" },
+    { key: "notes",         label: "Notes" },
+  ],
+  // ── Personnel & Externes ──
   personnel: [
-    { key: "salaire", label: "Salaire / Rémunération" },
-    { key: "contrat", label: "Type de contrat" },
-    { key: "contact", label: "Coordonnées" },
+    { key: "salaire",       label: "Salaire / Rémunération" },
+    { key: "contrat",       label: "Type de contrat" },
+    { key: "contact",       label: "Coordonnées" },
+    { key: "notes",         label: "Notes RH" },
   ],
   fournisseurs: [
-    { key: "tarifs", label: "Tarifs / Prix" },
-    { key: "contact", label: "Coordonnées" },
+    { key: "tarifs",        label: "Tarifs / Prix" },
+    { key: "contact",       label: "Coordonnées" },
+    { key: "notes",         label: "Notes" },
   ],
   prestataires: [
-    { key: "tarifs", label: "Tarifs / Prix" },
-    { key: "contact", label: "Coordonnées" },
+    { key: "tarifs",        label: "Tarifs / Prix" },
+    { key: "contact",       label: "Coordonnées" },
+    { key: "notes",         label: "Notes" },
   ],
-  coutsPersonnel: [
-    { key: "montants", label: "Montants / Coûts" },
+  // ── RH ──
+  suiviActivite: [
+    { key: "heures",        label: "Heures travaillées" },
+    { key: "absences",      label: "Absences / Congés" },
+    { key: "notes",         label: "Commentaires" },
   ],
+  // ── Finances ──
   comptabiliteProjet: [
-    { key: "montants", label: "Montants" },
-    { key: "details", label: "Détails comptables" },
+    { key: "montants",      label: "Montants / Totaux" },
+    { key: "details",       label: "Détails comptables" },
+    { key: "marges",        label: "Marges" },
   ],
   pilotageBudgetaire: [
-    { key: "budgets", label: "Budgets / Prévisions" },
-    { key: "ecarts", label: "Écarts" },
+    { key: "budgets",       label: "Budgets / Prévisions" },
+    { key: "ecarts",        label: "Écarts budgétaires" },
+    { key: "previsions",    label: "Prévisions" },
   ],
-  facturationRevenus: [
-    { key: "montants", label: "Montants / Revenus" },
-    { key: "factures", label: "Factures" },
-  ],
+  // ── Calendrier & Planning ──
   calendrier: [
-    { key: "notes", label: "Notes / Détails" },
-    { key: "assignations", label: "Assignations" },
+    { key: "notes",         label: "Notes / Détails" },
+    { key: "assignations",  label: "Assignations" },
   ],
   planningPerso: [
-    { key: "notes", label: "Notes personnelles" },
+    { key: "notes",         label: "Notes personnelles" },
+    { key: "evenements",    label: "Evénements privés" },
   ],
+  // ── Drive ──
   drive: [
-    { key: "fichiers", label: "Fichiers" },
-    { key: "dossiers", label: "Dossiers" },
+    { key: "fichiers",      label: "Fichiers" },
+    { key: "dossiers",      label: "Dossiers" },
   ],
 });
 
