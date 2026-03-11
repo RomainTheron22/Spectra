@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./AdminPage.module.css";
 import {
   PERMISSION_ACTIONS,
   PERMISSION_RESOURCES,
   ROLE_NAMES,
   isActionSupportedForResource,
+  getResourceFields,
 } from "../../lib/rbac";
 
 function formatDateTime(value) {
@@ -29,6 +30,22 @@ export default function AdminPage() {
 
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleLabel, setNewRoleLabel] = useState("");
+
+  // expandedFields: Set de "roleId-resourceKey"
+  const [expandedFields, setExpandedFields] = useState(new Set());
+
+  const toggleExpanded = (roleId, resourceKey) => {
+    const key = `${roleId}-${resourceKey}`;
+    setExpandedFields((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const isExpanded = (roleId, resourceKey) =>
+    expandedFields.has(`${roleId}-${resourceKey}`);
 
   const loadData = async () => {
     setError("");
@@ -201,12 +218,28 @@ export default function AdminPage() {
 
     setRoles((prev) =>
       prev.map((item) =>
-        item.id === role.id
-          ? {
-              ...item,
-              permissions: nextPermissions,
-            }
-          : item
+        item.id === role.id ? { ...item, permissions: nextPermissions } : item
+      )
+    );
+
+    await updateRole(role.id, { permissions: nextPermissions });
+  };
+
+  const toggleFieldPermission = async (role, resourceKey, fieldKey, checked) => {
+    const nextPermissions = {
+      ...(role.permissions || {}),
+      [resourceKey]: {
+        ...(role.permissions?.[resourceKey] || {}),
+        fields: {
+          ...(role.permissions?.[resourceKey]?.fields || {}),
+          [fieldKey]: checked,
+        },
+      },
+    };
+
+    setRoles((prev) =>
+      prev.map((item) =>
+        item.id === role.id ? { ...item, permissions: nextPermissions } : item
       )
     );
 
@@ -221,6 +254,7 @@ export default function AdminPage() {
 
       {error ? <div className={styles.errorBox}>{error}</div> : null}
 
+      {/* ── Utilisateurs ── */}
       <section className={styles.card}>
         <div className={styles.cardHeader}>
           <h2 className={styles.cardTitle}>Gestion des utilisateurs</h2>
@@ -335,6 +369,7 @@ export default function AdminPage() {
         </div>
       </section>
 
+      {/* ── Rôles & permissions ── */}
       <section className={styles.card}>
         <div className={styles.cardHeader}>
           <h2 className={styles.cardTitle}>Gestion des roles</h2>
@@ -395,35 +430,102 @@ export default function AdminPage() {
                         {PERMISSION_ACTIONS.map((action) => (
                           <th key={`${role.id}-${action}`}>{action}</th>
                         ))}
+                        <th>Champs</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {PERMISSION_RESOURCES.map((resource) => (
-                        <tr key={`${role.id}-${resource.key}`}>
-                          <td>{resource.label}</td>
-                          {PERMISSION_ACTIONS.map((action) => {
-                            const isSupported = isActionSupportedForResource(resource.key, action);
-                            const checked =
-                              isSupported && Boolean(role.permissions?.[resource.key]?.[action]);
-                            return (
-                              <td key={`${role.id}-${resource.key}-${action}`}>
-                                {isSupported ? (
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    disabled={saving || lockPermissions}
-                                    onChange={(e) =>
-                                      togglePermission(role, resource.key, action, e.target.checked)
-                                    }
-                                  />
+                      {PERMISSION_RESOURCES.map((resource) => {
+                        const fields = getResourceFields(resource.key);
+                        const hasFields = fields.length > 0;
+                        const expanded = isExpanded(role.id, resource.key);
+
+                        return (
+                          <>
+                            <tr key={`${role.id}-${resource.key}`}>
+                              <td>{resource.label}</td>
+                              {PERMISSION_ACTIONS.map((action) => {
+                                const isSupported = isActionSupportedForResource(resource.key, action);
+                                const checked =
+                                  isSupported &&
+                                  Boolean(role.permissions?.[resource.key]?.[action]);
+                                return (
+                                  <td key={`${role.id}-${resource.key}-${action}`}>
+                                    {isSupported ? (
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        disabled={saving || lockPermissions}
+                                        onChange={(e) =>
+                                          togglePermission(role, resource.key, action, e.target.checked)
+                                        }
+                                      />
+                                    ) : (
+                                      <span className={styles.notAvailable}>-</span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                              <td>
+                                {hasFields ? (
+                                  <button
+                                    type="button"
+                                    className={styles.fieldsToggleBtn}
+                                    onClick={() => toggleExpanded(role.id, resource.key)}
+                                    disabled={lockPermissions}
+                                  >
+                                    {expanded ? "▲" : "▼"} {fields.length}
+                                  </button>
                                 ) : (
                                   <span className={styles.notAvailable}>-</span>
                                 )}
                               </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
+                            </tr>
+
+                            {hasFields && expanded && (
+                              <tr
+                                key={`${role.id}-${resource.key}-fields`}
+                                className={styles.fieldsRow}
+                              >
+                                <td colSpan={PERMISSION_ACTIONS.length + 2}>
+                                  <div className={styles.fieldsPanel}>
+                                    <p className={styles.fieldsPanelTitle}>
+                                      Champs visibles — {resource.label}
+                                    </p>
+                                    <div className={styles.fieldsGrid}>
+                                      {fields.map((field) => {
+                                        const stored =
+                                          role.permissions?.[resource.key]?.fields?.[field.key];
+                                        const checked = stored === undefined ? true : Boolean(stored);
+                                        return (
+                                          <label
+                                            key={field.key}
+                                            className={styles.fieldLabel}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={checked}
+                                              disabled={saving || lockPermissions}
+                                              onChange={(e) =>
+                                                toggleFieldPermission(
+                                                  role,
+                                                  resource.key,
+                                                  field.key,
+                                                  e.target.checked
+                                                )
+                                              }
+                                            />
+                                            {field.label}
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

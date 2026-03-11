@@ -121,6 +121,15 @@ export function normalizePermissions(input, defaultValue = false) {
         normalized[resource.key][action] = Boolean(source[action]);
       }
     }
+    // Préserver les permissions de champs si présentes
+    const fields = getResourceFields(resource.key);
+    if (fields.length > 0) {
+      normalized[resource.key].fields = {};
+      for (const field of fields) {
+        const stored = source?.fields?.[field.key];
+        normalized[resource.key].fields[field.key] = stored === undefined ? true : Boolean(stored);
+      }
+    }
   }
 
   return normalized;
@@ -138,6 +147,83 @@ export function getSupportedActionsForResource(resourceKey) {
 export function isActionSupportedForResource(resourceKey, action) {
   const supported = getSupportedActionsForResource(resourceKey);
   return supported.includes(String(action || "").trim());
+}
+
+// Permissions de champs par ressource.
+// Par défaut tous les champs sont visibles (true).
+// L'admin peut les restreindre par rôle.
+export const RESOURCE_FIELDS = Object.freeze({
+  contrats: [
+    { key: "budget", label: "Budget / Prix" },
+    { key: "clientNom", label: "Nom du client" },
+    { key: "contenuBrief", label: "Contenu du brief" },
+    { key: "devis", label: "Section Devis" },
+    { key: "fichiers", label: "Fichiers joints" },
+  ],
+  commandes: [
+    { key: "prixHT", label: "Prix HT / Totaux" },
+    { key: "fournisseur", label: "Fournisseur" },
+    { key: "qonto", label: "Paiement Qonto" },
+    { key: "commentaires", label: "Commentaires" },
+    { key: "referenceUrl", label: "URLs de référence" },
+  ],
+  inventaire: [
+    { key: "prix", label: "Prix / Valeur" },
+    { key: "zoneStockage", label: "Zone de stockage" },
+  ],
+  equipements: [
+    { key: "prix", label: "Prix / Valeur" },
+  ],
+  personnel: [
+    { key: "salaire", label: "Salaire / Rémunération" },
+    { key: "contrat", label: "Type de contrat" },
+    { key: "contact", label: "Coordonnées" },
+  ],
+  fournisseurs: [
+    { key: "tarifs", label: "Tarifs / Prix" },
+    { key: "contact", label: "Coordonnées" },
+  ],
+  prestataires: [
+    { key: "tarifs", label: "Tarifs / Prix" },
+    { key: "contact", label: "Coordonnées" },
+  ],
+  coutsPersonnel: [
+    { key: "montants", label: "Montants / Coûts" },
+  ],
+  comptabiliteProjet: [
+    { key: "montants", label: "Montants" },
+    { key: "details", label: "Détails comptables" },
+  ],
+  pilotageBudgetaire: [
+    { key: "budgets", label: "Budgets / Prévisions" },
+    { key: "ecarts", label: "Écarts" },
+  ],
+  facturationRevenus: [
+    { key: "montants", label: "Montants / Revenus" },
+    { key: "factures", label: "Factures" },
+  ],
+  calendrier: [
+    { key: "notes", label: "Notes / Détails" },
+    { key: "assignations", label: "Assignations" },
+  ],
+  planningPerso: [
+    { key: "notes", label: "Notes personnelles" },
+  ],
+  drive: [
+    { key: "fichiers", label: "Fichiers" },
+    { key: "dossiers", label: "Dossiers" },
+  ],
+});
+
+export function getResourceFields(resourceKey) {
+  return RESOURCE_FIELDS[String(resourceKey || "")] || [];
+}
+
+export function hasFieldPermission(permissions, resource, fieldKey) {
+  const fields = permissions?.[resource]?.fields;
+  if (!fields || typeof fields !== "object") return true; // visible par défaut
+  if (!(fieldKey in fields)) return true; // champ non restreint = visible
+  return Boolean(fields[fieldKey]);
 }
 
 export function hasPermission(permissions, resource, action = "view") {
