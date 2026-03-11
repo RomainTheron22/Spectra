@@ -143,6 +143,7 @@ export const auth = new Proxy(
   {},
   {
     get(_, prop) {
+      if (process.env.NEXT_PHASE === "phase-production-build") return undefined;
       if (!_authInstance) _authInstance = createAuthInstance();
       const value = _authInstance[prop];
       return typeof value === "function" ? value.bind(_authInstance) : value;

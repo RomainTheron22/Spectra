@@ -44,6 +44,9 @@ function buildClient() {
 }
 
 export async function getDb() {
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    throw new Error("Database non disponible pendant le build.");
+  }
   try {
     if (!clientPromise) buildClient();
     const connectedClient = await clientPromise;
@@ -57,6 +60,7 @@ export async function getDb() {
 }
 
 export function getMongoClient() {
+  if (process.env.NEXT_PHASE === "phase-production-build") return null;
   if (!mongoClient) buildClient();
   return mongoClient;
 }
