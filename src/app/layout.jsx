@@ -10,6 +10,9 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Spectra",
   description: "Spectra internal app",
+  icons: {
+    icon: "/Icone.png",
+  },
 };
 
 export default async function RootLayout({ children }) {
