@@ -182,6 +182,9 @@ async function bootstrapAuth() {
 }
 
 export async function ensureAuthSetup() {
+  // Pendant next build, on ne tente pas de connexion MongoDB
+  // (réseau non disponible en phase de build Docker/Nixpacks).
+  if (process.env.NEXT_PHASE === "phase-production-build") return;
   if (!authSetupPromise) {
     authSetupPromise = bootstrapAuth();
   }
