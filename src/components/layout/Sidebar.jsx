@@ -28,7 +28,7 @@ const MENU = [
     id: "menu-0",
     label: "Contrats & Projets",
     items: [
-      { label: "Brief & Devis", to: "/brief", resource: "contrats" },
+      { label: "Brief & Devis", to: "/brief", resource: "brief" },
       { label: "Contrats / Projets", to: "/contrats-projets", resource: "contrats" },
       { label: "Calendrier Projets", to: "/calendrier-projets", resource: "calendrier" },
     ],
@@ -75,9 +75,9 @@ const MENU = [
     id: "menu-4",
     label: "Equipements",
     items: [
-      { label: "Kits & Machines", to: "/equipements/kits-machines", resource: "equipements" },
-      { label: "Checklists & EPI", to: "/equipements/checklists-epi", resource: "equipements" },
-      { label: "Historique", to: "/equipements/historique", resource: "equipements" },
+      { label: "Kits & Machines", to: "/equipements/kits-machines", resource: "kitsMachines" },
+      { label: "Checklists & EPI", to: "/equipements/checklists-epi", resource: "checklistsEpi" },
+      { label: "Historique", to: "/equipements/historique", resource: "historiqueEquip" },
     ],
   },
 ];

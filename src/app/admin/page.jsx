@@ -5,6 +5,7 @@ import styles from "./AdminPage.module.css";
 import {
   PERMISSION_ACTIONS,
   PERMISSION_RESOURCES,
+  GROUP_LABELS,
   ROLE_NAMES,
   isActionSupportedForResource,
   getResourceFields,
@@ -435,15 +436,6 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {(() => {
-                        const GROUP_LABELS = {
-                          general:  "Général",
-                          projets:  "Projets",
-                          materiel: "Stock & Matériel",
-                          externes: "Externes",
-                          rh:       "RH",
-                          finances: "Finances",
-                          admin:    "Admin",
-                        };
                         let lastGroup = null;
                         return PERMISSION_RESOURCES.flatMap((resource) => {
                         const fields = getResourceFields(resource.key);
