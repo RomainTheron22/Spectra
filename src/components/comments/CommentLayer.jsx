@@ -35,6 +35,7 @@ export default function CommentLayer() {
 
   const formRef = useRef(null);
   const threadRef = useRef(null);
+  const ctxMenuDataRef = useRef(null); // garde la position même après setCtxMenu(null)
 
   // ── Load comments ──
   const loadComments = useCallback(async () => {
@@ -66,7 +67,9 @@ export default function CommentLayer() {
       e.preventDefault();
       const xVw = (e.clientX / window.innerWidth) * 100;
       const docY = e.clientY + window.scrollY;
-      setCtxMenu({ x: e.clientX, y: e.clientY, xVw, docY });
+      const data = { x: e.clientX, y: e.clientY, xVw, docY };
+      ctxMenuDataRef.current = data;
+      setCtxMenu(data);
       setForm(null);
       setOpenId(null);
     };
@@ -90,10 +93,12 @@ export default function CommentLayer() {
 
   // ── Open new comment form ──
   const startComment = () => {
-    if (!ctxMenu) return;
-    setForm(ctxMenu);
+    const data = ctxMenuDataRef.current;
+    if (!data) return;
+    setForm(data);
     setFormText("");
     setCtxMenu(null);
+    ctxMenuDataRef.current = null;
   };
 
   // ── Save comment ──
@@ -225,7 +230,11 @@ export default function CommentLayer() {
 
       {/* ── Context menu ── */}
       {ctxMenu && (
-        <div className={styles.ctxMenu} style={{ top: ctxMenu.y, left: ctxMenu.x }}>
+        <div
+          className={styles.ctxMenu}
+          style={{ top: ctxMenu.y, left: ctxMenu.x }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <button type="button" className={styles.ctxItem} onClick={startComment}>
             💬 Ajouter un commentaire
           </button>
@@ -241,6 +250,7 @@ export default function CommentLayer() {
             top: form.y + 10,
             left: Math.min(form.x, window.innerWidth - 320),
           }}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           <p className={styles.formTitle}>Nouveau commentaire</p>
           <form onSubmit={saveComment}>
