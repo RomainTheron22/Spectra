@@ -77,19 +77,17 @@ export default function CommentLayer() {
     return () => document.removeEventListener("contextmenu", onContextMenu);
   }, []);
 
-  // ── Close menus on outside click ──
+  // ── Close thread on outside click ──
   useEffect(() => {
+    if (!openId) return;
     const onClick = (e) => {
-      if (formRef.current && !formRef.current.contains(e.target)) setForm(null);
       if (threadRef.current && !threadRef.current.contains(e.target)) {
-        // only close if not clicking a pin
         if (!e.target.closest("[data-pin]")) setOpenId(null);
       }
-      setCtxMenu(null);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
-  }, []);
+  }, [openId]);
 
   // ── Open new comment form ──
   const startComment = () => {
@@ -230,19 +228,23 @@ export default function CommentLayer() {
 
       {/* ── Context menu ── */}
       {ctxMenu && (
-        <div
-          className={styles.ctxMenu}
-          style={{ top: ctxMenu.y, left: ctxMenu.x }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <button type="button" className={styles.ctxItem} onClick={startComment}>
-            💬 Ajouter un commentaire
-          </button>
-        </div>
+        <>
+          <div className={styles.backdrop} onClick={() => setCtxMenu(null)} />
+          <div
+            className={styles.ctxMenu}
+            style={{ top: ctxMenu.y, left: ctxMenu.x }}
+          >
+            <button type="button" className={styles.ctxItem} onClick={startComment}>
+              💬 Ajouter un commentaire
+            </button>
+          </div>
+        </>
       )}
 
       {/* ── New comment form ── */}
       {form && (
+        <>
+          <div className={styles.backdrop} onClick={() => setForm(null)} />
         <div
           ref={formRef}
           className={styles.commentForm}
@@ -250,7 +252,6 @@ export default function CommentLayer() {
             top: form.y + 10,
             left: Math.min(form.x, window.innerWidth - 320),
           }}
-          onMouseDown={(e) => e.stopPropagation()}
         >
           <p className={styles.formTitle}>Nouveau commentaire</p>
           <form onSubmit={saveComment}>
@@ -280,6 +281,7 @@ export default function CommentLayer() {
             </div>
           </form>
         </div>
+        </>
       )}
 
       {/* ── Thread panel ── */}
