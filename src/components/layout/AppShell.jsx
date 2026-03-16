@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import styles from "./AppShell.module.css";
 import Sidebar from "./Sidebar";
 import ForbiddenView from "../auth/ForbiddenView";
+import CommentLayer from "../comments/CommentLayer";
 import { authClient } from "../../lib/auth-client";
 import {
   ROLE_NAMES,
@@ -97,12 +98,15 @@ export default function AppShell({ children }) {
     renderedContent = <ForbiddenView />;
   }
 
+  const isAdmin = authz?.role?.name === ROLE_NAMES.ADMIN;
+
   return (
     <div className={styles.shell}>
       <Sidebar session={session} authz={authz} loading={isPending || authzLoading} />
       <div className={styles.main}>
         <main className={styles.content}>{renderedContent}</main>
       </div>
+      {isAdmin && !isPublic && <CommentLayer />}
     </div>
   );
 }

@@ -1,0 +1,316 @@
+/* ── Toolbar flottant (compteur de commentaires) ── */
+
+.toolbar {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9000;
+}
+
+.toolbarBtn {
+  background: var(--color-surface, #fff);
+  border: 1.5px solid var(--color-border, #e2e8f0);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text, #0f172a);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  transition: box-shadow 0.15s;
+}
+
+.toolbarBtn:hover {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+}
+
+/* ── Pins ── */
+
+.pin {
+  position: fixed;
+  z-index: 8900;
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.45);
+  cursor: pointer;
+  transform: translate(-50%, -100%) rotate(-45deg);
+  transition: transform 0.15s, box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pin:hover,
+.pinActive {
+  transform: translate(-50%, -110%) rotate(-45deg) scale(1.1);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.6);
+}
+
+.pinResolved {
+  background: linear-gradient(135deg, #94a3b8, #cbd5e1);
+  box-shadow: 0 2px 6px rgba(148, 163, 184, 0.4);
+}
+
+.pinIcon {
+  transform: rotate(45deg);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.pinBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  transform: rotate(45deg);
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #fff;
+}
+
+/* ── Context menu ── */
+
+.ctxMenu {
+  position: fixed;
+  z-index: 9500;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+  padding: 4px;
+  min-width: 200px;
+}
+
+.ctxItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: none;
+  border-radius: 7px;
+  font-size: 14px;
+  color: var(--color-text, #0f172a);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.ctxItem:hover {
+  background: var(--color-bg, #f8fafc);
+}
+
+/* ── New comment form ── */
+
+.commentForm {
+  position: fixed;
+  z-index: 9400;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.16);
+  padding: 14px;
+  width: 300px;
+}
+
+.formTitle {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted, #64748b);
+}
+
+.textarea {
+  width: 100%;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--color-text, #0f172a);
+  background: var(--color-bg, #f8fafc);
+  resize: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.textarea:focus {
+  outline: 2px solid rgba(99, 102, 241, 0.3);
+  border-color: #6366f1;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cancelBtn {
+  background: none;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--color-text-muted, #64748b);
+}
+
+.submitBtn {
+  background: linear-gradient(90deg, #6366f1, #3b82f6);
+  border: none;
+  border-radius: 7px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Thread panel ── */
+
+.thread {
+  position: fixed;
+  bottom: 70px;
+  right: 20px;
+  z-index: 9300;
+  width: 320px;
+  max-height: 480px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.threadHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  flex-shrink: 0;
+}
+
+.threadTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text, #0f172a);
+}
+
+.threadHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.resolveBtn {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.unresolveBtn {
+  background: #94a3b8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 2px 4px;
+  opacity: 0.6;
+  transition: opacity 0.1s;
+}
+
+.deleteBtn:hover { opacity: 1; }
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 2px 6px;
+  color: var(--color-text-muted, #64748b);
+  font-weight: 700;
+}
+
+/* ── Messages ── */
+
+.message {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+
+.reply {
+  background: var(--color-bg, #f8fafc);
+  padding-left: 22px;
+}
+
+.msgMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.msgAuthor {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text, #0f172a);
+}
+
+.msgTime {
+  font-size: 11px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.msgContent {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text, #0f172a);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ── Reply form ── */
+
+.replyForm {
+  padding: 10px 14px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+}
