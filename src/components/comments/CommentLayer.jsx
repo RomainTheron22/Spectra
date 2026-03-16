@@ -19,23 +19,24 @@ export default function CommentLayer() {
   const [comments, setComments] = useState([]);
   const [scrollY, setScrollY] = useState(0);
   const [showResolved, setShowResolved] = useState(false);
+  const [showPanel, setShowPanel] = useState(false);
+  const [focusId, setFocusId] = useState(null);
 
   // Context menu
-  const [ctxMenu, setCtxMenu] = useState(null); // { x, y, xVw, docY }
+  const [ctxMenu, setCtxMenu] = useState(null);
 
   // New comment form
-  const [form, setForm] = useState(null); // { x, y, xVw, docY }
+  const [form, setForm] = useState(null);
   const [formText, setFormText] = useState("");
   const [formSaving, setFormSaving] = useState(false);
 
-  // Open thread
-  const [openId, setOpenId] = useState(null);
-  const [replyText, setReplyText] = useState("");
-  const [replySaving, setReplySaving] = useState(false);
+  // Per-comment reply state
+  const [replyTexts, setReplyTexts] = useState({});
+  const [replySavingId, setReplySavingId] = useState(null);
 
   const formRef = useRef(null);
-  const threadRef = useRef(null);
-  const ctxMenuDataRef = useRef(null); // garde la position même après setCtxMenu(null)
+  const panelRef = useRef(null);
+  const ctxMenuDataRef = useRef(null);
 
   // ── Load comments ──
   const loadComments = useCallback(async () => {
@@ -71,23 +72,17 @@ export default function CommentLayer() {
       ctxMenuDataRef.current = data;
       setCtxMenu(data);
       setForm(null);
-      setOpenId(null);
     };
     document.addEventListener("contextmenu", onContextMenu);
     return () => document.removeEventListener("contextmenu", onContextMenu);
   }, []);
 
-  // ── Close thread on outside click ──
+  // ── Scroll to focused comment in panel ──
   useEffect(() => {
-    if (!openId) return;
-    const onClick = (e) => {
-      if (threadRef.current && !threadRef.current.contains(e.target)) {
-        if (!e.target.closest("[data-pin]")) setOpenId(null);
-      }
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [openId]);
+    if (!focusId || !panelRef.current) return;
+    const el = panelRef.current.querySelector(`[data-comment-id="${focusId}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [focusId]);
 
   // ── Open new comment form ──
   const startComment = () => {
@@ -118,7 +113,8 @@ export default function CommentLayer() {
       if (res.ok) {
         const data = await res.json();
         setComments((prev) => [data.item, ...prev]);
-        setOpenId(data.item.id);
+        setShowPanel(true);
+        setFocusId(data.item.id);
       }
     } finally {
       setFormSaving(false);
@@ -128,27 +124,28 @@ export default function CommentLayer() {
   };
 
   // ── Reply ──
-  const saveReply = async (e) => {
+  const saveReply = async (e, commentId) => {
     e.preventDefault();
-    if (!replyText.trim() || !openId) return;
-    setReplySaving(true);
+    const text = (replyTexts[commentId] || "").trim();
+    if (!text) return;
+    setReplySavingId(commentId);
     try {
-      const res = await fetch(`/api/comments/${openId}`, {
+      const res = await fetch(`/api/comments/${commentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reply: replyText.trim() }),
+        body: JSON.stringify({ reply: text }),
       });
       if (res.ok) {
         const data = await res.json();
         setComments((prev) =>
           prev.map((c) =>
-            c.id === openId ? { ...c, replies: [...c.replies, data.reply] } : c
+            c.id === commentId ? { ...c, replies: [...c.replies, data.reply] } : c
           )
         );
-        setReplyText("");
+        setReplyTexts((prev) => ({ ...prev, [commentId]: "" }));
       }
     } finally {
-      setReplySaving(false);
+      setReplySavingId(null);
     }
   };
 
@@ -163,7 +160,6 @@ export default function CommentLayer() {
       setComments((prev) =>
         prev.map((c) => (c.id === id ? { ...c, resolved: !current } : c))
       );
-      if (!current) setOpenId(null);
     }
   };
 
@@ -173,12 +169,11 @@ export default function CommentLayer() {
     const res = await fetch(`/api/comments/${id}`, { method: "DELETE" });
     if (res.ok) {
       setComments((prev) => prev.filter((c) => c.id !== id));
-      setOpenId(null);
+      if (focusId === id) setFocusId(null);
     }
   };
 
   const visibleComments = comments.filter((c) => showResolved || !c.resolved);
-  const openComment = comments.find((c) => c.id === openId) || null;
 
   // ── Pin position ──
   const pinStyle = (c) => {
@@ -189,16 +184,16 @@ export default function CommentLayer() {
 
   return (
     <>
-      {/* ── Toggle show-resolved button ── */}
+      {/* ── Toolbar ── */}
       <div className={styles.toolbar}>
         <button
           type="button"
-          className={styles.toolbarBtn}
-          onClick={() => setShowResolved((v) => !v)}
-          title={showResolved ? "Masquer les résolus" : "Afficher les résolus"}
+          className={`${styles.toolbarBtn} ${showPanel ? styles.toolbarBtnActive : ""}`}
+          onClick={() => setShowPanel((v) => !v)}
+          title={showPanel ? "Fermer les commentaires" : "Voir les commentaires"}
         >
           💬 {comments.filter((c) => !c.resolved).length}
-          {showResolved && comments.filter((c) => c.resolved).length > 0
+          {comments.filter((c) => c.resolved).length > 0
             ? ` (+${comments.filter((c) => c.resolved).length} résolus)`
             : ""}
         </button>
@@ -213,9 +208,12 @@ export default function CommentLayer() {
             key={c.id}
             data-pin="true"
             type="button"
-            className={`${styles.pin} ${c.resolved ? styles.pinResolved : ""} ${openId === c.id ? styles.pinActive : ""}`}
+            className={`${styles.pin} ${c.resolved ? styles.pinResolved : ""} ${focusId === c.id ? styles.pinActive : ""}`}
             style={{ top, left }}
-            onClick={() => setOpenId(openId === c.id ? null : c.id)}
+            onClick={() => {
+              setShowPanel(true);
+              setFocusId(c.id);
+            }}
             title={c.content}
           >
             <span className={styles.pinIcon}>💬</span>
@@ -245,114 +243,146 @@ export default function CommentLayer() {
       {form && (
         <>
           <div className={styles.backdrop} onClick={() => setForm(null)} />
-        <div
-          ref={formRef}
-          className={styles.commentForm}
-          style={{
-            top: form.y + 10,
-            left: Math.min(form.x, window.innerWidth - 320),
-          }}
-        >
-          <p className={styles.formTitle}>Nouveau commentaire</p>
-          <form onSubmit={saveComment}>
-            <textarea
-              className={styles.textarea}
-              placeholder="Décris le problème ou la suggestion..."
-              value={formText}
-              onChange={(e) => setFormText(e.target.value)}
-              autoFocus
-              rows={3}
-            />
-            <div className={styles.formActions}>
-              <button
-                type="button"
-                className={styles.cancelBtn}
-                onClick={() => setForm(null)}
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                className={styles.submitBtn}
-                disabled={!formText.trim() || formSaving}
-              >
-                {formSaving ? "..." : "Envoyer"}
-              </button>
-            </div>
-          </form>
-        </div>
+          <div
+            ref={formRef}
+            className={styles.commentForm}
+            style={{
+              top: form.y + 10,
+              left: Math.min(form.x, window.innerWidth - 320),
+            }}
+          >
+            <p className={styles.formTitle}>Nouveau commentaire</p>
+            <form onSubmit={saveComment}>
+              <textarea
+                className={styles.textarea}
+                placeholder="Décris le problème ou la suggestion..."
+                value={formText}
+                onChange={(e) => setFormText(e.target.value)}
+                autoFocus
+                rows={3}
+              />
+              <div className={styles.formActions}>
+                <button
+                  type="button"
+                  className={styles.cancelBtn}
+                  onClick={() => setForm(null)}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className={styles.submitBtn}
+                  disabled={!formText.trim() || formSaving}
+                >
+                  {formSaving ? "..." : "Envoyer"}
+                </button>
+              </div>
+            </form>
+          </div>
         </>
       )}
 
-      {/* ── Thread panel ── */}
-      {openComment && (
-        <div ref={threadRef} className={styles.thread}>
-          <div className={styles.threadHeader}>
-            <span className={styles.threadTitle}>Discussion</span>
-            <div className={styles.threadHeaderActions}>
+      {/* ── Comments panel ── */}
+      {showPanel && (
+        <div ref={panelRef} className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <span className={styles.panelTitle}>Commentaires</span>
+            <div className={styles.panelHeaderActions}>
               <button
                 type="button"
-                className={openComment.resolved ? styles.unresolveBtn : styles.resolveBtn}
-                onClick={() => toggleResolved(openComment.id, openComment.resolved)}
+                className={`${styles.toggleResolvedBtn} ${showResolved ? styles.toggleResolvedBtnActive : ""}`}
+                onClick={() => setShowResolved((v) => !v)}
+                title={showResolved ? "Masquer les résolus" : "Afficher les résolus"}
               >
-                {openComment.resolved ? "Réouvrir" : "Résoudre ✓"}
-              </button>
-              <button
-                type="button"
-                className={styles.deleteBtn}
-                onClick={() => deleteComment(openComment.id)}
-              >
-                🗑
+                {showResolved ? "Masquer résolus" : "Afficher résolus"}
               </button>
               <button
                 type="button"
                 className={styles.closeBtn}
-                onClick={() => setOpenId(null)}
+                onClick={() => setShowPanel(false)}
               >
                 ✕
               </button>
             </div>
           </div>
 
-          {/* Original comment */}
-          <div className={styles.message}>
-            <div className={styles.msgMeta}>
-              <span className={styles.msgAuthor}>{openComment.authorName}</span>
-              <span className={styles.msgTime}>{timeAgo(openComment.createdAt)}</span>
-            </div>
-            <p className={styles.msgContent}>{openComment.content}</p>
-          </div>
-
-          {/* Replies */}
-          {openComment.replies.map((r, i) => (
-            <div key={i} className={`${styles.message} ${styles.reply}`}>
-              <div className={styles.msgMeta}>
-                <span className={styles.msgAuthor}>{r.authorName}</span>
-                <span className={styles.msgTime}>{timeAgo(r.createdAt)}</span>
-              </div>
-              <p className={styles.msgContent}>{r.content}</p>
-            </div>
-          ))}
-
-          {/* Reply form */}
-          {!openComment.resolved && (
-            <form className={styles.replyForm} onSubmit={saveReply}>
-              <textarea
-                className={styles.textarea}
-                placeholder="Répondre..."
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                rows={2}
-              />
-              <button
-                type="submit"
-                className={styles.submitBtn}
-                disabled={!replyText.trim() || replySaving}
+          <div className={styles.panelBody}>
+            {visibleComments.length === 0 && (
+              <p className={styles.emptyText}>Aucun commentaire sur cette page.</p>
+            )}
+            {visibleComments.map((c) => (
+              <div
+                key={c.id}
+                data-comment-id={c.id}
+                className={`${styles.commentCard} ${c.resolved ? styles.commentCardResolved : ""} ${focusId === c.id ? styles.commentCardFocused : ""}`}
               >
-                {replySaving ? "..." : "Répondre"}
-              </button>
-            </form>
-          )}
+                {/* Comment header */}
+                <div className={styles.cardHeader}>
+                  <div className={styles.cardMeta}>
+                    <span className={styles.msgAuthor}>{c.authorName}</span>
+                    <span className={styles.msgTime}>{timeAgo(c.createdAt)}</span>
+                    {c.resolved && <span className={styles.resolvedBadge}>Résolu</span>}
+                  </div>
+                  <div className={styles.cardActions}>
+                    <button
+                      type="button"
+                      className={c.resolved ? styles.unresolveBtn : styles.resolveBtn}
+                      onClick={() => toggleResolved(c.id, c.resolved)}
+                    >
+                      {c.resolved ? "Réouvrir" : "Résoudre ✓"}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.deleteBtn}
+                      onClick={() => deleteComment(c.id)}
+                      title="Supprimer"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <p className={styles.msgContent}>{c.content}</p>
+
+                {/* Replies */}
+                {c.replies.map((r, i) => (
+                  <div key={i} className={styles.replyItem}>
+                    <div className={styles.msgMeta}>
+                      <span className={styles.msgAuthor}>{r.authorName}</span>
+                      <span className={styles.msgTime}>{timeAgo(r.createdAt)}</span>
+                    </div>
+                    <p className={styles.msgContent}>{r.content}</p>
+                  </div>
+                ))}
+
+                {/* Reply form */}
+                {!c.resolved && (
+                  <form
+                    className={styles.replyForm}
+                    onSubmit={(e) => saveReply(e, c.id)}
+                  >
+                    <textarea
+                      className={styles.textarea}
+                      placeholder="Répondre..."
+                      value={replyTexts[c.id] || ""}
+                      onChange={(e) =>
+                        setReplyTexts((prev) => ({ ...prev, [c.id]: e.target.value }))
+                      }
+                      rows={2}
+                    />
+                    <button
+                      type="submit"
+                      className={styles.submitBtn}
+                      disabled={!(replyTexts[c.id] || "").trim() || replySavingId === c.id}
+                    >
+                      {replySavingId === c.id ? "..." : "Répondre"}
+                    </button>
+                  </form>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </>
