@@ -173,7 +173,8 @@ export default function CommentLayer() {
     }
   };
 
-  const visibleComments = comments.filter((c) => showResolved || !c.resolved);
+  const activeComments = comments.filter((c) => !c.resolved);
+  const visibleComments = showResolved ? comments : activeComments;
 
   // ── Pin position ──
   const pinStyle = (c) => {
@@ -199,8 +200,8 @@ export default function CommentLayer() {
         </button>
       </div>
 
-      {/* ── Pins ── */}
-      {visibleComments.map((c) => {
+      {/* ── Pins (unresolved only) ── */}
+      {activeComments.map((c) => {
         const { top, left } = pinStyle(c);
         if (top < -20 || top > window.innerHeight + 20) return null;
         return (
@@ -208,7 +209,7 @@ export default function CommentLayer() {
             key={c.id}
             data-pin="true"
             type="button"
-            className={`${styles.pin} ${c.resolved ? styles.pinResolved : ""} ${focusId === c.id ? styles.pinActive : ""}`}
+            className={`${styles.pin} ${focusId === c.id ? styles.pinActive : ""}`}
             style={{ top, left }}
             onClick={() => {
               setShowPanel(true);
