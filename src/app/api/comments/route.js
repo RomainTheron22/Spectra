@@ -56,7 +56,7 @@ export async function POST(request) {
   const xVw = Number(body.xVw) || 50;
   const docY = Number(body.docY) || 0;
 
-  const user = gate.user;
+  const user = gate.authz.user;
 
   try {
     const db = await getDb();
@@ -66,7 +66,7 @@ export async function POST(request) {
       xVw,
       docY,
       content,
-      authorId: String(user._id),
+      authorId: String(user.id),
       authorName: String(user.name || user.email || "Admin"),
       resolved: false,
       replies: [],
@@ -81,7 +81,7 @@ export async function POST(request) {
         xVw,
         docY,
         content,
-        authorId: String(user._id),
+        authorId: String(user.id),
         authorName: String(user.name || user.email || "Admin"),
         resolved: false,
         replies: [],

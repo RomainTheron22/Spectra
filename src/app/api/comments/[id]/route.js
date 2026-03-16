@@ -37,9 +37,9 @@ export async function PATCH(request, { params }) {
     if (body.reply) {
       const content = String(body.reply).trim();
       if (!content) return NextResponse.json({ error: "Réponse vide." }, { status: 400 });
-      const user = gate.user;
+      const user = gate.authz.user;
       const reply = {
-        authorId: String(user._id),
+        authorId: String(user.id),
         authorName: String(user.name || user.email || "Admin"),
         content,
         createdAt: now,
