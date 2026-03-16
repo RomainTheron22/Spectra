@@ -11,7 +11,8 @@ export async function PATCH(request, { params }) {
   const gate = await requireAdmin(request, "edit");
   if (!gate.ok) return gate.response;
 
-  const _id = toObjId(params.id);
+  const { id } = await params;
+  const _id = toObjId(id);
   if (!_id) return NextResponse.json({ error: "ID invalide." }, { status: 400 });
 
   let body;
@@ -61,7 +62,8 @@ export async function DELETE(request, { params }) {
   const gate = await requireAdmin(request, "delete");
   if (!gate.ok) return gate.response;
 
-  const _id = toObjId(params.id);
+  const { id } = await params;
+  const _id = toObjId(id);
   if (!_id) return NextResponse.json({ error: "ID invalide." }, { status: 400 });
 
   try {
