@@ -152,25 +152,31 @@
 }
 
 /* ── Citation ── */
-.citationRow {
-  margin-bottom: 20px;
+.citationBlock {
+  padding: 32px 0 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .citation {
   margin: 0;
-  padding-left: 16px;
-  border-left: 3px solid var(--brand-blue-500);
-  font-size: 15px;
+  font-size: 20px;
   font-style: italic;
-  color: var(--color-text-muted);
+  font-weight: 500;
+  color: var(--color-text);
   line-height: 1.65;
+  max-width: 720px;
 }
 
 .citationAuthor {
   font-style: normal;
   font-weight: 800;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-muted);
+  letter-spacing: 0.04em;
 }
 
 /* ── Divider ── */

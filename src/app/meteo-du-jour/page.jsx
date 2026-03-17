@@ -91,15 +91,37 @@ export default function MeteoDuJourPage() {
         )}
       </div>
 
-      {/* ── Citation ── */}
-      {citation && (
-        <div className={styles.citationRow}>
-          <blockquote className={styles.citation}>
-            "{citation.quote}"
-            <cite className={styles.citationAuthor}> — {citation.author}</cite>
-          </blockquote>
-        </div>
-      )}
+      {/* ── Projets du jour ── */}
+      <section className={styles.section}>
+        <div className={styles.sectionLabel}>Projets du jour</div>
+
+        {projets.length === 0 ? (
+          <p className={styles.muted}>Aucun projet au calendrier aujourd'hui.</p>
+        ) : (
+          <div className={styles.projetList}>
+            {projets.map((p, i) => (
+              <div key={i} className={styles.projetRow}>
+                <span className={styles.projetName}>{p.projet}</span>
+                <span className={styles.arrow}>→</span>
+                <span className={styles.phasePill} style={{ color: p.phaseColor, background: p.phaseColor + "18", borderColor: p.phaseColor + "44" }}>
+                  {p.phase}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {briefsConvertis.length > 0 && (
+          <div className={styles.convertedList}>
+            {briefsConvertis.map((b) => (
+              <div key={b.id} className={styles.convertedRow}>
+                <span className={styles.convertedTag}>Nouveau brief converti !!</span>
+                <span className={styles.convertedName}>{b.briefName}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className={styles.divider} />
 
@@ -149,39 +171,18 @@ export default function MeteoDuJourPage() {
         </div>
       </section>
 
-      <div className={styles.divider} />
-
-      {/* ── Projets ── */}
-      <section className={styles.section}>
-        <div className={styles.sectionLabel}>Projets en cours cette semaine</div>
-
-        {projets.length === 0 ? (
-          <p className={styles.muted}>Aucun projet au calendrier cette semaine.</p>
-        ) : (
-          <div className={styles.projetList}>
-            {projets.map((p, i) => (
-              <div key={i} className={styles.projetRow}>
-                <span className={styles.projetName}>{p.projet}</span>
-                <span className={styles.arrow}>→</span>
-                <span className={styles.phasePill} style={{ color: p.phaseColor, background: p.phaseColor + "18", borderColor: p.phaseColor + "44" }}>
-                  {p.phase}
-                </span>
-              </div>
-            ))}
+      {/* ── Citation ── */}
+      {citation && (
+        <>
+          <div className={styles.divider} />
+          <div className={styles.citationBlock}>
+            <blockquote className={styles.citation}>
+              "{citation.quote}"
+            </blockquote>
+            <cite className={styles.citationAuthor}>— {citation.author}</cite>
           </div>
-        )}
-
-        {briefsConvertis.length > 0 && (
-          <div className={styles.convertedList}>
-            {briefsConvertis.map((b) => (
-              <div key={b.id} className={styles.convertedRow}>
-                <span className={styles.convertedTag}>Nouveau brief converti !!</span>
-                <span className={styles.convertedName}>{b.briefName}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        </>
+      )}
 
     </div>
   );

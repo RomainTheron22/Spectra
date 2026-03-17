@@ -50,7 +50,7 @@ async function fetchMeteoblue() {
 
   const url =
     `https://my.meteoblue.com/packages/basic-1h` +
-    `?apikey=${apiKey}&lat=48.8276&lon=2.3619&asl=35&format=json&tz=Europe%2FParis`;
+    `?apikey=${apiKey}&lat=48.8267707824707&lon=2.35418963432312&asl=35&format=json&tz=Europe%2FParis`;
 
   const raw = await fetch(url, { cache: "no-store" }).then((r) => r.json());
   const d = raw?.data_1h;
