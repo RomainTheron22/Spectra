@@ -54,13 +54,13 @@
 /* ── Weather widget (top-right) ── */
 .weatherWidget {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   border-radius: 16px;
-  padding: 16px 22px;
+  padding: 18px 22px;
   color: #fff;
-  min-width: 260px;
-  max-width: 320px;
+  min-width: 300px;
+  max-width: 420px;
   flex-shrink: 0;
   box-shadow: 0 2px 16px rgba(0,0,0,0.12);
 }
@@ -97,9 +97,58 @@
   margin-top: 3px;
 }
 
-.weatherNoKey {
+.weatherWidgetEmpty {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 16px 22px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  min-width: 260px;
+}
+
+.weatherWidgetEmpty code {
   font-size: 12px;
-  opacity: 0.8;
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin: 0 3px;
+}
+
+/* ── Hourly strip inside weather widget ── */
+.hourlyStrip {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  flex-wrap: wrap;
+}
+
+.hourSlot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 32px;
+}
+
+.hourLabel {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.hourEmoji {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.hourTemp {
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.9;
 }
 
 /* ── Citation ── */

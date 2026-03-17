@@ -24,27 +24,6 @@ function weekLabel(weekStart, weekEnd) {
   return `Semaine du ${s.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} au ${e.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
 }
 
-function getWeatherGradient(id) {
-  if (!id) return "linear-gradient(135deg, #667eea, #764ba2)";
-  if (id === 800) return "linear-gradient(135deg, #f59e0b, #f97316)";
-  if (id >= 801 && id <= 804) return "linear-gradient(135deg, #64748b, #475569)";
-  if (id >= 500 && id < 600) return "linear-gradient(135deg, #0284c7, #0ea5e9)";
-  if (id >= 600 && id < 700) return "linear-gradient(135deg, #bfdbfe, #93c5fd)";
-  if (id >= 200 && id < 300) return "linear-gradient(135deg, #1e293b, #334155)";
-  return "linear-gradient(135deg, #0284c7, #0ea5e9)";
-}
-
-function weatherEmoji(id) {
-  if (!id) return "🌡️";
-  if (id === 800) return "☀️";
-  if (id >= 801 && id <= 802) return "⛅";
-  if (id >= 803 && id <= 804) return "☁️";
-  if (id >= 500 && id < 600) return "🌧️";
-  if (id >= 600 && id < 700) return "❄️";
-  if (id >= 200 && id < 300) return "⛈️";
-  if (id >= 700 && id < 800) return "🌫️";
-  return "🌡️";
-}
 
 export default function MeteoDuJourPage() {
   const [data, setData] = useState(null);
@@ -67,7 +46,6 @@ export default function MeteoDuJourPage() {
   if (error) return <div className={styles.page}><p className={styles.muted}>Erreur : {error}</p></div>;
 
   const { vacances = [], arrivants = [], projets = [], briefsConvertis = [], weather, citation, weekStart, weekEnd } = data || {};
-  const weatherId = weather?.weather?.[0]?.id;
 
   return (
     <div className={styles.page}>
@@ -84,24 +62,33 @@ export default function MeteoDuJourPage() {
         </div>
 
         {/* Weather widget */}
-        <div className={styles.weatherWidget} style={{ background: getWeatherGradient(weatherId) }}>
-          {weather?.main ? (
-            <>
-              <span className={styles.weatherEmoji}>{weatherEmoji(weatherId)}</span>
-              <div className={styles.weatherRight}>
-                <span className={styles.weatherTemp}>{Math.round(weather.main.temp)}°C</span>
-                <span className={styles.weatherDesc}>
-                  {weather.weather?.[0]?.description?.charAt(0).toUpperCase() + weather.weather?.[0]?.description?.slice(1)}
-                </span>
-                <span className={styles.weatherMeta}>
-                  Ressenti {Math.round(weather.main.feels_like)}° · {weather.main.humidity}% humidité
-                </span>
-              </div>
-            </>
-          ) : (
-            <span className={styles.weatherNoKey}>Clé OpenWeatherMap manquante</span>
-          )}
-        </div>
+        {weather?.current ? (
+          <div className={styles.weatherWidget} style={{ background: weather.current.gradient }}>
+            <span className={styles.weatherEmoji}>{weather.current.emoji}</span>
+            <div className={styles.weatherRight}>
+              <span className={styles.weatherTemp}>{weather.current.temp}°C</span>
+              <span className={styles.weatherDesc}>{weather.current.label}</span>
+              <span className={styles.weatherMeta}>
+                {weather.current.humidity}% humidité · {weather.current.wind} km/h
+              </span>
+              {weather.hourly?.length > 0 && (
+                <div className={styles.hourlyStrip}>
+                  {weather.hourly.map((h) => (
+                    <div key={h.hour} className={styles.hourSlot}>
+                      <span className={styles.hourLabel}>{String(h.hour).padStart(2, "0")}h</span>
+                      <span className={styles.hourEmoji}>{h.emoji}</span>
+                      <span className={styles.hourTemp}>{h.temp}°</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className={styles.weatherWidgetEmpty}>
+            Ajoutez <code>METEOBLUE_API_KEY</code> pour la météo
+          </div>
+        )}
       </div>
 
       {/* ── Citation ── */}
