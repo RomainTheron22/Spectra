@@ -55,6 +55,7 @@ async function fetchMeteoblue() {
   const raw = await fetch(url, { cache: "no-store" }).then((r) => r.json());
   const d = raw?.data_1h;
   if (!d) return null;
+  console.log("[meteoblue] data_1h fields:", Object.keys(d));
 
   const todayStr = new Date().toLocaleDateString("fr-CA"); // "YYYY-MM-DD" local
   const currentHour = new Date().getHours();
@@ -75,11 +76,16 @@ async function fetchMeteoblue() {
     todayHours.find(({ hour }) => hour >= currentHour) || todayHours[todayHours.length - 1];
   const ci = currentSlot.i;
 
+  // meteoblue field names vary by package; try all known variants
+  const tempArr = d.temperature ?? d.temp2m ?? d.temperature_mean ?? [];
+  const humArr  = d.relativehumidity ?? d.humidity ?? d.relativehumidity_mean ?? [];
+  const windArr = d.windspeed ?? d.windspeed_mean ?? d.wind_speed_10m ?? [];
+
   const code = d.pictocode?.[ci] ?? 1;
   const current = {
-    temp: Math.round(d.temp2m?.[ci] ?? 0),
-    humidity: Math.round(d.relativehumidity?.[ci] ?? 0),
-    wind: Math.round(d.windspeed?.[ci] ?? 0),
+    temp: Math.round(tempArr[ci] ?? null),
+    humidity: Math.round(humArr[ci] ?? 0),
+    wind: Math.round(windArr[ci] ?? 0),
     pictocode: code,
     emoji: PICTO[code]?.emoji ?? "🌡️",
     label: PICTO[code]?.label ?? "",
@@ -95,7 +101,7 @@ async function fetchMeteoblue() {
       const c = d.pictocode?.[i] ?? 1;
       return {
         hour,
-        temp: Math.round(d.temp2m?.[i] ?? 0),
+        temp: Math.round(tempArr[i] ?? null),
         emoji: PICTO[c]?.emoji ?? "🌡️",
         rain: d.rainspot?.[i] ?? 0,
       };
