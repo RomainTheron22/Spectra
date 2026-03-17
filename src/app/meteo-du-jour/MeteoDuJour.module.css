@@ -10,14 +10,19 @@
   margin: 0;
 }
 
-/* ── Header ── */
-.headerRow {
+/* ── Top layout: left (title + projets) | right (météo) ── */
+.topLayout {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 20px;
+  gap: 32px;
+  margin-bottom: 22px;
   flex-wrap: wrap;
+}
+
+.topLeft {
+  flex: 1;
+  min-width: 0;
 }
 
 .pageTitle {
@@ -33,6 +38,11 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.projetsInline {
+  /* projets collés sous le titre, dans la colonne gauche */
 }
 
 .todayStr {
@@ -362,7 +372,7 @@
   .weatherWidget {
     min-width: 100%;
   }
-  .headerRow {
-    flex-direction: column;
+  .topLayout {
+    flex-direction: column-reverse;
   }
 }

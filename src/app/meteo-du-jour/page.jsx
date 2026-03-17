@@ -50,14 +50,44 @@ export default function MeteoDuJourPage() {
   return (
     <div className={styles.page}>
 
-      {/* ── Header ── */}
-      <div className={styles.headerRow}>
-        <div>
+      {/* ── Top layout: left = titre + projets, right = météo ── */}
+      <div className={styles.topLayout}>
+
+        <div className={styles.topLeft}>
           <h1 className={styles.pageTitle}>Météo du jour</h1>
           <div className={styles.headerSub}>
             <span className={styles.todayStr}>{today.charAt(0).toUpperCase() + today.slice(1)}</span>
             <span className={styles.dot}>·</span>
             <span className={styles.weekStr}>{weekLabel(weekStart, weekEnd)}</span>
+          </div>
+
+          <div className={styles.projetsInline}>
+            <div className={styles.sectionLabel}>Projets du jour</div>
+            {projets.length === 0 ? (
+              <p className={styles.muted}>Aucun projet au calendrier aujourd'hui.</p>
+            ) : (
+              <div className={styles.projetList}>
+                {projets.map((p, i) => (
+                  <div key={i} className={styles.projetRow}>
+                    <span className={styles.projetName}>{p.projet}</span>
+                    <span className={styles.arrow}>→</span>
+                    <span className={styles.phasePill} style={{ color: p.phaseColor, background: p.phaseColor + "18", borderColor: p.phaseColor + "44" }}>
+                      {p.phase}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {briefsConvertis.length > 0 && (
+              <div className={styles.convertedList}>
+                {briefsConvertis.map((b) => (
+                  <div key={b.id} className={styles.convertedRow}>
+                    <span className={styles.convertedTag}>Nouveau brief converti !!</span>
+                    <span className={styles.convertedName}>{b.briefName}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -89,39 +119,8 @@ export default function MeteoDuJourPage() {
             Ajoutez <code>METEOBLUE_API_KEY</code> pour la météo
           </div>
         )}
+
       </div>
-
-      {/* ── Projets du jour ── */}
-      <section className={styles.section}>
-        <div className={styles.sectionLabel}>Projets du jour</div>
-
-        {projets.length === 0 ? (
-          <p className={styles.muted}>Aucun projet au calendrier aujourd'hui.</p>
-        ) : (
-          <div className={styles.projetList}>
-            {projets.map((p, i) => (
-              <div key={i} className={styles.projetRow}>
-                <span className={styles.projetName}>{p.projet}</span>
-                <span className={styles.arrow}>→</span>
-                <span className={styles.phasePill} style={{ color: p.phaseColor, background: p.phaseColor + "18", borderColor: p.phaseColor + "44" }}>
-                  {p.phase}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {briefsConvertis.length > 0 && (
-          <div className={styles.convertedList}>
-            {briefsConvertis.map((b) => (
-              <div key={b.id} className={styles.convertedRow}>
-                <span className={styles.convertedTag}>Nouveau brief converti !!</span>
-                <span className={styles.convertedName}>{b.briefName}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
 
       <div className={styles.divider} />
 
