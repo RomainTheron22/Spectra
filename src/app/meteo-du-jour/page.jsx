@@ -21,28 +21,29 @@ function weekLabel(weekStart, weekEnd) {
   if (!weekStart || !weekEnd) return "";
   const s = new Date(weekStart);
   const e = new Date(weekEnd);
-  return `Semaine du ${s.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} au ${e.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`;
+  return `Semaine du ${s.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} au ${e.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
 }
 
-function getWeatherGradient(weatherId) {
-  if (!weatherId) return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
-  if (weatherId === 800) return "linear-gradient(135deg, #f6d365 0%, #fda085 100%)"; // clear
-  if (weatherId >= 801 && weatherId <= 804) return "linear-gradient(135deg, #a8c0d6 0%, #778ca3 100%)"; // clouds
-  if (weatherId >= 500 && weatherId < 600) return "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"; // rain
-  if (weatherId >= 600 && weatherId < 700) return "linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)"; // snow
-  if (weatherId >= 200 && weatherId < 300) return "linear-gradient(135deg, #373b44 0%, #4286f4 100%)"; // thunder
-  return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+function getWeatherGradient(id) {
+  if (!id) return "linear-gradient(135deg, #667eea, #764ba2)";
+  if (id === 800) return "linear-gradient(135deg, #f59e0b, #f97316)";
+  if (id >= 801 && id <= 804) return "linear-gradient(135deg, #64748b, #475569)";
+  if (id >= 500 && id < 600) return "linear-gradient(135deg, #0284c7, #0ea5e9)";
+  if (id >= 600 && id < 700) return "linear-gradient(135deg, #bfdbfe, #93c5fd)";
+  if (id >= 200 && id < 300) return "linear-gradient(135deg, #1e293b, #334155)";
+  return "linear-gradient(135deg, #0284c7, #0ea5e9)";
 }
 
-function WeatherIcon({ id }) {
-  if (!id) return <span className={styles.weatherEmoji}>🌡️</span>;
-  if (id === 800) return <span className={styles.weatherEmoji}>☀️</span>;
-  if (id >= 801 && id <= 804) return <span className={styles.weatherEmoji}>☁️</span>;
-  if (id >= 500 && id < 600) return <span className={styles.weatherEmoji}>🌧️</span>;
-  if (id >= 600 && id < 700) return <span className={styles.weatherEmoji}>❄️</span>;
-  if (id >= 200 && id < 300) return <span className={styles.weatherEmoji}>⛈️</span>;
-  if (id >= 700 && id < 800) return <span className={styles.weatherEmoji}>🌫️</span>;
-  return <span className={styles.weatherEmoji}>🌡️</span>;
+function weatherEmoji(id) {
+  if (!id) return "🌡️";
+  if (id === 800) return "☀️";
+  if (id >= 801 && id <= 802) return "⛅";
+  if (id >= 803 && id <= 804) return "☁️";
+  if (id >= 500 && id < 600) return "🌧️";
+  if (id >= 600 && id < 700) return "❄️";
+  if (id >= 200 && id < 300) return "⛈️";
+  if (id >= 700 && id < 800) return "🌫️";
+  return "🌡️";
 }
 
 export default function MeteoDuJourPage() {
@@ -53,10 +54,7 @@ export default function MeteoDuJourPage() {
   useEffect(() => {
     fetch("/api/meteo-du-jour", { cache: "no-store" })
       .then((r) => r.json())
-      .then((d) => {
-        if (d.error) setError(d.error);
-        else setData(d);
-      })
+      .then((d) => { if (d.error) setError(d.error); else setData(d); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -65,161 +63,139 @@ export default function MeteoDuJourPage() {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-  if (loading) return <div className={styles.page}><div className={styles.loading}>Chargement...</div></div>;
-  if (error) return <div className={styles.page}><div className={styles.loading}>Erreur : {error}</div></div>;
+  if (loading) return <div className={styles.page}><p className={styles.muted}>Chargement...</p></div>;
+  if (error) return <div className={styles.page}><p className={styles.muted}>Erreur : {error}</p></div>;
 
   const { vacances = [], arrivants = [], projets = [], briefsConvertis = [], weather, citation, weekStart, weekEnd } = data || {};
-
   const weatherId = weather?.weather?.[0]?.id;
-  const weatherGradient = getWeatherGradient(weatherId);
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Météo du jour</h1>
-        <div className={styles.dateInfo}>
-          <span className={styles.todayLabel}>{today.charAt(0).toUpperCase() + today.slice(1)}</span>
-          <span className={styles.weekLabel}>{weekLabel(weekStart, weekEnd)}</span>
-        </div>
-      </div>
 
-      <div className={styles.grid}>
-        {/* ── Météo Paris ── */}
-        <div className={styles.weatherCard} style={{ background: weatherGradient }}>
-          <div className={styles.weatherTitle}>Paris 13e</div>
-          {weather && weather.main ? (
+      {/* ── Header ── */}
+      <div className={styles.headerRow}>
+        <div>
+          <h1 className={styles.pageTitle}>Météo du jour</h1>
+          <div className={styles.headerSub}>
+            <span className={styles.todayStr}>{today.charAt(0).toUpperCase() + today.slice(1)}</span>
+            <span className={styles.dot}>·</span>
+            <span className={styles.weekStr}>{weekLabel(weekStart, weekEnd)}</span>
+          </div>
+        </div>
+
+        {/* Weather widget */}
+        <div className={styles.weatherWidget} style={{ background: getWeatherGradient(weatherId) }}>
+          {weather?.main ? (
             <>
-              <div className={styles.weatherMain}>
-                <WeatherIcon id={weatherId} />
+              <span className={styles.weatherEmoji}>{weatherEmoji(weatherId)}</span>
+              <div className={styles.weatherRight}>
                 <span className={styles.weatherTemp}>{Math.round(weather.main.temp)}°C</span>
-              </div>
-              <div className={styles.weatherDesc}>
-                {weather.weather?.[0]?.description?.charAt(0).toUpperCase() + weather.weather?.[0]?.description?.slice(1)}
-              </div>
-              <div className={styles.weatherDetails}>
-                <span>Ressenti {Math.round(weather.main.feels_like)}°C</span>
-                <span>Humidité {weather.main.humidity}%</span>
-                <span>Vent {Math.round((weather.wind?.speed || 0) * 3.6)} km/h</span>
+                <span className={styles.weatherDesc}>
+                  {weather.weather?.[0]?.description?.charAt(0).toUpperCase() + weather.weather?.[0]?.description?.slice(1)}
+                </span>
+                <span className={styles.weatherMeta}>
+                  Ressenti {Math.round(weather.main.feels_like)}° · {weather.main.humidity}% humidité
+                </span>
               </div>
             </>
           ) : (
-            <div className={styles.weatherNoKey}>
-              Configurez <code>OPENWEATHERMAP_API_KEY</code> pour afficher la météo.
-            </div>
-          )}
-        </div>
-
-        {/* ── Citation du jour ── */}
-        <div className={styles.citationCard}>
-          <div className={styles.citationLabel}>Citation du jour</div>
-          {citation ? (
-            <>
-              <blockquote className={styles.citationText}>"{citation.quote}"</blockquote>
-              <div className={styles.citationAuthor}>— {citation.author}</div>
-            </>
-          ) : (
-            <div className={styles.empty}>Citation indisponible.</div>
-          )}
-        </div>
-
-        {/* ── Équipes ── */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardIcon}>👥</span>
-            <span className={styles.cardTitle}>Équipes</span>
-          </div>
-
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>En vacances cette semaine</div>
-            {vacances.length === 0 ? (
-              <div className={styles.empty}>Personne en vacances cette semaine.</div>
-            ) : (
-              <div className={styles.list}>
-                {vacances.map((v) => (
-                  <div key={v.id} className={styles.listItem}>
-                    <div className={styles.listItemName}>{v.name}</div>
-                    <div className={styles.listItemSub}>
-                      <span className={styles.absenceBadge}>{v.type}</span>
-                      <span className={styles.dateRange}>
-                        du {formatDateFr(v.startDate)} au {formatDateFr(v.endDate)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className={styles.divider} />
-
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>Nouveaux arrivants cette semaine</div>
-            {arrivants.length === 0 ? (
-              <div className={styles.empty}>Aucun nouvel arrivant cette semaine.</div>
-            ) : (
-              <div className={styles.list}>
-                {arrivants.map((a) => (
-                  <div key={a.id} className={styles.listItem}>
-                    <div className={styles.listItemName}>{a.name}</div>
-                    <div className={styles.listItemSub}>
-                      {a.role && <span className={styles.roleBadge}>{a.role}</span>}
-                      <span className={styles.dateRange}>Début le {formatDateLong(a.startDate)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Projets ── */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardIcon}>📁</span>
-            <span className={styles.cardTitle}>Projets</span>
-          </div>
-
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>En cours cette semaine</div>
-            {projets.length === 0 ? (
-              <div className={styles.empty}>Aucun projet au calendrier cette semaine.</div>
-            ) : (
-              <div className={styles.list}>
-                {projets.map((p, i) => (
-                  <div key={i} className={styles.listItem}>
-                    <div className={styles.listItemName}>{p.projet}</div>
-                    <div className={styles.listItemSub}>
-                      <span
-                        className={styles.phaseBadge}
-                        style={{ background: p.phaseColor + "22", color: p.phaseColor, borderColor: p.phaseColor + "55" }}
-                      >
-                        {p.phase}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {briefsConvertis.length > 0 && (
-            <>
-              <div className={styles.divider} />
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>Briefs convertis cette semaine</div>
-                <div className={styles.list}>
-                  {briefsConvertis.map((b) => (
-                    <div key={b.id} className={`${styles.listItem} ${styles.listItemConverted}`}>
-                      <div className={styles.convertedBadge}>Nouveau brief converti !!</div>
-                      <div className={styles.listItemName}>{b.briefName}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
+            <span className={styles.weatherNoKey}>Clé OpenWeatherMap manquante</span>
           )}
         </div>
       </div>
+
+      {/* ── Citation ── */}
+      {citation && (
+        <div className={styles.citationRow}>
+          <blockquote className={styles.citation}>
+            "{citation.quote}"
+            <cite className={styles.citationAuthor}> — {citation.author}</cite>
+          </blockquote>
+        </div>
+      )}
+
+      <div className={styles.divider} />
+
+      {/* ── Équipes ── */}
+      <section className={styles.section}>
+        <div className={styles.sectionLabel}>Équipes</div>
+        <div className={styles.equipeGrid}>
+
+          <div className={styles.equipeCol}>
+            <div className={styles.colTitle}>En vacances cette semaine</div>
+            {vacances.length === 0 ? (
+              <p className={styles.muted}>Personne en vacances.</p>
+            ) : (
+              <div className={styles.personList}>
+                {vacances.map((v) => (
+                  <div key={v.id} className={styles.personRow}>
+                    <span className={styles.personName}>{v.name}</span>
+                    <span className={styles.personMeta}>
+                      {v.type !== "Absence" && <span className={styles.typeBadge}>{v.type}</span>}
+                      du {formatDateFr(v.startDate)} au {formatDateFr(v.endDate)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className={styles.equipeCol}>
+            <div className={styles.colTitle}>Nouveaux arrivants</div>
+            {arrivants.length === 0 ? (
+              <p className={styles.muted}>Aucun nouvel arrivant.</p>
+            ) : (
+              <div className={styles.personList}>
+                {arrivants.map((a) => (
+                  <div key={a.id} className={styles.personRow}>
+                    <span className={styles.personName}>{a.name}</span>
+                    <span className={styles.personMeta}>
+                      {a.role && <span className={styles.roleBadge}>{a.role}</span>}
+                      Début le {formatDateLong(a.startDate)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </section>
+
+      <div className={styles.divider} />
+
+      {/* ── Projets ── */}
+      <section className={styles.section}>
+        <div className={styles.sectionLabel}>Projets en cours cette semaine</div>
+
+        {projets.length === 0 ? (
+          <p className={styles.muted}>Aucun projet au calendrier cette semaine.</p>
+        ) : (
+          <div className={styles.projetList}>
+            {projets.map((p, i) => (
+              <div key={i} className={styles.projetRow}>
+                <span className={styles.projetName}>{p.projet}</span>
+                <span className={styles.arrow}>→</span>
+                <span className={styles.phasePill} style={{ color: p.phaseColor, background: p.phaseColor + "18", borderColor: p.phaseColor + "44" }}>
+                  {p.phase}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {briefsConvertis.length > 0 && (
+          <div className={styles.convertedList}>
+            {briefsConvertis.map((b) => (
+              <div key={b.id} className={styles.convertedRow}>
+                <span className={styles.convertedTag}>Nouveau brief converti !!</span>
+                <span className={styles.convertedName}>{b.briefName}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
     </div>
   );
 }

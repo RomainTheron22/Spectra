@@ -1,289 +1,313 @@
 .page {
-  padding: 24px;
+  width: 100%;
   max-width: 1200px;
-  margin: 0 auto;
+  padding: 0 4px;
 }
 
-.loading {
-  padding: 48px;
-  text-align: center;
-  color: #94a3b8;
+.muted {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  margin: 0;
 }
 
 /* ── Header ── */
-.header {
-  margin-bottom: 28px;
-}
-
-.title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #f1f5f9;
-  margin: 0 0 6px 0;
-}
-
-.dateInfo {
+.headerRow {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.todayLabel {
-  font-size: 15px;
-  color: #94a3b8;
-  font-weight: 500;
-}
-
-.weekLabel {
-  font-size: 13px;
-  color: #64748b;
-}
-
-/* ── Grid layout ── */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-/* ── Weather card ── */
-.weatherCard {
-  border-radius: 16px;
-  padding: 28px;
-  color: #fff;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   justify-content: space-between;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-}
-
-.weatherTitle {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.85;
-  margin-bottom: 8px;
-}
-
-.weatherMain {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.weatherEmoji {
-  font-size: 52px;
-  line-height: 1;
-}
-
-.weatherTemp {
-  font-size: 56px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -2px;
-}
-
-.weatherDesc {
-  font-size: 18px;
-  font-weight: 500;
-  margin-top: 4px;
-  opacity: 0.95;
-}
-
-.weatherDetails {
-  display: flex;
-  gap: 16px;
-  margin-top: 12px;
-  font-size: 13px;
-  opacity: 0.8;
+  gap: 24px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
 }
 
-.weatherNoKey {
-  font-size: 14px;
-  opacity: 0.85;
-  margin-top: 16px;
-  line-height: 1.6;
+.pageTitle {
+  margin: 0 0 6px 0;
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
 }
 
-.weatherNoKey code {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-/* ── Citation card ── */
-.citationCard {
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 16px;
-  padding: 28px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 200px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-}
-
-.citationLabel {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #64748b;
-  margin-bottom: 16px;
-}
-
-.citationText {
-  font-size: 16px;
-  font-style: italic;
-  color: #e2e8f0;
-  line-height: 1.65;
-  margin: 0 0 14px 0;
-  padding-left: 14px;
-  border-left: 3px solid #3b82f6;
-}
-
-.citationAuthor {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-/* ── Generic card ── */
-.card {
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-}
-
-.cardHeader {
+.headerSub {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.todayStr {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.dot {
+  color: var(--color-border);
+  font-size: 16px;
+}
+
+.weekStr {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ── Weather widget (top-right) ── */
+.weatherWidget {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 16px;
+  padding: 16px 22px;
+  color: #fff;
+  min-width: 260px;
+  max-width: 320px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+}
+
+.weatherEmoji {
+  font-size: 40px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.weatherRight {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.weatherTemp {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.weatherDesc {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.92;
+  margin-top: 2px;
+}
+
+.weatherMeta {
+  font-size: 11px;
+  opacity: 0.72;
+  margin-top: 3px;
+}
+
+.weatherNoKey {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* ── Citation ── */
+.citationRow {
   margin-bottom: 20px;
 }
 
-.cardIcon {
-  font-size: 18px;
+.citation {
+  margin: 0;
+  padding-left: 16px;
+  border-left: 3px solid var(--brand-blue-500);
+  font-size: 15px;
+  font-style: italic;
+  color: var(--color-text-muted);
+  line-height: 1.65;
 }
 
-.cardTitle {
-  font-size: 16px;
-  font-weight: 700;
-  color: #f1f5f9;
+.citationAuthor {
+  font-style: normal;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
-/* ── Sections inside card ── */
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 22px 0;
+}
+
+/* ── Section ── */
 .section {
   margin-bottom: 4px;
 }
 
-.sectionTitle {
+.sectionLabel {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #64748b;
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+
+/* ── Équipes ── */
+.equipeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.equipeCol {
+  padding-right: 40px;
+}
+
+.equipeCol + .equipeCol {
+  padding-right: 0;
+  padding-left: 40px;
+  border-left: 1px solid var(--color-border);
+}
+
+.colTitle {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text);
   margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.divider {
-  height: 1px;
-  background: #334155;
-  margin: 16px 0;
-}
-
-/* ── List items ── */
-.list {
+.personList {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.listItem {
+.personRow {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
 }
 
-.listItemName {
+.personName {
   font-size: 14px;
-  font-weight: 600;
-  color: #e2e8f0;
+  font-weight: 800;
+  color: var(--color-text);
 }
 
-.listItemSub {
+.personMeta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
   flex-wrap: wrap;
 }
 
-.dateRange {
-  font-size: 12px;
-  color: #64748b;
-}
-
-.absenceBadge {
+.typeBadge {
   font-size: 11px;
-  font-weight: 600;
-  background: #0ea5e922;
-  color: #38bdf8;
-  border: 1px solid #0ea5e933;
-  border-radius: 4px;
-  padding: 1px 6px;
+  font-weight: 800;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 999px;
+  padding: 1px 8px;
 }
 
 .roleBadge {
   font-size: 11px;
-  font-weight: 600;
-  background: #8b5cf622;
-  color: #a78bfa;
-  border: 1px solid #8b5cf633;
-  border-radius: 4px;
-  padding: 1px 6px;
-}
-
-.phaseBadge {
-  font-size: 11px;
-  font-weight: 600;
-  border: 1px solid;
-  border-radius: 4px;
+  font-weight: 800;
+  background: #ede9fe;
+  color: #6d28d9;
+  border-radius: 999px;
   padding: 1px 8px;
 }
 
-/* ── Brief converti ── */
-.listItemConverted {
-  background: #1a2d1a;
-  border: 1px solid #16a34a44;
+/* ── Projets ── */
+.projetList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.projetRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.projetRow:last-child {
+  border-bottom: none;
+}
+
+.projetName {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text);
+  min-width: 160px;
+}
+
+.arrow {
+  color: var(--color-border);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.phasePill {
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 2px 12px;
+}
+
+/* ── Briefs convertis ── */
+.convertedList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.convertedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 10px 14px;
 }
 
-.convertedBadge {
+.convertedTag {
   font-size: 11px;
-  font-weight: 700;
-  color: #4ade80;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  color: #16a34a;
+  white-space: nowrap;
 }
 
-/* ── Empty states ── */
-.empty {
-  font-size: 13px;
-  color: #475569;
-  font-style: italic;
+.convertedName {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text);
 }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .grid {
+  .equipeGrid {
     grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .equipeCol {
+    padding-right: 0;
+  }
+  .equipeCol + .equipeCol {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    padding-top: 20px;
+  }
+  .weatherWidget {
+    min-width: 100%;
+  }
+  .headerRow {
+    flex-direction: column;
   }
 }
