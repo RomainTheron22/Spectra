@@ -1,0 +1,289 @@
+.page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.loading {
+  padding: 48px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+/* ── Header ── */
+.header {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 6px 0;
+}
+
+.dateInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todayLabel {
+  font-size: 15px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.weekLabel {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ── Grid layout ── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* ── Weather card ── */
+.weatherCard {
+  border-radius: 16px;
+  padding: 28px;
+  color: #fff;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.weatherTitle {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+
+.weatherMain {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.weatherEmoji {
+  font-size: 52px;
+  line-height: 1;
+}
+
+.weatherTemp {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.weatherDesc {
+  font-size: 18px;
+  font-weight: 500;
+  margin-top: 4px;
+  opacity: 0.95;
+}
+
+.weatherDetails {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  opacity: 0.8;
+  flex-wrap: wrap;
+}
+
+.weatherNoKey {
+  font-size: 14px;
+  opacity: 0.85;
+  margin-top: 16px;
+  line-height: 1.6;
+}
+
+.weatherNoKey code {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ── Citation card ── */
+.citationCard {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 200px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.citationLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.citationText {
+  font-size: 16px;
+  font-style: italic;
+  color: #e2e8f0;
+  line-height: 1.65;
+  margin: 0 0 14px 0;
+  padding-left: 14px;
+  border-left: 3px solid #3b82f6;
+}
+
+.citationAuthor {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ── Generic card ── */
+.card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.cardIcon {
+  font-size: 18px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+/* ── Sections inside card ── */
+.section {
+  margin-bottom: 4px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.divider {
+  height: 1px;
+  background: #334155;
+  margin: 16px 0;
+}
+
+/* ── List items ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.listItem {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.listItemName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.listItemSub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dateRange {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.absenceBadge {
+  font-size: 11px;
+  font-weight: 600;
+  background: #0ea5e922;
+  color: #38bdf8;
+  border: 1px solid #0ea5e933;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.roleBadge {
+  font-size: 11px;
+  font-weight: 600;
+  background: #8b5cf622;
+  color: #a78bfa;
+  border: 1px solid #8b5cf633;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.phaseBadge {
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 1px 8px;
+}
+
+/* ── Brief converti ── */
+.listItemConverted {
+  background: #1a2d1a;
+  border: 1px solid #16a34a44;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.convertedBadge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4ade80;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Empty states ── */
+.empty {
+  font-size: 13px;
+  color: #475569;
+  font-style: italic;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
