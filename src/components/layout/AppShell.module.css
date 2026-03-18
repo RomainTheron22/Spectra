@@ -6,6 +6,19 @@
   overflow: hidden;
 }
 
+.shellFull {
+  grid-template-columns: 1fr;
+}
+
+.mainMeteo {
+  overflow-y: auto;
+}
+
+.contentMeteo {
+  padding: 0;
+  max-width: none;
+}
+
 .main {
   display: flex;
   flex: 1;

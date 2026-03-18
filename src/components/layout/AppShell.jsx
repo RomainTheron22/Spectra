@@ -8,6 +8,7 @@ import Sidebar from "./Sidebar";
 import ForbiddenView from "../auth/ForbiddenView";
 import CommentLayer from "../comments/CommentLayer";
 import { authClient } from "../../lib/auth-client";
+import { SidebarContext } from "../../lib/sidebar-context";
 import {
   ROLE_NAMES,
   getResourceFromPath,
@@ -20,6 +21,13 @@ export default function AppShell({ children }) {
   const { data: session, isPending } = authClient.useSession();
   const [authz, setAuthz] = useState(null);
   const [authzLoading, setAuthzLoading] = useState(true);
+  const isMeteoPage = pathname === "/meteo-du-jour";
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    if (isMeteoPage) setSidebarOpen(false);
+    else setSidebarOpen(true);
+  }, [isMeteoPage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,14 +107,19 @@ export default function AppShell({ children }) {
   }
 
   const isAdmin = authz?.role?.name === ROLE_NAMES.ADMIN;
+  const showSidebar = !isMeteoPage || sidebarOpen;
 
   return (
-    <div className={styles.shell}>
-      <Sidebar session={session} authz={authz} loading={isPending || authzLoading} />
-      <div className={styles.main}>
-        <main className={styles.content}>{renderedContent}</main>
+    <SidebarContext.Provider value={{ sidebarOpen, setSidebarOpen }}>
+      <div className={`${styles.shell} ${!showSidebar ? styles.shellFull : ""}`}>
+        {showSidebar && <Sidebar session={session} authz={authz} loading={isPending || authzLoading} />}
+        <div className={`${styles.main} ${isMeteoPage ? styles.mainMeteo : ""}`}>
+          <main className={`${styles.content} ${isMeteoPage ? styles.contentMeteo : ""}`}>
+            {renderedContent}
+          </main>
+        </div>
+        {isAdmin && !isPublic && <CommentLayer />}
       </div>
-      {isAdmin && !isPublic && <CommentLayer />}
-    </div>
+    </SidebarContext.Provider>
   );
 }
