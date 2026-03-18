@@ -148,27 +148,27 @@ function BlocCard({ bloc, adminMode, onChange }) {
 
   return (
     <div className={styles.bloc}>
-      {adminMode ? (
-        <input
-          className={styles.blocTitleInput}
-          value={bloc.title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      ) : (
-        <div className={styles.blocTitle}>{bloc.title}</div>
-      )}
-      {adminMode ? (
-        <textarea
-          className={styles.blocTextarea}
-          value={bloc.content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Contenu libre…"
-        />
-      ) : (
-        <div className={styles.blocContent}>
-          {bloc.content || <span className={styles.empty}>Aucun contenu</span>}
-        </div>
-      )}
+      <div className={styles.blocCardHeader}>
+        {adminMode ? (
+          <input className={styles.blocTitleInput} value={bloc.title} onChange={(e) => setTitle(e.target.value)} />
+        ) : (
+          <span className={styles.blocCardTitle}>{bloc.title}</span>
+        )}
+      </div>
+      <div className={styles.blocCardBody}>
+        {adminMode ? (
+          <textarea
+            className={styles.blocTextarea}
+            value={bloc.content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Contenu libre…"
+          />
+        ) : (
+          <div className={styles.blocContent}>
+            {bloc.content || <span className={styles.empty}>Aucun contenu</span>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -180,16 +180,14 @@ export default function MeteoDuJourPage() {
   const { sidebarOpen, setSidebarOpen } = useSidebar();
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
 
-  const [showTomorrow, setShowTomorrow] = useState(false);
   const [adminMode, setAdminMode] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
-  const currentDate = showTomorrow ? tomorrow : today;
+  const currentDate = today;
   const dateStr = toDateStr(currentDate);
 
   // ── Fetch ──
@@ -244,39 +242,28 @@ export default function MeteoDuJourPage() {
   return (
     <div className={styles.page}>
 
-      {/* ── Sticky header ── */}
-      <header className={styles.header}>
+      {/* ── Header ── */}
+      <div className={styles.headerRow}>
         <div className={styles.headerLeft}>
           {!sidebarOpen && (
-            <button className={styles.burger} onClick={() => setSidebarOpen(true)} title="Afficher la sidebar">
-              ☰
-            </button>
+            <button className={styles.burger} onClick={() => setSidebarOpen(true)} title="Afficher la sidebar">☰</button>
           )}
+          <h1 className={styles.pageTitle}>Météo du jour</h1>
           <span className={styles.headerDate}>
             {headerDate.charAt(0).toUpperCase() + headerDate.slice(1)}
           </span>
         </div>
-
-        <h1 className={styles.headerTitle}>Météo du jour</h1>
-
         <div className={styles.headerRight}>
-          <button
-            className={`${styles.toggleBtn} ${showTomorrow ? styles.toggleBtnActive : ""}`}
-            onClick={() => setShowTomorrow((v) => !v)}
-          >
-            {showTomorrow ? "← Voir aujourd'hui" : "Voir demain →"}
-          </button>
-
           {isAdmin && (
             <button
               className={`${styles.adminBtn} ${adminMode ? styles.adminBtnActive : ""}`}
               onClick={() => { if (adminMode && isDirty) save(); setAdminMode((v) => !v); }}
             >
-              {adminMode ? (isDirty ? "💾 Sauvegarder" : "✓ Terminer") : "⚙ Mode admin"}
+              {adminMode ? (isDirty ? "💾 Sauvegarder" : "✓ Terminer édition") : "⚙ Mode admin"}
             </button>
           )}
         </div>
-      </header>
+      </div>
 
       {loading ? (
         <div className={styles.loading}>Chargement…</div>
