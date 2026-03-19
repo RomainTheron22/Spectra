@@ -1,5 +1,5 @@
 .shell {
-  height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-columns: 224px 1fr;
   background: var(--color-bg);
@@ -11,7 +11,7 @@
 }
 
 .mainMeteo {
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .contentMeteo {

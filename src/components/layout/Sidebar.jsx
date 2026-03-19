@@ -18,7 +18,8 @@ function slugify(str) {
 
 const MAIN_LINKS = [
   { label: "Tableau de bord", to: "/", resource: "dashboard" },
-  { label: "Météo du jour", to: "/meteo-du-jour", resource: "meteoDuJour" },
+  { label: "Météo du jour", to: "/meteo-du-jour", resource: "meteoQuotidien" },
+  { label: "Météo de la semaine", to: "/meteo-de-la-semaine", resource: "meteoDuJour" },
   { label: "Planning Perso", to: "/planning-perso", resource: "planningPerso" },
   { label: "Drive", to: "/drive", resource: "drive" },
   { label: "Admin", to: "/admin", resource: "admin" },

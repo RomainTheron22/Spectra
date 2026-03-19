@@ -5,17 +5,19 @@ import { ROLE_NAMES } from "../../../../lib/rbac";
 
 export const dynamic = "force-dynamic";
 
+const DEFAULT_ESPACES = () => [
+  { id: "atelier", name: "Atelier", projets: [] },
+  { id: "studio",  name: "Studio",  projets: [] },
+  { id: "bureau",  name: "Bureau",  projets: [] },
+  { id: "fablab",  name: "Fablab",  projets: [] },
+];
+
 const DEFAULT_DATA = (date) => ({
   date,
   energie: { type: "challenge", title: "Énergie du jour", body: "" },
   rdvs: [],
   citation: { label: "Citation", text: "" },
-  espaces: [
-    { id: "atelier", name: "Atelier", projets: [] },
-    { id: "studio",  name: "Studio",  projets: [] },
-    { id: "bureau",  name: "Bureau",  projets: [] },
-    { id: "fablab",  name: "Fablab",  projets: [] },
-  ],
+  espaces: DEFAULT_ESPACES(),
 });
 
 export async function GET(request) {
@@ -27,18 +29,9 @@ export async function GET(request) {
     if (!date) return Response.json({ error: "Paramètre date manquant" }, { status: 400 });
 
     const db = await getDb();
-    const col = db.collection("meteo_quotidien_data");
-    let doc = await col.findOne({ date });
+    const doc = await db.collection("meteo_quotidien_data").findOne({ date });
 
-    if (!doc) {
-      const prev = await col.findOne(
-        { date: { $lt: date } },
-        { sort: { date: -1 } }
-      );
-      doc = prev ? { ...prev, date } : DEFAULT_DATA(date);
-    }
-
-    return Response.json({ data: doc });
+    return Response.json({ data: doc ?? DEFAULT_DATA(date) });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
   }

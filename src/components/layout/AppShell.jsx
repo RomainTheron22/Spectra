@@ -21,13 +21,13 @@ export default function AppShell({ children }) {
   const { data: session, isPending } = authClient.useSession();
   const [authz, setAuthz] = useState(null);
   const [authzLoading, setAuthzLoading] = useState(true);
-  const isMeteoPage = pathname === "/meteo-du-jour";
+  const isAnyMeteoPage = pathname === "/meteo-du-jour" || pathname === "/meteo-de-la-semaine";
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
-    if (isMeteoPage) setSidebarOpen(false);
+    if (isAnyMeteoPage) setSidebarOpen(false);
     else setSidebarOpen(true);
-  }, [isMeteoPage]);
+  }, [isAnyMeteoPage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,14 +107,14 @@ export default function AppShell({ children }) {
   }
 
   const isAdmin = authz?.role?.name === ROLE_NAMES.ADMIN;
-  const showSidebar = !isMeteoPage || sidebarOpen;
+  const showSidebar = !isAnyMeteoPage || sidebarOpen;
 
   return (
     <SidebarContext.Provider value={{ sidebarOpen, setSidebarOpen }}>
       <div className={`${styles.shell} ${!showSidebar ? styles.shellFull : ""}`}>
         {showSidebar && <Sidebar session={session} authz={authz} loading={isPending || authzLoading} />}
-        <div className={`${styles.main} ${isMeteoPage ? styles.mainMeteo : ""}`}>
-          <main className={`${styles.content} ${isMeteoPage ? styles.contentMeteo : ""}`}>
+        <div className={`${styles.main} ${isAnyMeteoPage ? styles.mainMeteo : ""}`}>
+          <main className={`${styles.content} ${isAnyMeteoPage ? styles.contentMeteo : ""}`}>
             {renderedContent}
           </main>
         </div>

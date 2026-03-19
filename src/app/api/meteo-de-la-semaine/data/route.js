@@ -7,14 +7,16 @@ export const dynamic = "force-dynamic";
 
 const DEFAULT_DATA = (date) => ({
   date,
-  energie: { type: "challenge", title: "Énergie du jour", body: "" },
-  rdvs: [],
-  citation: { label: "Citation", text: "" },
-  espaces: [
-    { id: "atelier", name: "Atelier", projets: [] },
-    { id: "studio",  name: "Studio",  projets: [] },
-    { id: "bureau",  name: "Bureau",  projets: [] },
-    { id: "fablab",  name: "Fablab",  projets: [] },
+  columns: {
+    agency:        { projets: [], briefs: [] },
+    entertainment: { projets: [], briefs: [] },
+    sfx:           { projets: [], briefs: [] },
+    creativgen:    { projets: [], briefs: [] },
+  },
+  blocs: [
+    { id: "left",   title: "Notes équipe",      content: "" },
+    { id: "center", title: "Infos importantes", content: "" },
+    { id: "right",  title: "À surveiller",      content: "" },
   ],
 });
 
@@ -27,10 +29,11 @@ export async function GET(request) {
     if (!date) return Response.json({ error: "Paramètre date manquant" }, { status: 400 });
 
     const db = await getDb();
-    const col = db.collection("meteo_quotidien_data");
+    const col = db.collection("meteo_du_jour_data");
     let doc = await col.findOne({ date });
 
     if (!doc) {
+      // Carry over the most recent previous week's data instead of returning empty
       const prev = await col.findOne(
         { date: { $lt: date } },
         { sort: { date: -1 } }
@@ -52,19 +55,13 @@ export async function POST(request) {
       return Response.json({ error: "Réservé aux admins" }, { status: 403 });
 
     const body = await request.json();
-    const { date, energie, rdvs, citation, espaces } = body;
+    const { date, columns, blocs } = body;
     if (!date) return Response.json({ error: "date manquante" }, { status: 400 });
 
     const db = await getDb();
-    await db.collection("meteo_quotidien_data").updateOne(
+    await db.collection("meteo_du_jour_data").updateOne(
       { date },
-      {
-        $set: {
-          date, energie, rdvs, citation, espaces,
-          updatedAt: new Date(),
-          updatedBy: session.user.email,
-        },
-      },
+      { $set: { date, columns, blocs, updatedAt: new Date(), updatedBy: session.user.email } },
       { upsert: true }
     );
 

@@ -1,327 +1,614 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "../../lib/auth-client";
 import { useSidebar } from "../../lib/sidebar-context";
 import styles from "./MeteoDuJour.module.css";
 
-// ── Constants ────────────────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────────
 
-const COLUMNS = [
-  { key: "agency",        label: "Agency",        accent: "#0ea5e9" },
-  { key: "entertainment", label: "Entertainment", accent: "#8b5cf6" },
-  { key: "sfx",           label: "SFX",           accent: "#f59e0b" },
-  { key: "creativgen",    label: "CreativGen",    accent: "#22c55e" },
-];
-
-const STATUSES = ["En cours", "Nouveau", "Urgent", "En pause", "Terminé", "En attente"];
-
-const STATUS_STYLE = {
-  "En cours":   { bg: "#dbeafe", color: "#1d4ed8" },
-  "Nouveau":    { bg: "#ede9fe", color: "#6d28d9" },
-  "Urgent":     { bg: "#fee2e2", color: "#dc2626" },
-  "En pause":   { bg: "#fef3c7", color: "#92400e" },
-  "Terminé":    { bg: "#dcfce7", color: "#166534" },
-  "En attente": { bg: "#f1f5f9", color: "#475569" },
+const TAG_LABELS = {
+  "en-cours":  "En cours",
+  "prep":      "Préparation",
+  "tournage":  "Tournage",
+  "livraison": "Livraison",
 };
+
+const BADGE_TYPES  = ["victoire", "challenge", "alerte", "info"];
+const BADGE_LABELS = { victoire: "Victoire", challenge: "Challenge", alerte: "Alerte", info: "Info" };
+
+const DAYS   = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
 const DEFAULT_DATA = (date) => ({
   date,
-  columns: {
-    agency:        { projets: [], briefs: [] },
-    entertainment: { projets: [], briefs: [] },
-    sfx:           { projets: [], briefs: [] },
-    creativgen:    { projets: [], briefs: [] },
-  },
-  blocs: [
-    { id: "left",   title: "Notes équipe",      content: "" },
-    { id: "center", title: "Infos importantes", content: "" },
-    { id: "right",  title: "À surveiller",      content: "" },
+  energie: { type: "challenge", title: "Énergie du jour", body: "" },
+  rdvs: [],
+  citation: { label: "Citation", text: "" },
+  espaces: [
+    { id: "atelier", name: "Atelier", projets: [] },
+    { id: "studio",  name: "Studio",  projets: [] },
+    { id: "bureau",  name: "Bureau",  projets: [] },
+    { id: "fablab",  name: "Fablab",  projets: [] },
   ],
 });
 
-function toDateStr(d) {
-  return d.toLocaleDateString("fr-CA"); // YYYY-MM-DD
-}
-
-function formatHeaderDate(d) {
-  return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-}
-
 function uid() {
-  return typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  return typeof crypto !== "undefined"
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 }
 
-// ── StatusBadge ───────────────────────────────────────────────────────────────
-function StatusBadge({ status }) {
-  const s = STATUS_STYLE[status] ?? STATUS_STYLE["En attente"];
-  return (
-    <span className={styles.statusBadge} style={{ background: s.bg, color: s.color }}>
-      {status}
-    </span>
+function toDateStr(d) { return d.toLocaleDateString("fr-CA"); }
+
+function formatDate(d) {
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+const AVATAR_COLORS = ["#0ea5e9", "#8b5cf6", "#f59e0b", "#10b981", "#e11d48", "#0284c7", "#ec4899"];
+
+function avatarColor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function initials(name) {
+  return name.trim().split(/\s+/).map((w) => w[0] ?? "").slice(0, 2).join("").toUpperCase();
+}
+
+// Parse "14h30", "9h", "9h00", "14:30" → minutes depuis minuit (ou Infinity si vide)
+function parseHeure(h) {
+  if (!h) return Infinity;
+  const m = h.replace(":", "h").match(/^(\d{1,2})h?(\d{0,2})$/i);
+  if (!m) return Infinity;
+  return parseInt(m[1], 10) * 60 + (parseInt(m[2] || "0", 10) || 0);
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────────
+
+function Modal({ title, fields, onConfirm, onClose }) {
+  const [values, setValues] = useState(
+    fields.reduce((acc, f) => ({ ...acc, [f.key]: f.defaultValue || "" }), {})
   );
-}
 
-// ── AddItemForm ───────────────────────────────────────────────────────────────
-function AddItemForm({ onAdd, onCancel }) {
-  const [name, setName] = useState("");
-  const [detail, setDetail] = useState("");
-  const [status, setStatus] = useState("En cours");
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
-  const submit = (e) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    onAdd({ id: uid(), name: name.trim(), detail: detail.trim(), status });
-    setName(""); setDetail(""); setStatus("En cours");
+  const set = (key, val) => setValues((v) => ({ ...v, [key]: val }));
+
+  const confirm = () => {
+    const hasRequired = fields.filter((f) => f.required).every((f) => values[f.key]?.trim());
+    if (!hasRequired) return;
+    onConfirm(values);
+    onClose();
   };
 
   return (
-    <form className={styles.addForm} onSubmit={submit}>
-      <input
-        className={styles.addInput}
-        placeholder="Nom…"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        autoFocus
-      />
-      <input
-        className={styles.addInput}
-        placeholder="Détail…"
-        value={detail}
-        onChange={(e) => setDetail(e.target.value)}
-      />
-      <select className={styles.addSelect} value={status} onChange={(e) => setStatus(e.target.value)}>
-        {STATUSES.map((s) => <option key={s}>{s}</option>)}
-      </select>
-      <div className={styles.addActions}>
-        <button type="submit" className={styles.addConfirm}>Ajouter</button>
-        <button type="button" className={styles.addCancel} onClick={onCancel}>Annuler</button>
-      </div>
-    </form>
-  );
-}
-
-// ── ColumnSection ──────────────────────────────────────────────────────────────
-function ColumnSection({ colKey, sectionKey, label, items, adminMode, onChange }) {
-  const [adding, setAdding] = useState(false);
-
-  const addItem = (item) => {
-    onChange([...items, item]);
-    setAdding(false);
-  };
-
-  const deleteItem = (id) => onChange(items.filter((it) => it.id !== id));
-
-  return (
-    <div className={styles.section}>
-      <div className={styles.sectionTitle}>{label}</div>
-      {items.length === 0 && <div className={styles.empty}>Aucun élément</div>}
-      <div className={styles.itemList}>
-        {items.map((item) => (
-          <div key={item.id} className={styles.item}>
-            <div className={styles.itemTop}>
-              <span className={styles.itemName}>{item.name}</span>
-              <div className={styles.itemRight}>
-                <StatusBadge status={item.status} />
-                {adminMode && (
-                  <button className={styles.deleteBtn} onClick={() => deleteItem(item.id)} title="Supprimer">×</button>
-                )}
-              </div>
-            </div>
-            {item.detail && <div className={styles.itemDetail}>{item.detail}</div>}
-          </div>
-        ))}
-      </div>
-      {adminMode && (
-        adding
-          ? <AddItemForm onAdd={addItem} onCancel={() => setAdding(false)} />
-          : <button className={styles.addBtn} onClick={() => setAdding(true)}>+ Ajouter</button>
-      )}
-    </div>
-  );
-}
-
-// ── BlocCard ──────────────────────────────────────────────────────────────────
-function BlocCard({ bloc, adminMode, onChange }) {
-  const setTitle = (t) => onChange({ ...bloc, title: t });
-  const setContent = (c) => onChange({ ...bloc, content: c });
-
-  return (
-    <div className={styles.bloc}>
-      <div className={styles.blocCardHeader}>
-        {adminMode ? (
-          <input className={styles.blocTitleInput} value={bloc.title} onChange={(e) => setTitle(e.target.value)} />
-        ) : (
-          <span className={styles.blocCardTitle}>{bloc.title}</span>
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalTitle}>{title}</div>
+        {fields.map((f, i) =>
+          f.type === "select" ? (
+            <select
+              key={f.key}
+              className={styles.modalInput}
+              value={values[f.key]}
+              onChange={(e) => set(f.key, e.target.value)}
+            >
+              {f.options.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              key={f.key}
+              className={styles.modalInput}
+              placeholder={f.placeholder}
+              value={values[f.key]}
+              onChange={(e) => set(f.key, e.target.value)}
+              autoFocus={i === 0}
+              onKeyDown={(e) => e.key === "Enter" && confirm()}
+            />
+          )
         )}
-      </div>
-      <div className={styles.blocCardBody}>
-        {adminMode ? (
-          <textarea
-            className={styles.blocTextarea}
-            value={bloc.content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Contenu libre…"
-          />
-        ) : (
-          <div className={styles.blocContent}>
-            {bloc.content || <span className={styles.empty}>Aucun contenu</span>}
-          </div>
-        )}
+        <div className={styles.modalActions}>
+          <button className={styles.modalCancel} onClick={onClose}>Annuler</button>
+          <button className={styles.modalConfirm} onClick={confirm}>Ajouter</button>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Groupes ────────────────────────────────────────────────────────────────────
+
+const GROUPES = ["Scéno", "Com.", "Montage", "Production", "Direction", "Studio", "Fablab", "Technique"];
+
+// ── RdvModal ───────────────────────────────────────────────────────────────────
+
+function RdvModal({ members, onConfirm, onClose }) {
+  const [heure, setHeure]       = useState("");
+  const [titre, setTitre]       = useState("");
+  const [attrType, setAttrType] = useState("aucun"); // "aucun" | "groupe" | "personnes"
+  const [groupe, setGroupe]     = useState(GROUPES[0]);
+  const [selected, setSelected] = useState([]);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const togglePerson = (m) =>
+    setSelected((prev) =>
+      prev.find((p) => p.id === m.id) ? prev.filter((p) => p.id !== m.id) : [...prev, m]
+    );
+
+  const confirm = () => {
+    if (!titre.trim()) return;
+    onConfirm({
+      heure,
+      titre,
+      attrType: attrType === "aucun" ? null : attrType,
+      groupe:   attrType === "groupe" ? groupe : null,
+      people:   attrType === "personnes" ? selected : [],
+    });
+    onClose();
+  };
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalTitle}>Ajouter un RDV</div>
+
+        <input className={styles.modalInput} placeholder="Heure (ex: 14h30)" value={heure}
+          onChange={(e) => setHeure(e.target.value)} autoFocus />
+        <input className={styles.modalInput} placeholder="Titre…" value={titre}
+          onChange={(e) => setTitre(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && confirm()} />
+
+        {/* Toggle attribution */}
+        <div className={styles.rdvAttrToggle}>
+          {["aucun", "groupe", "personnes"].map((t) => (
+            <button
+              key={t}
+              className={`${styles.rdvAttrBtn} ${attrType === t ? styles.rdvAttrBtnActive : ""}`}
+              onClick={() => setAttrType(t)}
+            >
+              {t === "aucun" ? "Sans attribution" : t === "groupe" ? "Groupe" : "Personnes"}
+            </button>
+          ))}
+        </div>
+
+        {attrType === "groupe" && (
+          <div className={styles.groupeGrid}>
+            {GROUPES.map((g) => (
+              <button
+                key={g}
+                className={`${styles.groupeBtn} ${groupe === g ? styles.groupeBtnActive : ""}`}
+                onClick={() => setGroupe(g)}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {attrType === "personnes" && (
+          <div className={styles.memberList}>
+            {members.map((m) => {
+              const active = !!selected.find((p) => p.id === m.id);
+              return (
+                <button
+                  key={m.id}
+                  className={`${styles.memberItem} ${active ? styles.memberItemActive : ""}`}
+                  onClick={() => togglePerson(m)}
+                >
+                  <span className={styles.memberAvatar} style={{ background: avatarColor(m.name) }}>
+                    {initials(m.name)}
+                  </span>
+                  <span className={styles.memberName}>{m.name}</span>
+                  {active && <span className={styles.memberCheck}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className={styles.modalActions}>
+          <button className={styles.modalCancel} onClick={onClose}>Annuler</button>
+          <button className={styles.modalConfirm} onClick={confirm}>Ajouter</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────────
+
 export default function MeteoDuJourPage() {
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
   const { sidebarOpen, setSidebarOpen } = useSidebar();
 
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const today     = new Date();
+  const dateKey   = toDateStr(today);
+  const dateLabel = formatDate(today);
 
   const [adminMode, setAdminMode] = useState(false);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
+  const [data, setData]           = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [weather, setWeather]     = useState(null);
+  const [members, setMembers]     = useState([]);
+  const [modal, setModal]         = useState(null); // { type, espaceId? }
 
-  const currentDate = today;
-  const dateStr = toDateStr(currentDate);
-
-  // ── Fetch ──
+  // Load page data
   useEffect(() => {
     setLoading(true);
-    setIsDirty(false);
-    fetch(`/api/meteo-du-jour/data?date=${dateStr}`, { cache: "no-store" })
+    fetch(`/api/meteo-du-jour/data?date=${dateKey}`, { cache: "no-store" })
       .then((r) => r.json())
-      .then((d) => setData(d.data ?? DEFAULT_DATA(dateStr)))
-      .catch(() => setData(DEFAULT_DATA(dateStr)))
+      .then((d) => setData(d.data ?? DEFAULT_DATA(dateKey)))
+      .catch(() => setData(DEFAULT_DATA(dateKey)))
       .finally(() => setLoading(false));
-  }, [dateStr]);
+  }, [dateKey]);
 
-  // ── Mutations ──
-  const updateColumn = useCallback((colKey, sectionKey, items) => {
-    setData((prev) => ({
-      ...prev,
-      columns: {
-        ...prev.columns,
-        [colKey]: { ...prev.columns[colKey], [sectionKey]: items },
-      },
-    }));
-    setIsDirty(true);
+  // Load weather
+  useEffect(() => {
+    fetch("/api/meteo-du-jour/weather", { cache: "no-store" })
+      .then((r) => r.json())
+      .then(setWeather)
+      .catch(() => {});
   }, []);
 
-  const updateBloc = useCallback((updatedBloc) => {
-    setData((prev) => ({
-      ...prev,
-      blocs: prev.blocs.map((b) => (b.id === updatedBloc.id ? updatedBloc : b)),
-    }));
-    setIsDirty(true);
+  // Load members
+  useEffect(() => {
+    fetch("/api/meteo-du-jour/members", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setMembers(d.members ?? []))
+      .catch(() => {});
   }, []);
 
-  // ── Save ──
-  const save = async () => {
-    if (!data || !isDirty) return;
-    setSaving(true);
-    try {
-      const res = await fetch("/api/meteo-du-jour/data", {
+  // Auto-save when data changes in admin mode
+  useEffect(() => {
+    if (!adminMode || !data || loading) return;
+    const timer = setTimeout(() => {
+      fetch("/api/meteo-du-jour/data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: dateStr, columns: data.columns, blocs: data.blocs }),
-      });
-      if (res.ok) setIsDirty(false);
-    } finally {
-      setSaving(false);
-    }
-  };
+        body: JSON.stringify({ date: dateKey, ...data }),
+      }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [data, adminMode, loading, dateKey]);
 
-  const headerDate = formatHeaderDate(currentDate);
+  const toggleAdmin = () => setAdminMode((v) => !v);
+
+  if (loading) return <div className={styles.loading}>Chargement…</div>;
+
+  const { energie, rdvs, citation, espaces } = data;
+
+  // ── Handlers ──
+
+  const patchEnergie = (patch) =>
+    setData((prev) => ({ ...prev, energie: { ...prev.energie, ...patch } }));
+
+  const patchCitation = (patch) =>
+    setData((prev) => ({ ...prev, citation: { ...prev.citation, ...patch } }));
+
+  const addRdv = (v) =>
+    setData((prev) => ({
+      ...prev,
+      rdvs: [...(prev.rdvs || []), {
+        id: uid(),
+        heure: v.heure,
+        titre: v.titre,
+        attrType: v.attrType,
+        groupe: v.groupe,
+        people: v.people,
+      }],
+    }));
+
+  const delRdv = (id) =>
+    setData((prev) => ({ ...prev, rdvs: prev.rdvs.filter((r) => r.id !== id) }));
+
+  const addProjet = (espaceId, v) =>
+    setData((prev) => ({
+      ...prev,
+      espaces: prev.espaces.map((e) =>
+        e.id === espaceId
+          ? { ...e, projets: [...e.projets, { id: uid(), name: v.name, detail: v.detail, tag: v.tag }] }
+          : e
+      ),
+    }));
+
+  const delProjet = (espaceId, projId) =>
+    setData((prev) => ({
+      ...prev,
+      espaces: prev.espaces.map((e) =>
+        e.id === espaceId ? { ...e, projets: e.projets.filter((p) => p.id !== projId) } : e
+      ),
+    }));
+
+  const addEspace = (v) =>
+    setData((prev) => ({
+      ...prev,
+      espaces: [...prev.espaces, { id: uid(), name: v.name, projets: [] }],
+    }));
+
+  const delEspace = (espaceId) =>
+    setData((prev) => ({
+      ...prev,
+      espaces: prev.espaces.filter((e) => e.id !== espaceId),
+    }));
+
+  // ── Render ──
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} style={{ left: sidebarOpen ? "224px" : "0" }}>
 
-      {/* ── Header ── */}
-      <div className={styles.headerRow}>
+      {/* ── Page header ── */}
+      <div className={styles.pageHeader}>
         <div className={styles.headerLeft}>
-          {!sidebarOpen && (
-            <button className={styles.burger} onClick={() => setSidebarOpen(true)} title="Afficher la sidebar">☰</button>
-          )}
+          <button
+            className={styles.burgerBtn}
+            onClick={() => setSidebarOpen((v) => !v)}
+            title={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          >
+            {sidebarOpen ? "✕" : "☰"}
+          </button>
           <h1 className={styles.pageTitle}>Météo du jour</h1>
-          <span className={styles.headerDate}>
-            {headerDate.charAt(0).toUpperCase() + headerDate.slice(1)}
-          </span>
+          <span className={styles.dateLabel}>{dateLabel}</span>
         </div>
         <div className={styles.headerRight}>
+          {weather && (
+            <div className={styles.weatherChip}>
+              <span className={styles.weatherIcon}>{weather.icon}</span>
+              <span className={styles.weatherTemp}>
+                {weather.temp != null ? `${weather.temp}°C` : "—°C"}
+              </span>
+              <span className={styles.weatherDesc}>{weather.desc}</span>
+            </div>
+          )}
           {isAdmin && (
             <button
-              className={`${styles.adminBtn} ${adminMode ? styles.adminBtnActive : ""}`}
-              onClick={() => { if (adminMode && isDirty) save(); setAdminMode((v) => !v); }}
+              className={`${styles.gearBtn} ${adminMode ? styles.gearBtnActive : ""}`}
+              onClick={toggleAdmin}
+              title={adminMode ? "Quitter le mode édition" : "Mode édition"}
             >
-              {adminMode ? (isDirty ? "💾 Sauvegarder" : "✓ Terminer édition") : "⚙ Mode admin"}
+              ⚙
             </button>
           )}
         </div>
       </div>
 
-      {loading ? (
-        <div className={styles.loading}>Chargement…</div>
-      ) : (
-        <>
-          {/* ── 4 columns ── */}
-          <div className={styles.grid}>
-            {COLUMNS.map((col) => (
-              <div key={col.key} className={styles.column} style={{ "--col-accent": col.accent }}>
-                <div className={styles.colHeader} style={{ borderTopColor: col.accent }}>
-                  <span className={styles.colLabel} style={{ color: col.accent }}>{col.label}</span>
+      {/* ── Body ── */}
+      <div className={styles.body}>
+
+        {/* Top zone */}
+        <div className={styles.topZone}>
+
+          {/* Énergie du jour */}
+          <div className={styles.energie}>
+            <div className={styles.energieBadgeRow}>
+              <span className={`${styles.energieBadge} ${styles[`badge_${energie.type}`]}`}>
+                {BADGE_LABELS[energie.type]}
+              </span>
+              <span className={styles.journalDate}>{dateLabel}</span>
+              {adminMode && (
+                <div className={styles.energieTypeRow}>
+                  {BADGE_TYPES.map((t) => (
+                    <button
+                      key={t}
+                      className={`${styles.energieTypeBtn} ${energie.type === t ? styles.energieTypeBtnActive : ""}`}
+                      onClick={() => patchEnergie({ type: t })}
+                    >
+                      {BADGE_LABELS[t]}
+                    </button>
+                  ))}
                 </div>
-                <div className={styles.colBody}>
-                  <ColumnSection
-                    colKey={col.key}
-                    sectionKey="projets"
-                    label="Projets en cours"
-                    items={data?.columns?.[col.key]?.projets ?? []}
-                    adminMode={adminMode}
-                    onChange={(items) => updateColumn(col.key, "projets", items)}
-                  />
-                  <div className={styles.sectionDivider} />
-                  <ColumnSection
-                    colKey={col.key}
-                    sectionKey="briefs"
-                    label="Briefs en cours"
-                    items={data?.columns?.[col.key]?.briefs ?? []}
-                    adminMode={adminMode}
-                    onChange={(items) => updateColumn(col.key, "briefs", items)}
-                  />
+              )}
+            </div>
+
+            {adminMode ? (
+              <input
+                className={styles.energieTitleInput}
+                value={energie.title}
+                onChange={(e) => patchEnergie({ title: e.target.value })}
+                placeholder="Titre de l'énergie du jour…"
+              />
+            ) : (
+              <div className={styles.energieTitle}>{energie.title}</div>
+            )}
+
+            {adminMode ? (
+              <textarea
+                className={styles.energieBodyInput}
+                value={energie.body}
+                onChange={(e) => patchEnergie({ body: e.target.value })}
+                placeholder="Description…"
+              />
+            ) : (
+              energie.body && <div className={styles.energieBody}>{energie.body}</div>
+            )}
+          </div>
+
+          {/* Side info */}
+          <div className={styles.sideInfo}>
+
+            {/* RDV du jour */}
+            <div className={styles.rdvSection}>
+              <div className={styles.sideLabel}>
+                <span>RDV du jour</span>
+                {adminMode && (
+                  <button className={styles.sideAddBtn} onClick={() => setModal({ type: "rdv" })}>+</button>
+                )}
+              </div>
+              <div className={styles.rdvList}>
+                {rdvs.length === 0 && <span className={styles.emptyMuted}>—</span>}
+                {[...rdvs].sort((a, b) => parseHeure(a.heure) - parseHeure(b.heure)).map((rdv) => (
+                  <div key={rdv.id} className={styles.rdvItem}>
+                    <span className={styles.rdvHeure}>{rdv.heure || "—"}</span>
+                    <span className={styles.rdvTitre}>{rdv.titre}</span>
+                    {rdv.attrType === "groupe" && rdv.groupe && (
+                      <span className={styles.rdvGroupeTag} style={{ background: avatarColor(rdv.groupe) }}>
+                        {rdv.groupe}
+                      </span>
+                    )}
+                    {rdv.attrType === "personnes" && rdv.people?.length > 0 && (
+                      <div className={styles.rdvChips}>
+                        {rdv.people.map((p) => (
+                          <span key={p.id} className={styles.rdvChip}
+                            style={{ background: avatarColor(p.name) }} title={p.name}>
+                            {initials(p.name)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {adminMode && (
+                      <button className={styles.rdvDel} onClick={() => delRdv(rdv.id)}>✕</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Citation */}
+            <div className={styles.citationSection}>
+              {adminMode ? (
+                <input
+                  className={styles.citationLabelInput}
+                  value={citation.label}
+                  onChange={(e) => patchCitation({ label: e.target.value })}
+                />
+              ) : (
+                <div className={styles.citationLabel}>{citation.label}</div>
+              )}
+              {adminMode ? (
+                <textarea
+                  className={styles.citationTextInput}
+                  value={citation.text}
+                  onChange={(e) => patchCitation({ text: e.target.value })}
+                  placeholder="Citation du jour…"
+                />
+              ) : (
+                <div className={styles.citationText}>
+                  {citation.text || <span className={styles.emptyMuted}>—</span>}
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+        {/* Bottom zone */}
+        <div className={styles.bottomZone}>
+          <div className={styles.bzHead}>
+            <span className={styles.bzTitle}>Projets du jour</span>
+            {adminMode && (
+              <button className={styles.bzAddBtn} onClick={() => setModal({ type: "espace" })}>
+                + Espace
+              </button>
+            )}
+          </div>
+
+          <div className={styles.espacesStrips}>
+            {(espaces || []).map((espace) => (
+              <div key={espace.id} className={styles.espStrip}>
+                <div className={styles.espId}>
+                  <div className={styles.espNameRow}>
+                    <div className={styles.espName}>{espace.name}</div>
+                    <div className={styles.espCount}>
+                      {espace.projets.length} projet{espace.projets.length !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                  {adminMode && (
+                    <button
+                      className={styles.espDelBtn}
+                      onClick={() => delEspace(espace.id)}
+                      title="Supprimer cet espace"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <div className={styles.espContent}>
+                  {(espace.projets || []).map((proj) => (
+                    <div
+                      key={proj.id}
+                      className={`${styles.projPill} ${adminMode ? styles.projPillAdmin : ""}`}
+                    >
+                      <span className={styles.projName}>{proj.name}</span>
+                      {proj.detail && (
+                        <>
+                          <span className={styles.projSep}>·</span>
+                          <span className={styles.projDetail}>{proj.detail}</span>
+                        </>
+                      )}
+                      <span className={`${styles.projTag} ${styles[`tag_${proj.tag}`]}`}>
+                        {TAG_LABELS[proj.tag] || proj.tag}
+                      </span>
+                      {adminMode && (
+                        <button
+                          className={styles.projDel}
+                          onClick={() => delProjet(espace.id, proj.id)}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {adminMode && (
+                    <button
+                      className={styles.espAddBtn}
+                      onClick={() => setModal({ type: "proj", espaceId: espace.id })}
+                    >
+                      +
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* ── Bottom blocs ── */}
-          <div className={styles.blocs}>
-            {(data?.blocs ?? []).map((bloc) => (
-              <BlocCard
-                key={bloc.id}
-                bloc={bloc}
-                adminMode={adminMode}
-                onChange={updateBloc}
-              />
-            ))}
-          </div>
+      </div>
 
-          {/* ── Floating save indicator ── */}
-          {adminMode && isDirty && (
-            <div className={styles.saveBar}>
-              <span>Modifications non sauvegardées</span>
-              <button className={styles.saveBarBtn} onClick={save} disabled={saving}>
-                {saving ? "Sauvegarde…" : "Sauvegarder"}
-              </button>
-            </div>
-          )}
-        </>
+      {/* ── Modales ── */}
+      {modal?.type === "rdv" && (
+        <RdvModal members={members} onConfirm={addRdv} onClose={() => setModal(null)} />
       )}
+      {modal?.type === "proj" && (
+        <Modal
+          title={`Ajouter — ${espaces.find((e) => e.id === modal.espaceId)?.name || ""}`}
+          fields={[
+            { key: "name",   placeholder: "Nom du projet…", required: true },
+            { key: "detail", placeholder: "Détail…" },
+            {
+              key: "tag",
+              type: "select",
+              defaultValue: "en-cours",
+              options: Object.entries(TAG_LABELS).map(([value, label]) => ({ value, label })),
+            },
+          ]}
+          onConfirm={(v) => addProjet(modal.espaceId, v)}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal?.type === "espace" && (
+        <Modal
+          title="Nouvel espace"
+          fields={[
+            { key: "name", placeholder: "Nom (ex: Garage n°2)", required: true },
+          ]}
+          onConfirm={addEspace}
+          onClose={() => setModal(null)}
+        />
+      )}
+
     </div>
   );
 }

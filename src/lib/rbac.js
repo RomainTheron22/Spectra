@@ -15,7 +15,8 @@ export const PERMISSION_ACTIONS = Object.freeze([
 export const PERMISSION_RESOURCES = Object.freeze([
   // ── Général (liens directs, pas de menu déroulant) ──
   { key: "dashboard",          label: "Tableau de bord",         group: "general" },
-  { key: "meteoDuJour",        label: "Météo du jour",            group: "general" },
+  { key: "meteoDuJour",        label: "Météo de la semaine",      group: "general" },
+  { key: "meteoQuotidien",     label: "Météo du jour",            group: "general" },
   { key: "planningPerso",      label: "Planning Perso",           group: "general" },
   { key: "drive",              label: "Drive",                    group: "general" },
   { key: "admin",              label: "Admin",                    group: "general" },
@@ -52,6 +53,7 @@ export const GROUP_LABELS = Object.freeze({
 const SUPPORTED_ACTIONS_BY_RESOURCE = Object.freeze({
   dashboard:          ["view"],
   meteoDuJour:        ["view"],
+  meteoQuotidien:     ["view"],
   planningPerso:      ["view", "create", "edit", "delete"],
   drive:              ["view", "create", "edit", "delete"],
   admin:              ["view", "create", "edit", "delete"],
@@ -73,7 +75,8 @@ const SUPPORTED_ACTIONS_BY_RESOURCE = Object.freeze({
 
 const PATH_RESOURCE_RULES = [
   { test: (p) => p === "/",                                         resource: "dashboard" },
-  { test: (p) => p.startsWith("/meteo-du-jour"),                    resource: "meteoDuJour" },
+  { test: (p) => p.startsWith("/meteo-du-jour"),                    resource: "meteoQuotidien" },
+  { test: (p) => p.startsWith("/meteo-de-la-semaine"),              resource: "meteoDuJour" },
   { test: (p) => p.startsWith("/planning-perso"),                   resource: "planningPerso" },
   { test: (p) => p.startsWith("/drive"),                            resource: "drive" },
   { test: (p) => p.startsWith("/admin"),                            resource: "admin" },
