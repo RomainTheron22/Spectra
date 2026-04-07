@@ -8,6 +8,11 @@ import {
     createEvent,
 } from "../../../../lib/google-calendar";
 
+async function getSelectedCalendarId(db, userId) {
+    const prefs = await db.collection("user_preferences").findOne({ userId: String(userId) });
+    return prefs?.selectedGcalId || "primary";
+}
+
 /**
  * GET /api/planning/google-calendar
  *   ?from=ISO&to=ISO  → liste les evenements Google Calendar
@@ -49,7 +54,8 @@ export async function GET(request) {
             return Response.json({ items: [], connected: false });
         }
 
-        const events = await listEvents(tokens.accessToken, from, to);
+        const calendarId = await getSelectedCalendarId(db, userId);
+        const events = await listEvents(tokens.accessToken, from, to, calendarId);
         return Response.json({ items: events, connected: true });
     } catch (error) {
         console.error("[GCal] GET error:", error.message || error);
@@ -92,12 +98,13 @@ export async function POST(request) {
         }
 
         const body = await request.json();
+        const calendarId = await getSelectedCalendarId(db, userId);
         const event = await createEvent(tokens.accessToken, {
             title: body.title,
             start: body.start,
             end: body.end,
             description: body.description || "",
-        });
+        }, calendarId);
 
         return Response.json({ item: event });
     } catch (error) {

@@ -96,6 +96,9 @@ export default function PlanningPersoPage() {
   // Google Calendar
   const [gcalConnected, setGcalConnected] = useState(false);
   const [gcalEvents, setGcalEvents] = useState([]);
+  const [gcalPickerOpen, setGcalPickerOpen] = useState(false);
+  const [gcalCalendars, setGcalCalendars] = useState([]);
+  const [gcalSelectedId, setGcalSelectedId] = useState(null);
 
   /* ─── derived ─── */
 
@@ -181,6 +184,32 @@ export default function PlanningPersoPage() {
     return Array.isArray(data.items) ? data.items : [];
   };
 
+  const fetchGcalCalendars = useCallback(async () => {
+    try {
+      const res = await fetch("/api/planning/google-calendar/calendars", { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      setGcalCalendars(Array.isArray(data.calendars) ? data.calendars : []);
+      setGcalSelectedId(data.selectedCalendarId || null);
+      // Premier accès : pas encore de calendrier choisi → ouvrir le picker
+      if (!data.selectedCalendarId) setGcalPickerOpen(true);
+    } catch {
+      // silencieux
+    }
+  }, []);
+
+  const saveGcalCalendar = useCallback(async (calendarId) => {
+    await fetch("/api/planning/google-calendar/calendars", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ calendarId }),
+    });
+    setGcalSelectedId(calendarId);
+    setGcalPickerOpen(false);
+    // Recharger les events avec le nouveau calendrier
+    setWeekRange((prev) => ({ ...prev }));
+  }, []);
+
   const fetchGcalEvents = useCallback(async (from, to) => {
     if (!from || !to) return;
     try {
@@ -255,6 +284,7 @@ export default function PlanningPersoPage() {
 
         // Google Calendar
         await fetchGcalEvents(weekRange.from, weekRange.to);
+        await fetchGcalCalendars();
       } catch (e) {
         if (!cancelled) setError(String(e?.message || e));
       } finally {
@@ -264,7 +294,7 @@ export default function PlanningPersoPage() {
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekRange.from, weekRange.to, currentUserId, checkedUserIds]);
+  }, [weekRange.from, weekRange.to, currentUserId, checkedUserIds, fetchGcalCalendars]);
 
   // Availability check pour le modal
   useEffect(() => {
@@ -552,12 +582,19 @@ export default function PlanningPersoPage() {
         </div>
         <div className={styles.actions}>
           {gcalConnected ? (
-            <span className={styles.gcalConnected}>
+            <button
+              type="button"
+              className={styles.gcalConnected}
+              onClick={() => setGcalPickerOpen(true)}
+              title="Changer d'agenda Google"
+            >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
                 <path d="M20 6L9 17l-5-5" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Google Agenda
-            </span>
+              {gcalSelectedId && gcalCalendars.find((c) => c.id === gcalSelectedId)?.summary
+                ? gcalCalendars.find((c) => c.id === gcalSelectedId).summary
+                : "Google Agenda"}
+            </button>
           ) : null}
           <button type="button" className={styles.primaryBtn} onClick={openCreate}>
             Ajouter une tache
@@ -806,6 +843,52 @@ export default function PlanningPersoPage() {
       </Modal>
 
       {loading ? <div className={styles.loading}>Chargement...</div> : null}
+
+      {/* ─── Modal choix agenda Google ─── */}
+      <Modal
+        open={gcalPickerOpen}
+        title="Choisir un agenda Google"
+        onClose={() => gcalSelectedId && setGcalPickerOpen(false)}
+        size="sm"
+      >
+        <div className={styles.gcalPickerBody}>
+          <p className={styles.gcalPickerHint}>
+            Sélectionne l'agenda Google Calendar à synchroniser avec Spectra.
+          </p>
+          <div className={styles.gcalCalendarList}>
+            {gcalCalendars.map((cal) => (
+              <button
+                key={cal.id}
+                type="button"
+                className={`${styles.gcalCalendarItem} ${gcalSelectedId === cal.id ? styles.gcalCalendarItemSelected : ""}`}
+                onClick={() => saveGcalCalendar(cal.id)}
+              >
+                <span
+                  className={styles.gcalCalendarDot}
+                  style={{ background: cal.backgroundColor || "#0ea5e9" }}
+                />
+                <span className={styles.gcalCalendarName}>{cal.summary}</span>
+                {cal.primary && <span className={styles.gcalPrimaryBadge}>Principal</span>}
+                {gcalSelectedId === cal.id && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ marginLeft: "auto", flexShrink: 0 }}>
+                    <path d="M20 6L9 17l-5-5" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+            ))}
+            {gcalCalendars.length === 0 && (
+              <div className={styles.gcalPickerEmpty}>Chargement des agendas…</div>
+            )}
+          </div>
+          {gcalSelectedId && (
+            <div className={styles.gcalPickerFooter}>
+              <button type="button" className={styles.secondaryBtn} onClick={() => setGcalPickerOpen(false)}>
+                Annuler
+              </button>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

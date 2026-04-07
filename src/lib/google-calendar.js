@@ -124,9 +124,31 @@ export async function hasCalendarScope(db, userId) {
 }
 
 /**
+ * Liste les agendas Google Calendar de l'utilisateur.
+ */
+export async function listCalendars(accessToken) {
+    const res = await fetch(`${GCAL_BASE}/users/me/calendarList`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+        const err = await res.text().catch(() => "");
+        throw new Error(`Google Calendar list error: ${res.status} ${err}`);
+    }
+
+    const data = await res.json();
+    return (data.items || []).map((cal) => ({
+        id: cal.id,
+        summary: cal.summary || cal.id,
+        primary: cal.primary === true,
+        backgroundColor: cal.backgroundColor || null,
+    }));
+}
+
+/**
  * Liste les evenements Google Calendar sur une plage donnee.
  */
-export async function listEvents(accessToken, timeMin, timeMax) {
+export async function listEvents(accessToken, timeMin, timeMax, calendarId = "primary") {
     const params = new URLSearchParams({
         timeMin: new Date(timeMin).toISOString(),
         timeMax: new Date(timeMax).toISOString(),
@@ -136,7 +158,7 @@ export async function listEvents(accessToken, timeMin, timeMax) {
     });
 
     const res = await fetch(
-        `${GCAL_BASE}/calendars/primary/events?${params.toString()}`,
+        `${GCAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`,
         {
             headers: { Authorization: `Bearer ${accessToken}` },
         }
@@ -154,7 +176,7 @@ export async function listEvents(accessToken, timeMin, timeMax) {
 /**
  * Cree un evenement dans Google Calendar.
  */
-export async function createEvent(accessToken, event) {
+export async function createEvent(accessToken, event, calendarId = "primary") {
     const body = {
         summary: event.title || "Sans titre",
         start: {
@@ -169,7 +191,7 @@ export async function createEvent(accessToken, event) {
 
     if (event.description) body.description = event.description;
 
-    const res = await fetch(`${GCAL_BASE}/calendars/primary/events`, {
+    const res = await fetch(`${GCAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events`, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${accessToken}`,
