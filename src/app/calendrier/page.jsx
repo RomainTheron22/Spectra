@@ -39,6 +39,59 @@ function toDateTimeLocalValue(d) {
   )}:${pad(x.getMinutes())}`;
 }
 
+function getEaster(year) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+function getFrenchHolidays(year) {
+  const easter = getEaster(year);
+  const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+  const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return new Set([
+    `${year}-01-01`, // Jour de l'An
+    fmt(addDays(easter, 1)),   // Lundi de Pâques
+    `${year}-05-01`, // Fête du Travail
+    `${year}-05-08`, // Victoire 1945
+    fmt(addDays(easter, 39)),  // Ascension
+    fmt(addDays(easter, 50)),  // Lundi de Pentecôte
+    `${year}-07-14`, // Fête Nationale
+    `${year}-08-15`, // Assomption
+    `${year}-11-01`, // Toussaint
+    `${year}-11-11`, // Armistice
+    `${year}-12-25`, // Noël
+  ]);
+}
+
+// Pré-calculer pour les 2 prochaines années
+const HOLIDAYS = new Set([
+  ...getFrenchHolidays(new Date().getFullYear()),
+  ...getFrenchHolidays(new Date().getFullYear() + 1),
+]);
+
+function getCurrentMonday() {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
 function toExclusiveEnd(ymd) {
   const d = new Date(`${ymd}T00:00:00`);
   d.setDate(d.getDate() + 1);
@@ -441,16 +494,31 @@ export default function CalendrierPage() {
             week: "Semaine",
             day: "Jour",
           }}
-          initialView="dayGridMonth"
+          initialView="dayGridFourWeeks"
+          initialDate={getCurrentMonday()}
+          views={{
+            dayGridFourWeeks: {
+              type: "dayGrid",
+              duration: { weeks: 4 },
+              buttonText: "Mois",
+            },
+          }}
           headerToolbar={{
             left: "prev,next today",
             center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
+            right: "dayGridFourWeeks,timeGridWeek,timeGridDay",
           }}
           height="auto"
           nowIndicator
           selectable
           dayMaxEvents
+          dayCellClassNames={(arg) => {
+            const ymd = toYMD(arg.date);
+            if (HOLIDAYS.has(ymd)) return ["dayHoliday"];
+            const dow = arg.date.getDay();
+            if (dow === 0 || dow === 6) return ["dayWeekend"];
+            return [];
+          }}
           events={calendarEvents}
           eventOrder={(a, b) => {
             const aMission = a.extendedProps?.source === "prestataireMission";

@@ -429,7 +429,8 @@ export default function PlanningPersoPage() {
       { id: currentUserId, title: "Moi" }
     ];
     for (const user of checkedUsersOrdered) {
-      res.push({ id: user.id, title: user.name });
+      const firstName = (user.name || "").split(" ")[0];
+      res.push({ id: user.id, title: firstName });
     }
     return res;
   }, [currentUserId, checkedUsersOrdered]);
