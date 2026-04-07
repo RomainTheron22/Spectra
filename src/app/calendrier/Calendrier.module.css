@@ -103,17 +103,11 @@
 
 .calendarCard :global(.fc .fc-daygrid-day.dayWeekend),
 .calendarCard :global(.fc .fc-timegrid-col.dayWeekend) {
-  background: #f1f5f9;
+  background: #c8c8c8;
 }
 
-.calendarCard :global(.fc .fc-daygrid-day.dayHoliday),
-.calendarCard :global(.fc .fc-timegrid-col.dayHoliday) {
-  background: #f1f5f9;
-}
-
-.calendarCard :global(.fc .fc-daygrid-day.dayWeekend .fc-daygrid-day-number),
-.calendarCard :global(.fc .fc-daygrid-day.dayHoliday .fc-daygrid-day-number) {
-  color: #94a3b8;
+.calendarCard :global(.fc .fc-daygrid-day.dayWeekend .fc-daygrid-day-number) {
+  color: #6b7280;
 }
 
 /* bandeaux plus fins */
