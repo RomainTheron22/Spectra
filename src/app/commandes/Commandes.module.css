@@ -3,6 +3,32 @@
   min-width: 0;
 }
 
+.branchSection {
+  margin-bottom: 32px;
+}
+
+.branchHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.branchTitle {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.branchCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
 .headerRow {
   display: flex;
   justify-content: space-between;

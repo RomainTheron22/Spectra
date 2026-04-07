@@ -381,6 +381,17 @@ export default function CommandesPage() {
     [rows, pendingReception]
   );
 
+  const rowsByBranch = useMemo(() => {
+    const grouped = {};
+    for (const branch of BRANCH_OPTIONS) grouped[branch] = [];
+    for (const row of filteredRows) {
+      const b = row.branche || "Agency";
+      if (grouped[b]) grouped[b].push(row);
+      else grouped[b] = [row];
+    }
+    return grouped;
+  }, [filteredRows]);
+
   const updateFormField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -828,190 +839,164 @@ export default function CommandesPage() {
         </div>
       </div>
 
-      <div className={styles.tableCard}>
-        <div className={styles.tableWrap} role="region" aria-label="Table des commandes">
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                {MAIN_COLUMNS.map((col) => (
-                  <th key={col}>{col}</th>
-                ))}
-              </tr>
-            </thead>
+      {BRANCH_OPTIONS.map((branch) => {
+        const branchRows = rowsByBranch[branch] || [];
+        return (
+          <div key={branch} className={styles.branchSection}>
+            <div className={styles.branchHeader}>
+              <span className={styles.branchTitle}>{branch}</span>
+              <span className={styles.branchCount}>{branchRows.length} commande{branchRows.length !== 1 ? "s" : ""}</span>
+            </div>
 
-            <tbody>
-              {filteredRows.length === 0 ? (
-                <tr>
-                  <td className={styles.emptyCell} colSpan={MAIN_COLUMNS.length}>
-                    Aucune commande.
-                  </td>
-                </tr>
-              ) : (
-                filteredRows.map((row) => {
-                  const expanded = !!expandedMap[row.id];
+            <div className={styles.tableCard}>
+              <div className={styles.tableWrap} role="region" aria-label={`Commandes ${branch}`}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      {MAIN_COLUMNS.filter((c) => c !== "Branche").map((col) => (
+                        <th key={col}>{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
 
-                  return (
-                    <React.Fragment key={row.id}>
+                  <tbody>
+                    {branchRows.length === 0 ? (
                       <tr>
-                        <td className={styles.centerCell}>
-                          <button
-                            type="button"
-                            className={styles.expandButton}
-                            onClick={() => toggleExpanded(row.id)}
-                            aria-label={expanded ? "Replier" : "Deplier"}
-                            title={expanded ? "Replier" : "Deplier"}
-                          >
-                            {expanded ? "-" : "+"}
-                          </button>
-                        </td>
-
-                        <td>{row.dateCreation || "-"}</td>
-                        <td>{row.fournisseur || "-"}</td>
-                        <td>{row.branche || "-"}</td>
-
-                        <td>
-                          <select
-                            className={styles.inlineSelect}
-                            value={row.status || "En attente"}
-                            onChange={(e) => updateStatusInline(row, e.target.value)}
-                          >
-                            {STATUS_OPTIONS.map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-
-                        <td className={styles.centerCell}>
-                          <input
-                            type="checkbox"
-                            checked={!!row.qonto}
-                            onChange={(e) => updateQontoInline(row, e.target.checked)}
-                            aria-label="Qonto"
-                          />
-                        </td>
-
-                        <td>{row.totalProduits}</td>
-                        <td>{formatMoney(row.prixTotalHT)}</td>
-                        <td className={styles.wrapCell}>{row.commentaires || "-"}</td>
-
-                        <td className={styles.centerCell}>
-                          <div className={styles.actionButtons}>
-                            <button
-                              type="button"
-                              className={styles.iconButton}
-                              onClick={() => openEditModal(row)}
-                              title="Modifier"
-                              aria-label="Modifier"
-                            >
-                              ✏️
-                            </button>
-
-                            <button
-                              type="button"
-                              className={styles.deleteButton}
-                              onClick={async () => {
-                                try {
-                                  await deleteCommande(row.id);
-                                } catch (error) {
-                                  console.error(error);
-                                  alert(error?.message || "Erreur suppression");
-                                }
-                              }}
-                              title="Supprimer"
-                              aria-label="Supprimer"
-                            >
-                              ✖
-                            </button>
-                          </div>
+                        <td className={styles.emptyCell} colSpan={MAIN_COLUMNS.length - 1}>
+                          Aucune commande pour cette branche.
                         </td>
                       </tr>
+                    ) : (
+                      branchRows.map((row) => {
+                        const expanded = !!expandedMap[row.id];
+                        return (
+                          <React.Fragment key={row.id}>
+                            <tr>
+                              <td className={styles.centerCell}>
+                                <button
+                                  type="button"
+                                  className={styles.expandButton}
+                                  onClick={() => toggleExpanded(row.id)}
+                                  aria-label={expanded ? "Replier" : "Deplier"}
+                                  title={expanded ? "Replier" : "Deplier"}
+                                >
+                                  {expanded ? "-" : "+"}
+                                </button>
+                              </td>
 
-                      {expanded ? (
-                        <tr className={styles.detailRow}>
-                          <td colSpan={MAIN_COLUMNS.length}>
-                            <div className={styles.detailWrap}>
-                              <table className={styles.detailTable}>
-                                <thead>
-                                  <tr>
-                                    <th>Produit</th>
-                                    <th>Recu</th>
-                                    <th>Projet</th>
-                                    <th>Categorie</th>
-                                    <th>Quantite</th>
-                                    <th>Prix HT</th>
-                                    <th>Total HT</th>
-                                    <th>URL</th>
-                                    <th>Lieu</th>
-                                    <th>Zone</th>
-                                    <th className={styles.centerCell}>Recommander</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {row.produits.length === 0 ? (
-                                    <tr>
-                                      <td colSpan={11} className={styles.emptyCellSmall}>
-                                        Aucun produit sur cette commande.
-                                      </td>
-                                    </tr>
-                                  ) : (
-                                    row.produits.map((line) => (
-                                      <tr key={`${row.id}-${line.id}`}>
-                                        <td>
-                                          <span className={styles.productName}>{line.nomProduit || "-"}</span>
-                                        </td>
-                                        <td className={styles.centerCell}>
-                                          <input
-                                            type="checkbox"
-                                            checked={!!line.recu}
-                                            onChange={async (e) => {
-                                              try {
-                                                await toggleProduitRecu(row, line, e.target.checked);
-                                              } catch (error) {
-                                                console.error(error);
-                                                alert(error?.message || "Erreur mise a jour reception");
-                                              }
-                                            }}
-                                            aria-label={`Reception ${line.nomProduit || "produit"}`}
-                                          />
-                                        </td>
-                                        <td>{line.projet || "-"}</td>
-                                        <td>{line.categories || "-"}</td>
-                                        <td>{line.quantite}</td>
-                                        <td>{formatMoney(line.prixUnitaireHT)}</td>
-                                        <td>{formatMoney(line.prixTotalHT)}</td>
-                                        <td className={styles.wrapCell}>{line.referenceUrl || "-"}</td>
-                                        <td>{line.lieux || "-"}</td>
-                                        <td>{line.zoneStockage || "-"}</td>
-                                        <td className={styles.centerCell}>
-                                          <button
-                                            type="button"
-                                            className={styles.recommendButton}
-                                            onClick={() => handleRecommanderProduit(row, line)}
-                                            title="Recommander"
-                                            aria-label={`Recommander ${line.nomProduit || "produit"}`}
-                                          >
-                                            ↻
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    ))
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : null}
-                    </React.Fragment>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                              <td>{row.dateCreation || "-"}</td>
+                              <td>{row.fournisseur || "-"}</td>
+
+                              <td>
+                                <select
+                                  className={styles.inlineSelect}
+                                  value={row.status || "En attente"}
+                                  onChange={(e) => updateStatusInline(row, e.target.value)}
+                                >
+                                  {STATUS_OPTIONS.map((status) => (
+                                    <option key={status} value={status}>{status}</option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              <td className={styles.centerCell}>
+                                <input
+                                  type="checkbox"
+                                  checked={!!row.qonto}
+                                  onChange={(e) => updateQontoInline(row, e.target.checked)}
+                                  aria-label="Qonto"
+                                />
+                              </td>
+
+                              <td>{row.totalProduits}</td>
+                              <td>{formatMoney(row.prixTotalHT)}</td>
+                              <td className={styles.wrapCell}>{row.commentaires || "-"}</td>
+
+                              <td className={styles.centerCell}>
+                                <div className={styles.actionButtons}>
+                                  <button type="button" className={styles.iconButton} onClick={() => openEditModal(row)} title="Modifier" aria-label="Modifier">✏️</button>
+                                  <button
+                                    type="button"
+                                    className={styles.deleteButton}
+                                    onClick={async () => {
+                                      try { await deleteCommande(row.id); }
+                                      catch (error) { console.error(error); alert(error?.message || "Erreur suppression"); }
+                                    }}
+                                    title="Supprimer"
+                                    aria-label="Supprimer"
+                                  >✖</button>
+                                </div>
+                              </td>
+                            </tr>
+
+                            {expanded ? (
+                              <tr className={styles.detailRow}>
+                                <td colSpan={MAIN_COLUMNS.length - 1}>
+                                  <div className={styles.detailWrap}>
+                                    <table className={styles.detailTable}>
+                                      <thead>
+                                        <tr>
+                                          <th>Produit</th><th>Recu</th><th>Projet</th><th>Categorie</th>
+                                          <th>Quantite</th><th>Prix HT</th><th>Total HT</th>
+                                          <th>URL</th><th>Lieu</th><th>Zone</th>
+                                          <th className={styles.centerCell}>Recommander</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {row.produits.length === 0 ? (
+                                          <tr><td colSpan={11} className={styles.emptyCellSmall}>Aucun produit.</td></tr>
+                                        ) : (
+                                          row.produits.map((line) => (
+                                            <tr key={`${row.id}-${line.id}`}>
+                                              <td><span className={styles.productName}>{line.nomProduit || "-"}</span></td>
+                                              <td className={styles.centerCell}>
+                                                <input
+                                                  type="checkbox"
+                                                  checked={!!line.recu}
+                                                  onChange={async (e) => {
+                                                    try { await toggleProduitRecu(row, line, e.target.checked); }
+                                                    catch (error) { console.error(error); alert(error?.message || "Erreur"); }
+                                                  }}
+                                                  aria-label={`Reception ${line.nomProduit || "produit"}`}
+                                                />
+                                              </td>
+                                              <td>{line.projet || "-"}</td>
+                                              <td>{line.categories || "-"}</td>
+                                              <td>{line.quantite}</td>
+                                              <td>{formatMoney(line.prixUnitaireHT)}</td>
+                                              <td>{formatMoney(line.prixTotalHT)}</td>
+                                              <td className={styles.wrapCell}>{line.referenceUrl || "-"}</td>
+                                              <td>{line.lieux || "-"}</td>
+                                              <td>{line.zoneStockage || "-"}</td>
+                                              <td className={styles.centerCell}>
+                                                <button
+                                                  type="button"
+                                                  className={styles.recommendButton}
+                                                  onClick={() => handleRecommanderProduit(row, line)}
+                                                  title="Recommander"
+                                                  aria-label={`Recommander ${line.nomProduit || "produit"}`}
+                                                >↻</button>
+                                              </td>
+                                            </tr>
+                                          ))
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : null}
+                          </React.Fragment>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })}
 
       <Modal
         open={open}
