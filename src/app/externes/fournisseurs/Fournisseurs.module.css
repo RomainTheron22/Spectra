@@ -553,3 +553,45 @@
   border-color: rgba(2, 132, 199, 0.45);
   box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
 }
+
+/* ── Historique période ──────────────────────────────────── */
+.histPeriodBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 0 14px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  margin-bottom: 12px;
+}
+
+.histPeriodSelect {
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.histPeriodTotal {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--color-text);
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  border-radius: 10px;
+  padding: 7px 14px;
+}
+
+.histPeriodTotal strong {
+  color: var(--active-from, #0ea5e9);
+  font-size: 15px;
+}
+
+.histPeriodCount {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}

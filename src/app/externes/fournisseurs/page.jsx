@@ -38,6 +38,8 @@ export default function FournisseurPage() {
   const [historique, setHistorique] = useState([]);
   const [expandedHist, setExpandedHist] = useState({});
   const [loadingHist, setLoadingHist] = useState(false);
+  const [histFilterYear, setHistFilterYear] = useState("all");
+  const [histFilterMonth, setHistFilterMonth] = useState("all");
 
   const [search, setSearch] = useState("");
 
@@ -173,6 +175,8 @@ export default function FournisseurPage() {
 
       setHistorique(mapped);
       setExpandedHist({});
+      setHistFilterYear("all");
+      setHistFilterMonth("all");
     } catch (e) {
       console.error(e);
       setHistorique([]);
@@ -189,6 +193,8 @@ export default function FournisseurPage() {
     setExpandedHist({});
     setIsEditing(false);
     setActiveTab("infos");
+    setHistFilterYear("all");
+    setHistFilterMonth("all");
   };
 
   // Save edit (dans modal détail)
@@ -327,6 +333,40 @@ export default function FournisseurPage() {
       };
     });
   }, [historique, selected?.nom]);
+
+  // Années disponibles dans l'historique
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    for (const h of histRows) {
+      const y = h.date?.slice(0, 4);
+      if (y && /^\d{4}$/.test(y)) years.add(y);
+    }
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [histRows]);
+
+  // Lignes filtrées par période
+  const filteredHistRows = useMemo(() => {
+    return histRows.filter((h) => {
+      if (histFilterYear === "all") return true;
+      if (!h.date || h.date === "—") return false;
+      const rowYear = h.date.slice(0, 4);
+      if (rowYear !== histFilterYear) return false;
+      if (histFilterMonth === "all") return true;
+      const rowMonth = String(Number(h.date.slice(5, 7)));
+      return rowMonth === histFilterMonth;
+    });
+  }, [histRows, histFilterYear, histFilterMonth]);
+
+  // Total de la période filtrée
+  const periodTotal = useMemo(
+    () => filteredHistRows.reduce((sum, h) => sum + h.totalHT, 0),
+    [filteredHistRows]
+  );
+
+  const MONTHS_FR = [
+    "Janvier","Février","Mars","Avril","Mai","Juin",
+    "Juillet","Août","Septembre","Octobre","Novembre","Décembre",
+  ];
 
   const toggleHistRow = (commandeId) => {
     setExpandedHist((prev) => ({ ...prev, [commandeId]: !prev[commandeId] }));
@@ -736,6 +776,45 @@ export default function FournisseurPage() {
                 ) : histRows.length === 0 ? (
                   <div className={styles.muted}>Aucune commande trouvée pour ce fournisseur.</div>
                 ) : (
+                  <>
+                    {/* ── Sélecteur de période ── */}
+                    <div className={styles.histPeriodBar}>
+                      <select
+                        className={styles.histPeriodSelect}
+                        value={histFilterYear}
+                        onChange={(e) => {
+                          setHistFilterYear(e.target.value);
+                          setHistFilterMonth("all");
+                        }}
+                      >
+                        <option value="all">Toutes les années</option>
+                        {availableYears.map((y) => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+
+                      {histFilterYear !== "all" && (
+                        <select
+                          className={styles.histPeriodSelect}
+                          value={histFilterMonth}
+                          onChange={(e) => setHistFilterMonth(e.target.value)}
+                        >
+                          <option value="all">Tous les mois</option>
+                          {MONTHS_FR.map((m, i) => (
+                            <option key={i + 1} value={String(i + 1)}>{m}</option>
+                          ))}
+                        </select>
+                      )}
+
+                      <div className={styles.histPeriodTotal}>
+                        Total période&nbsp;:&nbsp;
+                        <strong>{formatMoney(periodTotal)} €</strong>
+                        <span className={styles.histPeriodCount}>
+                          &nbsp;({filteredHistRows.length} commande{filteredHistRows.length !== 1 ? "s" : ""})
+                        </span>
+                      </div>
+                    </div>
+
                   <div className={styles.histTableWrap}>
                     <table className={styles.histTable}>
                       <thead>
@@ -747,7 +826,13 @@ export default function FournisseurPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {histRows.map((h) => {
+                        {filteredHistRows.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className={styles.muted} style={{ textAlign: "center", padding: "16px" }}>
+                              Aucune commande sur cette période.
+                            </td>
+                          </tr>
+                        ) : filteredHistRows.map((h) => {
                           const expanded = !!expandedHist[h.id];
                           return (
                             <React.Fragment key={h.id}>
@@ -820,6 +905,7 @@ export default function FournisseurPage() {
                       </tbody>
                     </table>
                   </div>
+                  </>
                 )}
               </div>
             )}

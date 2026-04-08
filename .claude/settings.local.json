@@ -5,7 +5,29 @@
       "Bash(node -e \"const p = require\\(''./package.json''\\); console.log\\(p.dependencies.next || p.devDependencies.next\\)\")",
       "Bash(node -e \":*)",
       "Bash(rm -f src/app/api/setup/route.js src/app/api/admin/env/route.js src/instrumentation.js .env.example)",
-      "Bash(rm -rf src/app/cle)"
+      "Bash(rm -rf src/app/cle)",
+      "Bash(ls -d /c/Users/thero/OneDrive/Bureau/spectra-next/src/app/*/)",
+      "WebFetch(domain:docs.meteoblue.com)",
+      "WebFetch(domain:my.meteoblue.com)",
+      "Bash(find c:/Users/thero/OneDrive/Bureau/spectra-next/src -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.jsx -o -name *.js \\\\\\))",
+      "Bash(find /c/Users/thero/OneDrive/Bureau/spectra-next -type f -name *.ttf -o -name *.woff -o -name *.woff2)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\thero\\\\OneDrive\\\\Bureau\\\\spectra-next\\\\src\\\\app\\\\api\\\\meteo-quotidien\\\\weather\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\thero\\\\OneDrive\\\\Bureau\\\\spectra-next\\\\src\\\\app\\\\api\\\\meteo-quotidien\\\\data\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\thero\\\\OneDrive\\\\Bureau\\\\spectra-next\\\\src\\\\app\\\\meteo-quotidien\")",
+      "Bash(mv src/app/meteo-du-jour src/app/meteo-de-la-semaine)",
+      "Bash(mv src/app/meteo-quotidien src/app/meteo-du-jour)",
+      "Bash(mv src/app/api/meteo-du-jour src/app/api/meteo-de-la-semaine)",
+      "Bash(mv src/app/api/meteo-quotidien src/app/api/meteo-du-jour)",
+      "Bash(mv src/app/meteo-de-la-semaine/MeteoDuJour.module.css src/app/meteo-de-la-semaine/MeteoSemaine.module.css)",
+      "Bash(cp -r src/app/api/meteo-quotidien/. src/app/api/meteo-du-jour-new)",
+      "Bash(mv src/app/api/meteo-du-jour-new src/app/api/meteo-du-jour-daily)",
+      "Bash(mv src/app/meteo-du-jour/MeteoQuotidien.module.css src/app/meteo-du-jour/MeteoDuJour.module.css)",
+      "Bash(node scripts/migrate-meteo-semaine.mjs)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -n \"PATCH\\\\|DELETE\\\\|return NextResponse\\\\|return Response\" /c/Users/thero/OneDrive/Bureau/spectra-next/src/app/api/contrats/[id]/route.js)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)"
     ]
   }
 }

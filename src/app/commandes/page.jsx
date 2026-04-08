@@ -8,13 +8,14 @@ import SelectWithAdd from "../../components/ui/SelectWithAdd";
 const BRANCH_OPTIONS = ["Agency", "CreativeGen", "Enterntainement", "SFX"];
 const STATUS_OPTIONS = ["En attente", "A acheter", "Commande", "Partiellement recue", "Recue"];
 const LIEUX_OPTIONS = ["Studio", "Atelier", "Fablab", "Maison"];
+const TYPE_PRODUIT_OPTIONS = ["Matériel", "Consommable", "Façonnage"];
 
 const FILTER_FIELDS = [
   { value: "fournisseur", label: "Fournisseur" },
   { value: "branche", label: "Branche" },
   { value: "status", label: "Status" },
   { value: "projet", label: "Projet" },
-  { value: "categories", label: "Categorie" },
+  { value: "typeProduit", label: "Type de produit" },
   { value: "lieux", label: "Lieu" },
   { value: "zoneStockage", label: "Zone de stockage" },
 ];
@@ -69,7 +70,7 @@ function createEmptyProduct() {
     prixUnitaireHT: "",
     referenceUrl: "",
     projet: "",
-    categories: "",
+    typeProduit: "Matériel",
     lieux: "Studio",
     zoneStockage: "",
     recu: false,
@@ -111,7 +112,7 @@ function normalizeProduitFromApi(raw = {}, index = 0) {
         : toSafeNumber(raw.prixTotalHT, 0),
     referenceUrl: String(raw.referenceUrl || "").trim(),
     projet: String(raw.projet || "").trim(),
-    categories: String(raw.categories || "").trim(),
+    typeProduit: String(raw.typeProduit || raw.categories || "Matériel").trim() || "Matériel",
     lieux: String(raw.lieux || "Studio").trim() || "Studio",
     zoneStockage: String(raw.zoneStockage || "").trim(),
     recu: !!raw.recu,
@@ -187,11 +188,9 @@ export default function CommandesPage() {
   const [expandedMap, setExpandedMap] = useState({});
 
   const [projetOptions, setProjetOptions] = useState([]);
-  const [categorieOptions, setCategorieOptions] = useState([]);
   const [fournisseurOptions, setFournisseurOptions] = useState([]);
 
   const [stockModalOpen, setStockModalOpen] = useState(false);
-  const [stockType, setStockType] = useState("Consommables");
   const [stockSeuilMin, setStockSeuilMin] = useState("");
   const [pendingReception, setPendingReception] = useState(null);
 
@@ -228,9 +227,6 @@ export default function CommandesPage() {
         const projetsFromRows = mappedRows.flatMap((item) => item.produits.map((line) => line.projet));
         const projetsFromApi = (dataContrats.items || []).map((item) => String(item.nomContrat || "").trim());
         setProjetOptions(mergeUniqueSorted(projetsFromRows, projetsFromApi));
-
-        const categoriesFromRows = mappedRows.flatMap((item) => item.produits.map((line) => line.categories));
-        setCategorieOptions(mergeUniqueSorted(categoriesFromRows, []));
       } catch (error) {
         console.error(error);
       }
@@ -271,7 +267,7 @@ export default function CommandesPage() {
             : toSafeNumber(prixUnitaireRaw, ""),
         referenceUrl: String(produitRaw?.referenceUrl || "").trim(),
         projet: String(produitRaw?.projet || "").trim(),
-        categories: String(produitRaw?.categories || "").trim(),
+        typeProduit: String(produitRaw?.typeProduit || "Matériel").trim() || "Matériel",
         lieux: String(produitRaw?.lieux || "Studio").trim() || "Studio",
         zoneStockage: String(produitRaw?.zoneStockage || "").trim(),
       };
@@ -296,7 +292,7 @@ export default function CommandesPage() {
             prixUnitaireHT: produit.prixUnitaireHT,
             referenceUrl: produit.referenceUrl,
             projet: produit.projet,
-            categories: produit.categories,
+            typeProduit: produit.typeProduit,
             lieux: produit.lieux,
             zoneStockage: produit.zoneStockage,
             recu: false,
@@ -316,7 +312,7 @@ export default function CommandesPage() {
       branche: new Set(),
       status: new Set(),
       projet: new Set(),
-      categories: new Set(),
+      typeProduit: new Set(),
       lieux: new Set(),
       zoneStockage: new Set(),
     };
@@ -328,7 +324,7 @@ export default function CommandesPage() {
 
       for (const line of row.produits || []) {
         if (line.projet) map.projet.add(line.projet);
-        if (line.categories) map.categories.add(line.categories);
+        if (line.typeProduit) map.typeProduit.add(line.typeProduit);
         if (line.lieux) map.lieux.add(line.lieux);
         if (line.zoneStockage) map.zoneStockage.add(line.zoneStockage);
       }
@@ -348,7 +344,7 @@ export default function CommandesPage() {
         row.commentaires,
         row.branche,
         row.status,
-        ...row.produits.flatMap((line) => [line.nomProduit, line.projet, line.categories, line.referenceUrl]),
+        ...row.produits.flatMap((line) => [line.nomProduit, line.projet, line.typeProduit, line.referenceUrl]),
       ]
         .join(" ")
         .toLowerCase();
@@ -380,17 +376,6 @@ export default function CommandesPage() {
     () => findCommandeAndProduit(rows, pendingReception),
     [rows, pendingReception]
   );
-
-  const rowsByBranch = useMemo(() => {
-    const grouped = {};
-    for (const branch of BRANCH_OPTIONS) grouped[branch] = [];
-    for (const row of filteredRows) {
-      const b = row.branche || "Agency";
-      if (grouped[b]) grouped[b].push(row);
-      else grouped[b] = [row];
-    }
-    return grouped;
-  }, [filteredRows]);
 
   const updateFormField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -443,7 +428,7 @@ export default function CommandesPage() {
               prixUnitaireHT: line.prixUnitaireHT ?? "",
               referenceUrl: line.referenceUrl || "",
               projet: line.projet || "",
-              categories: line.categories || "",
+              typeProduit: line.typeProduit || "Matériel",
               lieux: line.lieux || "Studio",
               zoneStockage: line.zoneStockage || "",
               recu: !!line.recu,
@@ -493,7 +478,7 @@ export default function CommandesPage() {
         prixTotalHT: computeLineTotal(line.quantite, line.prixUnitaireHT),
         referenceUrl: String(line.referenceUrl || "").trim(),
         projet: String(line.projet || "").trim(),
-        categories: String(line.categories || "").trim(),
+        typeProduit: String(line.typeProduit || "Matériel").trim(),
         lieux: String(line.lieux || "Studio").trim() || "Studio",
         zoneStockage: String(line.zoneStockage || "").trim(),
         recu: !!line.recu,
@@ -549,7 +534,6 @@ export default function CommandesPage() {
 
       setFournisseurOptions((prev) => mergeUniqueSorted(prev, [payload.fournisseur]));
       setProjetOptions((prev) => mergeUniqueSorted(prev, payload.produits.map((line) => line.projet)));
-      setCategorieOptions((prev) => mergeUniqueSorted(prev, payload.produits.map((line) => line.categories)));
 
       closeModal();
     } catch (error) {
@@ -603,7 +587,7 @@ export default function CommandesPage() {
               : produit.prixUnitaireHT,
           referenceUrl: String(produit?.referenceUrl || "").trim(),
           projet: produit?.projet || "",
-          categories: produit?.categories || "",
+          typeProduit: produit?.typeProduit || "Matériel",
           lieux: produit?.lieux || "Studio",
           zoneStockage: produit?.zoneStockage || "",
           recu: false,
@@ -656,7 +640,7 @@ export default function CommandesPage() {
       projet: produit.projet || "",
       lieux: produit.lieux || "Studio",
       zoneStockage: produit.zoneStockage || "",
-      categories: produit.categories || "",
+      categories: produit.typeProduit || "",
       fournisseur: commande.fournisseur || "",
       referenceUrl: produit.referenceUrl || "",
       description: commande.commentaires || "",
@@ -697,30 +681,45 @@ export default function CommandesPage() {
       return;
     }
 
-    setPendingReception({ commandeId: commande.id, produitId: produit.id });
-    setStockType("Consommables");
-    setStockSeuilMin("");
-    setStockModalOpen(true);
+    // Le popup seuil minimum ne s'ouvre que pour les Consommables
+    if (produit.typeProduit === "Consommable") {
+      setPendingReception({ commandeId: commande.id, produitId: produit.id });
+      setStockSeuilMin("");
+      setStockModalOpen(true);
+      return;
+    }
+
+    // Matériel / Façonnage : ajout inventaire direct sans popup
+    try {
+      const typeStock = produit.typeProduit === "Façonnage" ? "Fixe" : "Fixe";
+      await createInventaireFromProduit(commande, produit, typeStock, null);
+      const nextProduits = commande.produits.map((line) =>
+        line.id === produit.id ? { ...line, recu: true, inventaireCreated: true } : line
+      );
+      await persistProduits(commande.id, nextProduits);
+    } catch (error) {
+      console.error(error);
+      alert(error?.message || "Erreur création inventaire");
+    }
   };
 
   const closeStockModal = () => {
     setStockModalOpen(false);
     setPendingReception(null);
-    setStockType("Consommables");
     setStockSeuilMin("");
   };
 
   const confirmStockModal = async () => {
     if (!pendingTarget) return;
 
-    if (stockType === "Consommables" && stockSeuilMin === "") {
+    if (stockSeuilMin === "") {
       alert("Renseigne un seuil minimum.");
       return;
     }
 
     try {
       const { commande, produit } = pendingTarget;
-      await createInventaireFromProduit(commande, produit, stockType, stockSeuilMin);
+      await createInventaireFromProduit(commande, produit, "Consommables", stockSeuilMin);
 
       const nextProduits = commande.produits.map((line) =>
         line.id === produit.id
@@ -839,94 +838,86 @@ export default function CommandesPage() {
         </div>
       </div>
 
-      {BRANCH_OPTIONS.map((branch) => {
-        const branchRows = rowsByBranch[branch] || [];
-        return (
-          <div key={branch} className={styles.branchSection}>
-            <div className={styles.branchHeader}>
-              <span className={styles.branchTitle}>{branch}</span>
-              <span className={styles.branchCount}>{branchRows.length} commande{branchRows.length !== 1 ? "s" : ""}</span>
-            </div>
+      <div className={styles.tableCard}>
+        <div className={styles.tableWrap} role="region" aria-label="Commandes">
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                {MAIN_COLUMNS.map((col) => (
+                  <th key={col}>{col}</th>
+                ))}
+              </tr>
+            </thead>
 
-            <div className={styles.tableCard}>
-              <div className={styles.tableWrap} role="region" aria-label={`Commandes ${branch}`}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      {MAIN_COLUMNS.filter((c) => c !== "Branche").map((col) => (
-                        <th key={col}>{col}</th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {branchRows.length === 0 ? (
+            <tbody>
+              {filteredRows.length === 0 ? (
+                <tr>
+                  <td className={styles.emptyCell} colSpan={MAIN_COLUMNS.length}>
+                    Aucune commande.
+                  </td>
+                </tr>
+              ) : (
+                filteredRows.map((row) => {
+                  const expanded = !!expandedMap[row.id];
+                  return (
+                    <React.Fragment key={row.id}>
                       <tr>
-                        <td className={styles.emptyCell} colSpan={MAIN_COLUMNS.length - 1}>
-                          Aucune commande pour cette branche.
+                        <td className={styles.centerCell}>
+                          <button
+                            type="button"
+                            className={styles.expandButton}
+                            onClick={() => toggleExpanded(row.id)}
+                            aria-label={expanded ? "Replier" : "Deplier"}
+                            title={expanded ? "Replier" : "Deplier"}
+                          >
+                            {expanded ? "-" : "+"}
+                          </button>
                         </td>
-                      </tr>
-                    ) : (
-                      branchRows.map((row) => {
-                        const expanded = !!expandedMap[row.id];
-                        return (
-                          <React.Fragment key={row.id}>
-                            <tr>
-                              <td className={styles.centerCell}>
-                                <button
-                                  type="button"
-                                  className={styles.expandButton}
-                                  onClick={() => toggleExpanded(row.id)}
-                                  aria-label={expanded ? "Replier" : "Deplier"}
-                                  title={expanded ? "Replier" : "Deplier"}
-                                >
-                                  {expanded ? "-" : "+"}
-                                </button>
-                              </td>
 
-                              <td>{row.dateCreation || "-"}</td>
-                              <td>{row.fournisseur || "-"}</td>
+                        <td>{row.dateCreation || "-"}</td>
+                        <td>{row.fournisseur || "-"}</td>
+                        <td>{row.branche || "-"}</td>
 
-                              <td>
-                                <select
-                                  className={styles.inlineSelect}
-                                  value={row.status || "En attente"}
-                                  onChange={(e) => updateStatusInline(row, e.target.value)}
-                                >
-                                  {STATUS_OPTIONS.map((status) => (
-                                    <option key={status} value={status}>{status}</option>
-                                  ))}
-                                </select>
-                              </td>
+                        <td>
+                          <select
+                            className={styles.inlineSelect}
+                            value={row.status || "En attente"}
+                            onChange={(e) => updateStatusInline(row, e.target.value)}
+                          >
+                            {STATUS_OPTIONS.map((status) => (
+                              <option key={status} value={status}>{status}</option>
+                            ))}
+                          </select>
+                        </td>
 
-                              <td className={styles.centerCell}>
-                                <input
-                                  type="checkbox"
-                                  checked={!!row.qonto}
-                                  onChange={(e) => updateQontoInline(row, e.target.checked)}
-                                  aria-label="Qonto"
-                                />
-                              </td>
+                        <td className={styles.centerCell}>
+                          <input
+                            type="checkbox"
+                            checked={!!row.qonto}
+                            onChange={(e) => updateQontoInline(row, e.target.checked)}
+                            aria-label="Qonto"
+                          />
+                        </td>
 
-                              <td>{row.totalProduits}</td>
-                              <td>{formatMoney(row.prixTotalHT)}</td>
-                              <td className={styles.wrapCell}>{row.commentaires || "-"}</td>
+                        <td>{row.totalProduits}</td>
+                        <td>{formatMoney(row.prixTotalHT)}</td>
+                        <td className={styles.wrapCell}>{row.commentaires || "-"}</td>
 
-                              <td className={styles.centerCell}>
-                                <div className={styles.actionButtons}>
-                                  <button type="button" className={styles.iconButton} onClick={() => openEditModal(row)} title="Modifier" aria-label="Modifier">✏️</button>
-                                  <button
-                                    type="button"
-                                    className={styles.deleteButton}
-                                    onClick={async () => {
-                                      try { await deleteCommande(row.id); }
-                                      catch (error) { console.error(error); alert(error?.message || "Erreur suppression"); }
-                                    }}
-                                    title="Supprimer"
-                                    aria-label="Supprimer"
-                                  >✖</button>
-                                </div>
-                              </td>
+                        <td className={styles.centerCell}>
+                          <div className={styles.actionButtons}>
+                            <button type="button" className={styles.iconButton} onClick={() => openEditModal(row)} title="Modifier" aria-label="Modifier">✏️</button>
+                            <button
+                              type="button"
+                              className={styles.deleteButton}
+                              onClick={async () => {
+                                try { await deleteCommande(row.id); }
+                                catch (error) { console.error(error); alert(error?.message || "Erreur suppression"); }
+                              }}
+                              title="Supprimer"
+                              aria-label="Supprimer"
+                            >✖</button>
+                          </div>
+                        </td>
                             </tr>
 
                             {expanded ? (
@@ -936,7 +927,7 @@ export default function CommandesPage() {
                                     <table className={styles.detailTable}>
                                       <thead>
                                         <tr>
-                                          <th>Produit</th><th>Recu</th><th>Projet</th><th>Categorie</th>
+                                          <th>Produit</th><th>Recu</th><th>Projet</th><th>Type</th>
                                           <th>Quantite</th><th>Prix HT</th><th>Total HT</th>
                                           <th>URL</th><th>Lieu</th><th>Zone</th>
                                           <th className={styles.centerCell}>Recommander</th>
@@ -961,7 +952,7 @@ export default function CommandesPage() {
                                                 />
                                               </td>
                                               <td>{line.projet || "-"}</td>
-                                              <td>{line.categories || "-"}</td>
+                                              <td>{line.typeProduit || "-"}</td>
                                               <td>{line.quantite}</td>
                                               <td>{formatMoney(line.prixUnitaireHT)}</td>
                                               <td>{formatMoney(line.prixTotalHT)}</td>
@@ -985,20 +976,18 @@ export default function CommandesPage() {
                                   </div>
                                 </td>
                               </tr>
-                            ) : null}
-                          </React.Fragment>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                          ) : null}
+                        </React.Fragment>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        );
-      })}
 
       <Modal
+
         open={open}
         title={editingId ? "Modifier une commande" : "Ajouter une commande"}
         onClose={closeModal}
@@ -1115,7 +1104,7 @@ export default function CommandesPage() {
                     <th>Total HT</th>
                     <th>URL</th>
                     <th>Projet</th>
-                    <th>Categorie</th>
+                    <th>Type de produit</th>
                     <th>Lieu</th>
                     <th>Zone</th>
                     <th>Action</th>
@@ -1204,14 +1193,15 @@ export default function CommandesPage() {
                       </td>
 
                       <td>
-                        <input
-                          className={styles.lineInput}
-                          list="commandes-categories"
-                          type="text"
-                          value={line.categories}
-                          onChange={(e) => updateProduitField(index, "categories", e.target.value)}
-                          placeholder="Categorie"
-                        />
+                        <select
+                          className={styles.lineSelect}
+                          value={line.typeProduit}
+                          onChange={(e) => updateProduitField(index, "typeProduit", e.target.value)}
+                        >
+                          {TYPE_PRODUIT_OPTIONS.map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
                       </td>
 
                       <td>
@@ -1254,12 +1244,6 @@ export default function CommandesPage() {
               </table>
             </div>
 
-            <datalist id="commandes-categories">
-              {categorieOptions.map((option) => (
-                <option key={option} value={option} />
-              ))}
-            </datalist>
-
             <div className={styles.totalBar}>Total commande HT: {formatMoney(formTotal)} EUR</div>
           </div>
 
@@ -1274,41 +1258,28 @@ export default function CommandesPage() {
         </form>
       </Modal>
 
-      <Modal open={stockModalOpen} title="Ajouter en inventaire" onClose={closeStockModal}>
+      <Modal open={stockModalOpen} title="Seuil minimum — Consommable" onClose={closeStockModal}>
         <div className={styles.form}>
           {pendingTarget ? (
             <div className={styles.pendingLine}>
-              Produit: <strong>{pendingTarget.produit.nomProduit || "Produit"}</strong> - Fournisseur:{" "}
+              Produit: <strong>{pendingTarget.produit.nomProduit || "Produit"}</strong> — Fournisseur:{" "}
               <strong>{pendingTarget.commande.fournisseur || "-"}</strong>
             </div>
           ) : null}
 
           <div className={styles.grid}>
             <div className={styles.field}>
-              <label className={styles.label}>Type stock</label>
-              <select
+              <label className={styles.label}>Seuil minimum de stock</label>
+              <input
                 className={styles.input}
-                value={stockType}
-                onChange={(e) => setStockType(e.target.value)}
-              >
-                <option value="Consommables">Consommables</option>
-                <option value="Fixe">Fixe</option>
-              </select>
+                type="number"
+                min="0"
+                step="1"
+                value={stockSeuilMin}
+                onChange={(e) => setStockSeuilMin(e.target.value)}
+                placeholder="ex: 5"
+              />
             </div>
-
-            {stockType === "Consommables" ? (
-              <div className={styles.field}>
-                <label className={styles.label}>Seuil minimum</label>
-                <input
-                  className={styles.input}
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={stockSeuilMin}
-                  onChange={(e) => setStockSeuilMin(e.target.value)}
-                />
-              </div>
-            ) : null}
           </div>
 
           <div className={styles.footer}>
