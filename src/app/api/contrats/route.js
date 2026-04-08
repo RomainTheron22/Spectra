@@ -12,6 +12,7 @@ import {
   extensionFromFileName,
   sanitizeDriveName,
 } from "../../../lib/drive";
+import { logActivity } from "../../../lib/activity-log";
 
 const BRIEFS_STORAGE = path.join(process.cwd(), "storage", "briefs");
 const CONTRATS_STORAGE = path.join(process.cwd(), "storage", "contrats");
@@ -189,6 +190,13 @@ export async function POST(req) {
       console.error("Erreur création dossier Drive pour le projet:", driveErr);
       // Non-bloquant : le contrat est créé même si le drive échoue
     }
+
+    logActivity(gate.authz.user, {
+      action: "create",
+      resource: "contrat",
+      resourceLabel: "Contrat",
+      detail: doc.nomContrat || "",
+    });
 
     return NextResponse.json({ item: doc }, { status: 201 });
   } catch (err) {

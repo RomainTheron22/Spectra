@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "../../../../lib/mongodb";
 import { requireApiPermission } from "../../../../lib/authz";
+import { logActivity } from "../../../../lib/activity-log";
 
 export async function PATCH(request, context) {
   const gate = await requireApiPermission(request, { resource: "fournisseurs", action: "edit" });
@@ -44,6 +45,14 @@ export async function PATCH(request, context) {
     );
 
     const updated = await db.collection("fournisseurs").findOne({ _id: new ObjectId(id) });
+
+    logActivity(gate.authz.user, {
+      action: "update",
+      resource: "fournisseur",
+      resourceLabel: "Fournisseur",
+      detail: updated?.nom || id,
+    });
+
     return NextResponse.json({ item: updated }, { status: 200 });
   } catch (err) {
     console.error("PATCH /api/fournisseurs/[id] error:", err);
@@ -68,7 +77,15 @@ export async function DELETE(request, context) {
     if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
     const db = await getDb();
+    const toDelete = await db.collection("fournisseurs").findOne({ _id: new ObjectId(id) });
     await db.collection("fournisseurs").deleteOne({ _id: new ObjectId(id) });
+
+    logActivity(gate.authz.user, {
+      action: "delete",
+      resource: "fournisseur",
+      resourceLabel: "Fournisseur",
+      detail: toDelete?.nom || id,
+    });
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {

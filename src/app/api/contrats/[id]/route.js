@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs/promises";
 import { getDb } from "../../../../lib/mongodb";
 import { requireApiPermission } from "../../../../lib/authz";
+import { logActivity } from "../../../../lib/activity-log";
 
 const CONTRATS_STORAGE = path.join(process.cwd(), "storage", "contrats");
 
@@ -52,6 +53,13 @@ export async function PATCH(request, context) {
     await db.collection("contrats").updateOne({ _id: new ObjectId(id) }, { $set });
     const updated = await db.collection("contrats").findOne({ _id: new ObjectId(id) });
 
+    logActivity(gate.authz.user, {
+      action: "update",
+      resource: "contrat",
+      resourceLabel: "Contrat",
+      detail: updated?.nomContrat || id,
+    });
+
     return NextResponse.json({ item: updated }, { status: 200 });
   } catch (err) {
     console.error("PATCH /api/contrats/[id] error:", err);
@@ -71,15 +79,19 @@ export async function DELETE(request, context) {
     if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
     const db = await getDb();
-    const contrat = await db.collection("contrats").findOne(
-      { _id: new ObjectId(id) },
-      { projection: { files: 1 } }
-    );
+    const contrat = await db.collection("contrats").findOne({ _id: new ObjectId(id) });
     if (contrat?.files?.length) {
       const contractDir = path.join(CONTRATS_STORAGE, id);
       await fs.rm(contractDir, { recursive: true, force: true }).catch(() => {});
     }
     await db.collection("contrats").deleteOne({ _id: new ObjectId(id) });
+
+    logActivity(gate.authz.user, {
+      action: "delete",
+      resource: "contrat",
+      resourceLabel: "Contrat",
+      detail: contrat?.nomContrat || id,
+    });
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {

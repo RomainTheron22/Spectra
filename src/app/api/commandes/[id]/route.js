@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "../../../../lib/mongodb";
 import { requireApiPermission } from "../../../../lib/authz";
+import { logActivity } from "../../../../lib/activity-log";
 import {
   computeCommandeAggregates,
   ensureCommandeProduits,
@@ -123,6 +124,13 @@ export async function PATCH(request, context) {
     await db.collection("commandes").updateOne({ _id: objectId }, { $set });
     const updated = await db.collection("commandes").findOne({ _id: objectId });
 
+    logActivity(gate.authz.user, {
+      action: "update",
+      resource: "commande",
+      resourceLabel: "Commande",
+      detail: updated?.fournisseur || id,
+    });
+
     return NextResponse.json({ item: normalizeCommandeDocument(updated) }, { status: 200 });
   } catch (err) {
     console.error("PATCH /api/commandes/[id] error:", err);
@@ -145,7 +153,15 @@ export async function DELETE(request, context) {
     if (!objectId) return NextResponse.json({ error: "ID invalide" }, { status: 400 });
 
     const db = await getDb();
+    const toDelete = await db.collection("commandes").findOne({ _id: objectId });
     await db.collection("commandes").deleteOne({ _id: objectId });
+
+    logActivity(gate.authz.user, {
+      action: "delete",
+      resource: "commande",
+      resourceLabel: "Commande",
+      detail: toDelete?.fournisseur || id,
+    });
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {

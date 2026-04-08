@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../lib/mongodb";
 import { requireApiPermission } from "../../../lib/authz";
+import { logActivity } from "../../../lib/activity-log";
 
 function toDate(v) {
   const d = new Date(v);
@@ -117,6 +118,13 @@ export async function POST(req) {
 
     const res = await db.collection("evenements").insertOne(doc);
     const inserted = await db.collection("evenements").findOne({ _id: res.insertedId });
+
+    logActivity(gate.authz.user, {
+      action: "create",
+      resource: "evenement",
+      resourceLabel: "Événement",
+      detail: doc.projet || doc.phaseName || "",
+    });
 
     return NextResponse.json({ item: inserted }, { status: 201 });
   } catch (err) {

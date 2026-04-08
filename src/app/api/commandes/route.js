@@ -6,6 +6,7 @@ import {
   isMeaningfulString,
   normalizeCommandeDocument,
 } from "../../../lib/commandes";
+import { logActivity } from "../../../lib/activity-log";
 
 export async function GET(req) {
   const gate = await requireApiPermission(req, { resource: "commandes", action: "view" });
@@ -68,6 +69,13 @@ export async function POST(req) {
     };
 
     const result = await db.collection("commandes").insertOne(finalDoc);
+
+    logActivity(gate.authz.user, {
+      action: "create",
+      resource: "commande",
+      resourceLabel: "Commande",
+      detail: doc.fournisseur || "",
+    });
 
     return NextResponse.json(
       { item: normalizeCommandeDocument({ ...finalDoc, _id: result.insertedId }) },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../lib/mongodb";
 import { requireApiPermission } from "../../../lib/authz";
+import { logActivity } from "../../../lib/activity-log";
 
 function sanitizeString(value) {
   return String(value || "").trim();
@@ -67,6 +68,14 @@ export async function POST(request) {
     }
 
     const result = await db.collection("briefs").insertOne(doc);
+
+    logActivity(gate.authz.user, {
+      action: "create",
+      resource: "brief",
+      resourceLabel: "Brief",
+      detail: doc.nomBrief || "",
+    });
+
     return NextResponse.json({ item: { ...doc, _id: result.insertedId } }, { status: 201 });
   } catch (err) {
     console.error("POST /api/briefs error:", err);

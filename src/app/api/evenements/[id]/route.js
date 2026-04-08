@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "../../../../lib/mongodb";
 import { requireApiPermission } from "../../../../lib/authz";
+import { logActivity } from "../../../../lib/activity-log";
 
 function toDate(v) {
   const d = new Date(v);
@@ -84,6 +85,13 @@ export async function PATCH(req, context) {
     await db.collection("evenements").updateOne({ _id: new ObjectId(id) }, { $set });
     const updated = await db.collection("evenements").findOne({ _id: new ObjectId(id) });
 
+    logActivity(gate.authz.user, {
+      action: "update",
+      resource: "evenement",
+      resourceLabel: "Événement",
+      detail: updated?.projet || updated?.phaseName || id,
+    });
+
     return NextResponse.json({ item: updated }, { status: 200 });
   } catch (err) {
     console.error("PATCH /api/evenements/[id] error:", err);
@@ -103,7 +111,15 @@ export async function DELETE(req, context) {
     if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
     const db = await getDb();
+    const toDelete = await db.collection("evenements").findOne({ _id: new ObjectId(id) });
     await db.collection("evenements").deleteOne({ _id: new ObjectId(id) });
+
+    logActivity(gate.authz.user, {
+      action: "delete",
+      resource: "evenement",
+      resourceLabel: "Événement",
+      detail: toDelete?.projet || toDelete?.phaseName || id,
+    });
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {

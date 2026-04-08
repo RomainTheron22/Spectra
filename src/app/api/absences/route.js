@@ -2,6 +2,7 @@ import { auth } from "../../../lib/auth";
 import { headers } from "next/headers";
 import { getDb } from "../../../lib/mongodb";
 import { ObjectId } from "mongodb";
+import { logActivity } from "../../../lib/activity-log";
 
 // GET /api/absences?employeeId=...&from=...&to=...
 export async function GET(request) {
@@ -60,6 +61,18 @@ export async function POST(request) {
         };
 
         const result = await db.collection("absences").insertOne(newAbsence);
+
+        const sessionUser = session?.user;
+        logActivity(
+          { id: sessionUser?.id, name: sessionUser?.name, email: sessionUser?.email },
+          {
+            action: "create",
+            resource: "absence",
+            resourceLabel: "Absence",
+            detail: `${newAbsence.type} (${newAbsence.startDate} → ${newAbsence.endDate})`,
+          }
+        );
+
         return Response.json({ item: { _id: result.insertedId, ...newAbsence } });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });

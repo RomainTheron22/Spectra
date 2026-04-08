@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import { randomUUID } from "crypto";
 import { getDb } from "../../../../lib/mongodb";
 import { requireApiPermission } from "../../../../lib/authz";
+import { logActivity } from "../../../../lib/activity-log";
 
 const BRIEFS_STORAGE = path.join(process.cwd(), "storage", "briefs");
 
@@ -60,6 +61,14 @@ export async function PATCH(request, context) {
 
     await db.collection("briefs").updateOne({ _id: new ObjectId(id) }, updateOp);
     const updated = await db.collection("briefs").findOne({ _id: new ObjectId(id) });
+
+    logActivity(gate.authz.user, {
+      action: "update",
+      resource: "brief",
+      resourceLabel: "Brief",
+      detail: updated?.nomBrief || id,
+    });
+
     return NextResponse.json({ item: updated }, { status: 200 });
   } catch (err) {
     console.error("PATCH /api/briefs/[id] error:", err);
@@ -80,16 +89,21 @@ export async function DELETE(request, context) {
 
     const db = await getDb();
 
-    const brief = await db.collection("briefs").findOne(
-      { _id: new ObjectId(id) },
-      { projection: { files: 1 } }
-    );
+    const brief = await db.collection("briefs").findOne({ _id: new ObjectId(id) });
     if (brief?.files?.length) {
       const briefDir = path.join(BRIEFS_STORAGE, id);
       await fs.rm(briefDir, { recursive: true, force: true }).catch(() => {});
     }
 
     await db.collection("briefs").deleteOne({ _id: new ObjectId(id) });
+
+    logActivity(gate.authz.user, {
+      action: "delete",
+      resource: "brief",
+      resourceLabel: "Brief",
+      detail: brief?.nomBrief || id,
+    });
+
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
     console.error("DELETE /api/briefs/[id] error:", err);

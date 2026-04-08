@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "../../../../lib/mongodb";
 import { requireApiPermission } from "../../../../lib/authz";
+import { logActivity } from "../../../../lib/activity-log";
 
 function toSafeNumber(v) {
   if (v === "" || v === null || v === undefined) return null;
@@ -58,6 +59,14 @@ export async function PATCH(request, context) {
     );
 
     const updated = await db.collection("inventaire").findOne({ _id: new ObjectId(id) });
+
+    logActivity(gate.authz.user, {
+      action: "update",
+      resource: "inventaire",
+      resourceLabel: "Inventaire",
+      detail: updated?.produit || id,
+    });
+
     return NextResponse.json({ item: updated }, { status: 200 });
   } catch (err) {
     console.error("PATCH /api/inventaire/[id] error:", err);
@@ -83,7 +92,15 @@ export async function DELETE(request, context) {
     if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
     const db = await getDb();
+    const toDelete = await db.collection("inventaire").findOne({ _id: new ObjectId(id) });
     await db.collection("inventaire").deleteOne({ _id: new ObjectId(id) });
+
+    logActivity(gate.authz.user, {
+      action: "delete",
+      resource: "inventaire",
+      resourceLabel: "Inventaire",
+      detail: toDelete?.produit || id,
+    });
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {

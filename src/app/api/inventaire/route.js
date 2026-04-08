@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../lib/mongodb";
 import { requireApiPermission } from "../../../lib/authz";
+import { logActivity } from "../../../lib/activity-log";
 
 function toSafeNumber(v) {
   if (v === "" || v === null || v === undefined) return null;
@@ -64,6 +65,13 @@ export async function POST(req) {
     };
 
     const result = await db.collection("inventaire").insertOne(doc);
+
+    logActivity(gate.authz.user, {
+      action: "create",
+      resource: "inventaire",
+      resourceLabel: "Inventaire",
+      detail: doc.produit || "",
+    });
 
     return NextResponse.json({ item: { ...doc, _id: result.insertedId } }, { status: 201 });
   } catch (err) {

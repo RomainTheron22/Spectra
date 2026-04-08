@@ -6,6 +6,53 @@
   gap: 22px;
 }
 
+/* ── Navigation onglets ──────────────────────────────────── */
+.mainNav {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  border-bottom: 2px solid rgba(15, 23, 42, 0.1);
+  margin-top: -6px;
+}
+
+.navItem,
+.navItemActive {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 0;
+  color: var(--color-text-muted);
+}
+
+.navItemActive {
+  color: var(--active-from);
+}
+
+.navItemActive::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--active-from);
+  border-radius: 2px 2px 0 0;
+}
+
+.navItem:hover {
+  color: var(--color-text);
+  background: rgba(15, 23, 42, 0.04);
+}
+
 .headerRow {
   display: flex;
   align-items: center;
@@ -342,6 +389,75 @@
   }
 
   .roleForm {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Historique Spectra ───────────────────────────────────── */
+
+.histSearchBar {
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.histDate {
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.histUser {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.histEmail {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.histBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.histDetail {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.histPagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.histPageInfo {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  .histSearchBar {
     grid-template-columns: 1fr;
   }
 }
