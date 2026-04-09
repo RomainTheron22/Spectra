@@ -34,6 +34,7 @@ export async function PATCH(request, context) {
         }
 
         if ("contenu" in payload) $set.contenu = Array.isArray(payload.contenu) ? payload.contenu : [];
+        if ("modules" in payload) $set.modules = Array.isArray(payload.modules) ? payload.modules : [];
         if ("photos" in payload) $set.photos = Array.isArray(payload.photos) ? payload.photos : [];
         if ("sorties" in payload) {
             $set.sorties = Array.isArray(payload.sorties) ? payload.sorties : [];

@@ -38,6 +38,7 @@ export async function POST(req) {
             type: payload.type || "Kit", // Kit | Machine | Accessoire
             description: payload.description || "",
             contenu: Array.isArray(payload.contenu) ? payload.contenu : [],
+            modules: Array.isArray(payload.modules) ? payload.modules : [],
             statut: payload.statut || "Disponible", // Disponible | En tournage | En maintenance | Hors service
             photos: Array.isArray(payload.photos) ? payload.photos : [],
             sorties: Array.isArray(payload.sorties) ? payload.sorties : [],

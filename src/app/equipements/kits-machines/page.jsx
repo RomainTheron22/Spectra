@@ -55,7 +55,10 @@ export default function KitsMachinesPage() {
     const [selected, setSelected] = useState(null);
     const [detailTab, setDetailTab] = useState("infos");
 
-    // Sortie Modal (enregistrer une sortie/retour)
+    // Modules
+    const [modulesInput, setModulesInput] = useState("");
+
+    // Sortie Modal
     const [sortieOpen, setSortieOpen] = useState(false);
     const [sortieForm, setSortieForm] = useState({
         type: "sortie",
@@ -63,6 +66,9 @@ export default function KitsMachinesPage() {
         commentaire: "",
         etatRetour: "ras",
         date: "",
+        dateRetourPrevue: "",
+        checklistItems: [],
+        retourItems: [],
     });
 
     const [form, setForm] = useState({
@@ -77,17 +83,10 @@ export default function KitsMachinesPage() {
     const canSubmit = useMemo(() => String(form.nom).trim().length > 0, [form.nom]);
 
     const resetForm = () => {
-        setForm({
-            nom: "",
-            type: TYPES[0],
-            description: "",
-            statut: STATUTS[0],
-            contenu: [""],
-        });
+        setForm({ nom: "", type: TYPES[0], description: "", statut: STATUTS[0], contenu: [""] });
         setEditingId(null);
     };
 
-    // Load items
     useEffect(() => {
         let cancelled = false;
         (async () => {
@@ -110,7 +109,7 @@ export default function KitsMachinesPage() {
         const q = search.trim().toLowerCase();
         if (!q) return items;
         return items.filter((item) => {
-            const blob = `${item.nom || ""} ${item.type || ""} ${item.description || ""} ${item.statut || ""} ${(item.contenu || []).join(" ")}`.toLowerCase();
+            const blob = `${item.nom || ""} ${item.type || ""} ${item.description || ""} ${item.statut || ""} ${(item.contenu || []).join(" ")} ${(item.modules || []).join(" ")}`.toLowerCase();
             return blob.includes(q);
         });
     }, [items, search]);
@@ -189,25 +188,116 @@ export default function KitsMachinesPage() {
         setSelected(item);
         setDetailTab("infos");
         setDetailOpen(true);
+        setModulesInput("");
     };
 
     const closeDetail = () => {
         setDetailOpen(false);
         setSelected(null);
         setDetailTab("infos");
+        setModulesInput("");
     };
 
-    // Sorties (enregistrer sortie/retour)
+    // Modules management
+    const handleAddModule = async () => {
+        const nom = modulesInput.trim();
+        if (!nom || !selected?.id) return;
+        setModulesInput("");
+        const nextModules = [...(selected.modules || []), nom];
+        const optimistic = { ...selected, modules: nextModules };
+        setSelected(optimistic);
+        setItems((prev) => prev.map((x) => (x.id === selected.id ? optimistic : x)));
+
+        await fetch(`/api/equipements/kits/${encodeURIComponent(selected.id)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ modules: nextModules }),
+        });
+    };
+
+    const handleRemoveModule = async (idx) => {
+        if (!selected?.id) return;
+        const nextModules = (selected.modules || []).filter((_, i) => i !== idx);
+        const optimistic = { ...selected, modules: nextModules };
+        setSelected(optimistic);
+        setItems((prev) => prev.map((x) => (x.id === selected.id ? optimistic : x)));
+
+        await fetch(`/api/equipements/kits/${encodeURIComponent(selected.id)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ modules: nextModules }),
+        });
+    };
+
+    // PDF export
+    const exportChecklistPDF = () => {
+        if (!selected) return;
+        const contenuItems = selected.contenu || [];
+        const moduleItems = selected.modules || [];
+        const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Checklist — ${selected.nom || "Kit"}</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 30px; color: #0f172a; max-width: 700px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+  .section-title { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin: 20px 0 8px 0; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+  .item { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid #f1f5f9; }
+  .checkbox { width: 16px; height: 16px; border: 2px solid #94a3b8; border-radius: 3px; flex-shrink: 0; }
+  .label { font-size: 14px; flex: 1; }
+  .badge { font-size: 10px; font-weight: 700; background: #dbeafe; color: #1e40af; border-radius: 4px; padding: 2px 6px; }
+  .signature-row { display: flex; gap: 32px; margin-top: 48px; padding-top: 16px; border-top: 2px solid #e2e8f0; }
+  .sig-block { flex: 1; }
+  .sig-label { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 28px; }
+  .sig-line { border-bottom: 1px solid #94a3b8; }
+  @media print { body { padding: 16px; } }
+</style>
+</head>
+<body>
+<h1>${selected.nom || "Checklist Kit"}</h1>
+<div class="subtitle">Type : ${selected.type || "Kit"}&nbsp;&nbsp;|&nbsp;&nbsp;Statut : ${selected.statut || ""}&nbsp;&nbsp;|&nbsp;&nbsp;Imprimé le : ${new Date().toLocaleDateString("fr-FR")}</div>
+<div class="section-title">Contenu de base (${contenuItems.length} élément${contenuItems.length > 1 ? "s" : ""})</div>
+${contenuItems.map((c) => `<div class="item"><div class="checkbox"></div><div class="label">${c}</div></div>`).join("") || '<div style="font-size:13px;color:#94a3b8;padding:8px 0;">Aucun élément</div>'}
+${moduleItems.length > 0 ? `
+<div class="section-title">Modules optionnels (${moduleItems.length})</div>
+${moduleItems.map((m) => `<div class="item"><div class="checkbox"></div><div class="label">${m} <span class="badge">Module</span></div></div>`).join("")}
+` : ""}
+<div class="signature-row">
+  <div class="sig-block"><div class="sig-label">Sorti par</div><div class="sig-line"></div></div>
+  <div class="sig-block"><div class="sig-label">Date de sortie</div><div class="sig-line"></div></div>
+  <div class="sig-block"><div class="sig-label">Projet</div><div class="sig-line"></div></div>
+</div>
+</body>
+</html>`;
+        const win = window.open("", "_blank");
+        if (!win) return;
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        setTimeout(() => win.print(), 400);
+    };
+
+    // Sorties
     const openSortie = (type) => {
         const today = new Date();
         const pad = (n) => String(n).padStart(2, "0");
         const ymd = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+        const contenuItems = (selected?.contenu || []).map((nom) => ({ nom, checked: true, isModule: false }));
+        const moduleItems = (selected?.modules || []).map((nom) => ({ nom, checked: false, isModule: true }));
+        const allItems = [...contenuItems, ...moduleItems];
+
         setSortieForm({
             type,
             projet: "",
             commentaire: "",
             etatRetour: "ras",
             date: ymd,
+            dateRetourPrevue: "",
+            checklistItems: type === "sortie" ? allItems : [],
+            retourItems: type === "retour" ? allItems.map((item) => ({ ...item, present: true, etat: "bon" })) : [],
         });
         setSortieOpen(true);
     };
@@ -224,6 +314,9 @@ export default function KitsMachinesPage() {
             commentaire: sortieForm.commentaire,
             etatRetour: sortieForm.type === "retour" ? sortieForm.etatRetour : "",
             date: sortieForm.date || new Date().toISOString(),
+            dateRetourPrevue: sortieForm.type === "sortie" ? sortieForm.dateRetourPrevue : "",
+            checklistItems: sortieForm.type === "sortie" ? sortieForm.checklistItems : [],
+            retourItems: sortieForm.type === "retour" ? sortieForm.retourItems : [],
         };
 
         const nextSorties = [...currentSorties, newSortie];
@@ -232,10 +325,7 @@ export default function KitsMachinesPage() {
         const res = await fetch(`/api/equipements/kits/${encodeURIComponent(String(selected.id))}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                sorties: nextSorties,
-                statut: nextStatut,
-            }),
+            body: JSON.stringify({ sorties: nextSorties, statut: nextStatut }),
         });
 
         const data = await res.json().catch(() => null);
@@ -248,7 +338,6 @@ export default function KitsMachinesPage() {
         setItems((prev) => prev.map((x) => (x.id === saved.id ? saved : x)));
         setSelected(saved);
 
-        // Ajouter à l'historique global
         try {
             await fetch("/api/equipements/historique", {
                 method: "POST",
@@ -328,6 +417,11 @@ export default function KitsMachinesPage() {
                                         {item.statut || "Disponible"}
                                     </span>
                                     <span className={styles.typePill}>{item.type || "Kit"}</span>
+                                    {(item.modules || []).length > 0 ? (
+                                        <span className={styles.moduleCountPill}>
+                                            {item.modules.length} module{item.modules.length > 1 ? "s" : ""}
+                                        </span>
+                                    ) : null}
                                 </div>
                                 <div className={styles.cardActions}>
                                     <button
@@ -452,6 +546,9 @@ export default function KitsMachinesPage() {
                                 <button type="button" className={detailTab === "contenu" ? styles.tabActive : styles.tab} onClick={() => setDetailTab("contenu")}>
                                     Contenu
                                 </button>
+                                <button type="button" className={detailTab === "modules" ? styles.tabActive : styles.tab} onClick={() => setDetailTab("modules")}>
+                                    Modules ({(selected.modules || []).length})
+                                </button>
                                 <button type="button" className={detailTab === "sorties" ? styles.tabActive : styles.tab} onClick={() => setDetailTab("sorties")}>
                                     Sorties ({selected.nombreSorties || 0})
                                 </button>
@@ -500,6 +597,9 @@ export default function KitsMachinesPage() {
                                 </div>
 
                                 <div className={styles.footer}>
+                                    <button type="button" className={styles.iconButton} onClick={exportChecklistPDF} title="Exporter checklist PDF">
+                                        📄 PDF
+                                    </button>
                                     <button type="button" className={styles.submitBtn} onClick={() => openSortie("sortie")}>
                                         📤 Enregistrer une sortie
                                     </button>
@@ -520,34 +620,95 @@ export default function KitsMachinesPage() {
                                     <div className={styles.muted}>Aucun element dans ce kit.</div>
                                 )}
                             </div>
+                        ) : detailTab === "modules" ? (
+                            <div className={styles.modulesSection}>
+                                <div className={styles.modulesList}>
+                                    {(selected.modules || []).length === 0 ? (
+                                        <div className={styles.muted}>Aucun module optionnel. Ajoutez des modules ci-dessous.</div>
+                                    ) : (
+                                        (selected.modules || []).map((mod, idx) => (
+                                            <div key={idx} className={styles.moduleRow}>
+                                                <span className={styles.moduleRowName}>{mod}</span>
+                                                <button
+                                                    type="button"
+                                                    className={styles.removeBtn}
+                                                    onClick={() => handleRemoveModule(idx)}
+                                                >
+                                                    ✖
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                <div className={styles.moduleAddRow}>
+                                    <input
+                                        className={styles.contenuRowInput}
+                                        value={modulesInput}
+                                        onChange={(e) => setModulesInput(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddModule(); } }}
+                                        placeholder="Ex: Micro cravate, Lumière annulaire..."
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.submitBtn}
+                                        onClick={handleAddModule}
+                                        style={{ padding: "8px 14px", fontSize: 13, whiteSpace: "nowrap" }}
+                                    >
+                                        Ajouter
+                                    </button>
+                                </div>
+                            </div>
                         ) : (
                             <div className={styles.sortiesList}>
                                 {sortiesSorted.length === 0 ? (
                                     <div className={styles.muted}>Aucune sortie enregistree.</div>
                                 ) : (
-                                    sortiesSorted.map((sortie) => (
-                                        <div key={sortie.id} className={styles.sortieCard}>
-                                            <div className={styles.sortieHeader}>
-                                                <div>
-                                                    <span className={styles.sortieDate}>{formatDate(sortie.date)}</span>
-                                                    {sortie.projet ? <span className={styles.sortieProjet}> — {sortie.projet}</span> : null}
-                                                </div>
-                                                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                                                    <span className={`${styles.statusPill} ${sortie.type === "sortie" ? styles.statusBlue : styles.statusGreen}`}>
-                                                        {sortie.type === "sortie" ? "📤 Sortie" : "📥 Retour"}
-                                                    </span>
-                                                    {sortie.type === "retour" && sortie.etatRetour ? (
-                                                        <span className={`${styles.etatPill} ${styles[etatClass(sortie.etatRetour)]}`}>
-                                                            {etatLabel(sortie.etatRetour)}
+                                    sortiesSorted.map((sortie) => {
+                                        const manquants = (sortie.retourItems || []).filter((i) => !i.present).length;
+                                        const abimes = (sortie.retourItems || []).filter((i) => i.present && i.etat !== "bon").length;
+                                        return (
+                                            <div key={sortie.id} className={styles.sortieCard}>
+                                                <div className={styles.sortieHeader}>
+                                                    <div>
+                                                        <span className={styles.sortieDate}>{formatDate(sortie.date)}</span>
+                                                        {sortie.projet ? <span className={styles.sortieProjet}> — {sortie.projet}</span> : null}
+                                                    </div>
+                                                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                                        <span className={`${styles.statusPill} ${sortie.type === "sortie" ? styles.statusBlue : styles.statusGreen}`}>
+                                                            {sortie.type === "sortie" ? "📤 Sortie" : "📥 Retour"}
                                                         </span>
-                                                    ) : null}
+                                                        {sortie.type === "retour" && sortie.etatRetour ? (
+                                                            <span className={`${styles.etatPill} ${styles[etatClass(sortie.etatRetour)]}`}>
+                                                                {etatLabel(sortie.etatRetour)}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
                                                 </div>
+                                                {sortie.type === "sortie" && sortie.dateRetourPrevue ? (
+                                                    <div className={styles.sortieComment} style={{ color: "var(--color-text-muted)" }}>
+                                                        Retour prévu : {formatDate(sortie.dateRetourPrevue)}
+                                                    </div>
+                                                ) : null}
+                                                {sortie.type === "retour" && (manquants > 0 || abimes > 0) ? (
+                                                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                                        {manquants > 0 ? (
+                                                            <span className={`${styles.etatPill} ${styles.etatReparer}`}>
+                                                                {manquants} manquant{manquants > 1 ? "s" : ""}
+                                                            </span>
+                                                        ) : null}
+                                                        {abimes > 0 ? (
+                                                            <span className={`${styles.etatPill} ${styles.etatRevoir}`}>
+                                                                {abimes} abimé/cassé{abimes > 1 ? "s" : ""}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                ) : null}
+                                                {sortie.commentaire ? (
+                                                    <div className={styles.sortieComment}>{sortie.commentaire}</div>
+                                                ) : null}
                                             </div>
-                                            {sortie.commentaire ? (
-                                                <div className={styles.sortieComment}>{sortie.commentaire}</div>
-                                            ) : null}
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         )}
@@ -569,18 +730,92 @@ export default function KitsMachinesPage() {
                             <input className={styles.input} value={sortieForm.projet} onChange={(e) => setSortieForm((p) => ({ ...p, projet: e.target.value }))} placeholder="Nom du projet / tournage" />
                         </div>
 
-                        {sortieForm.type === "retour" ? (
+                        {sortieForm.type === "sortie" ? (
                             <div className={styles.field}>
-                                <label className={styles.label}>Etat au retour</label>
+                                <label className={styles.label}>Date de retour prévue</label>
+                                <input className={styles.input} type="date" value={sortieForm.dateRetourPrevue} onChange={(e) => setSortieForm((p) => ({ ...p, dateRetourPrevue: e.target.value }))} />
+                            </div>
+                        ) : (
+                            <div className={styles.field}>
+                                <label className={styles.label}>Etat global au retour</label>
                                 <select className={styles.input} value={sortieForm.etatRetour} onChange={(e) => setSortieForm((p) => ({ ...p, etatRetour: e.target.value }))}>
                                     {ETATS_RETOUR.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
                                 </select>
+                            </div>
+                        )}
+
+                        {sortieForm.type === "sortie" && sortieForm.checklistItems.length > 0 ? (
+                            <div className={styles.fieldWide}>
+                                <div className={styles.checklistSection}>
+                                    <div className={styles.checklistTitle}>Checklist de départ</div>
+                                    <div className={styles.checklistItems}>
+                                        {sortieForm.checklistItems.map((item, idx) => (
+                                            <label key={idx} className={styles.checklistItem}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={item.checked}
+                                                    onChange={(e) => setSortieForm((p) => {
+                                                        const next = [...p.checklistItems];
+                                                        next[idx] = { ...next[idx], checked: e.target.checked };
+                                                        return { ...p, checklistItems: next };
+                                                    })}
+                                                />
+                                                <span className={styles.checklistItemName}>{item.nom}</span>
+                                                {item.isModule ? <span className={styles.moduleBadge}>Module</span> : null}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {sortieForm.type === "retour" && sortieForm.retourItems.length > 0 ? (
+                            <div className={styles.fieldWide}>
+                                <div className={styles.checklistSection}>
+                                    <div className={styles.checklistTitle}>État des éléments au retour</div>
+                                    <div className={styles.checklistItems}>
+                                        {sortieForm.retourItems.map((item, idx) => (
+                                            <div key={idx} className={styles.retourItemRow}>
+                                                <label className={styles.retourItemLabel}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={item.present}
+                                                        onChange={(e) => setSortieForm((p) => {
+                                                            const next = [...p.retourItems];
+                                                            next[idx] = { ...next[idx], present: e.target.checked };
+                                                            return { ...p, retourItems: next };
+                                                        })}
+                                                    />
+                                                    <span className={styles.checklistItemName}>{item.nom}</span>
+                                                    {item.isModule ? <span className={styles.moduleBadge}>Module</span> : null}
+                                                </label>
+                                                {item.present ? (
+                                                    <select
+                                                        className={styles.retourEtatSelect}
+                                                        value={item.etat}
+                                                        onChange={(e) => setSortieForm((p) => {
+                                                            const next = [...p.retourItems];
+                                                            next[idx] = { ...next[idx], etat: e.target.value };
+                                                            return { ...p, retourItems: next };
+                                                        })}
+                                                    >
+                                                        <option value="bon">✅ Bon état</option>
+                                                        <option value="abimé">⚠️ Abîmé</option>
+                                                        <option value="cassé">❌ Cassé</option>
+                                                    </select>
+                                                ) : (
+                                                    <span className={styles.manquantBadge}>Manquant</span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         ) : null}
 
                         <div className={styles.fieldWide}>
                             <label className={styles.label}>Commentaire</label>
-                            <textarea className={styles.textarea} rows={4} value={sortieForm.commentaire} onChange={(e) => setSortieForm((p) => ({ ...p, commentaire: e.target.value }))} placeholder={sortieForm.type === "retour" ? "Ex: Cable XLR #3 a remplacer, micro OK..." : "Notes pour cette sortie..."} />
+                            <textarea className={styles.textarea} rows={3} value={sortieForm.commentaire} onChange={(e) => setSortieForm((p) => ({ ...p, commentaire: e.target.value }))} placeholder={sortieForm.type === "retour" ? "Ex: Cable XLR #3 a remplacer, micro OK..." : "Notes pour cette sortie..."} />
                         </div>
                     </div>
 
