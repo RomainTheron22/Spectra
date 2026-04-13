@@ -16,78 +16,48 @@ const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août"
 const JOURS_HEAD = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 const JOURS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
 const DEFAULT_CONGES = 30;
+const HOUR_START = 7;
+const HOUR_END = 21;
 
-// Couleurs par branche de projet
-const BRANCH_COLORS = {
-  "Agency": "#e11d48",
-  "CreativeGen": "#7c3aed",
-  "Entertainment": "#0891b2",
-  "SFX": "#ca8a04",
-  "default": "#6b7280",
-};
+const BRANCH_COLORS = { "Agency": "#e11d48", "CreativeGen": "#7c3aed", "Entertainment": "#0891b2", "SFX": "#ca8a04", "default": "#6b7280" };
+function projectColor(b) { return BRANCH_COLORS[b] || BRANCH_COLORS.default; }
+function normalizeProject(c) { return { id: String(c._id), title: c.nom || c.nomContrat || "Sans nom", branche: c.branche || "—", color: projectColor(c.branche), statut: c.statut || "—", dateDebut: c.dateDebut || null, dateFin: c.dateFin || null, assignees: c.assignees || c.equipe || [] }; }
 
-function projectColor(branche) {
-  return BRANCH_COLORS[branche] || BRANCH_COLORS.default;
-}
-
-function normalizeProject(contrat) {
-  return {
-    id: String(contrat._id),
-    title: contrat.nom || contrat.nomContrat || "Sans nom",
-    branche: contrat.branche || "—",
-    color: projectColor(contrat.branche),
-    statut: contrat.statut || "—",
-    dateDebut: contrat.dateDebut || null,
-    dateFin: contrat.dateFin || null,
-    assignees: contrat.assignees || contrat.equipe || [],
-  };
-}
-
-// Phrases du jour — inspirantes, contextuelles, rotatives
-const DAILY_QUOTES = [
-  { emoji: "🚀", msg: "Chaque jour est une nouvelle chance de créer quelque chose d'incroyable", author: "" },
-  { emoji: "🎬", msg: "Les meilleures histoires commencent par 'Et si on essayait ?'", author: "" },
-  { emoji: "✨", msg: "La créativité, c'est l'intelligence qui s'amuse", author: "Albert Einstein" },
-  { emoji: "🌟", msg: "Fais de chaque détail une oeuvre", author: "" },
-  { emoji: "💡", msg: "L'imagination est le début de la création", author: "George Bernard Shaw" },
-  { emoji: "🎯", msg: "Vise la lune. Même en cas d'échec, tu atterriras parmi les étoiles", author: "Oscar Wilde" },
-  { emoji: "🔥", msg: "Le talent, c'est l'audace que les autres n'ont pas eue", author: "" },
-  { emoji: "🌈", msg: "Après la pluie, le beau temps — et des projets encore plus fous", author: "" },
-  { emoji: "🎨", msg: "Chaque projet est une toile blanche. À toi de jouer.", author: "" },
-  { emoji: "⚡", msg: "L'énergie d'une équipe, c'est sa plus grande force créative", author: "" },
-  { emoji: "🌺", msg: "Prends le temps de bien faire. La qualité, ça se ressent.", author: "" },
-  { emoji: "🏔️", msg: "Les grands projets se construisent un pas après l'autre", author: "" },
-  { emoji: "🎭", msg: "Le spectacle continue — et il est magnifique", author: "" },
-  { emoji: "💫", msg: "Aujourd'hui est un bon jour pour faire avancer les choses", author: "" },
-];
-
-function getDailyQuote() {
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
-}
-
-// Vibes congés — chaque palier a sa référence culturelle
 const CONGE_VIBES = [
-  { min: 30, emoji: "🌍", msg: "30 jours. Phileas Fogg a fait le tour du monde en 80 — tu as de la marge", sub: "Six semaines d'aventure t'attendent" },
-  { min: 28, emoji: "🌙", msg: "28 jours. Un cycle lunaire complet. Assez pour se transformer", sub: "La lune fait le tour, toi aussi" },
-  { min: 25, emoji: "🎄", msg: "25 jours. Comme un calendrier de l'Avent — chaque jour est une surprise", sub: "Ouvre chaque case avec impatience" },
-  { min: 21, emoji: "🃏", msg: "21. Blackjack. Tu as la main parfaite", sub: "Trois semaines de pur kiff" },
-  { min: 18, emoji: "⛳", msg: "18 jours. Un parcours de golf complet. Trou par trou, profite", sub: "Prends ton temps, vise le green" },
-  { min: 15, emoji: "🏉", msg: "15 jours. Comme une équipe de rugby — en force", sub: "Deux semaines et demie d'évasion" },
-  { min: 12, emoji: "🕐", msg: "12 jours. 12 coups de minuit. Cendrillon avait moins de temps que toi", sub: "Et elle a quand même dansé" },
-  { min: 10, emoji: "🔟", msg: "10 jours. Les 10 Commandements ont changé le monde — imagine ce que tu peux faire", sub: "Deux semaines les pieds dans le sable" },
-  { min: 7, emoji: "🌅", msg: "7 jours. Le monde a été créé en 7 jours. On a de quoi encore faire pas mal de choses", sub: "Une semaine pour tout réinventer" },
-  { min: 5, emoji: "🖐️", msg: "5 jours. Les 5 sens. Prends le temps de tous les éveiller", sub: "Une semaine pour se reconnecter" },
-  { min: 3, emoji: "🧞", msg: "3 jours. Trois voeux. Choisis-les bien", sub: "Un long week-end magique" },
-  { min: 2, emoji: "🎭", msg: "2 jours. Pile et face. L'aventure ou le repos ? Pourquoi pas les deux", sub: "48h rien qu'à toi" },
-  { min: 1, emoji: "🎯", msg: "1 jour. 24h. 1440 minutes. Chacune compte — fais-en un chef-d'oeuvre", sub: "Une journée, une histoire" },
-  { min: 0, emoji: "⚡", msg: "0 jour. Batterie à 100%. Tu as tout donné — et la team le sait", sub: "Full power. Respect." },
+  { min: 30, emoji: "🌍", msg: "Le monde entier est à toi" }, { min: 25, emoji: "🌅", msg: "Un mois de soleil t'attend" },
+  { min: 20, emoji: "🗾", msg: "Trois semaines au Japon" }, { min: 15, emoji: "🛤️", msg: "Road trip sans fin" },
+  { min: 10, emoji: "🏖️", msg: "Deux semaines les pieds dans le sable" }, { min: 7, emoji: "🌅", msg: "Le monde a été créé en 7 jours" },
+  { min: 4, emoji: "🛫", msg: "City-trip à Lisbonne" }, { min: 2, emoji: "🏔️", msg: "Week-end à la montagne" },
+  { min: 1, emoji: "🧘‍♀️", msg: "24h rien que pour toi" }, { min: 0, emoji: "💫", msg: "Full energy !" },
 ];
 function getVibe(j) { for (const v of CONGE_VIBES) { if (j >= v.min) return v; } return CONGE_VIBES[CONGE_VIBES.length - 1]; }
+
 function toYMD(d) { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, "0"); const day = String(d.getDate()).padStart(2, "0"); return `${y}-${m}-${day}`; }
 function countWorkDays(s, e, half) { if (half) return 0.5; let c = 0; const d = new Date(s); const end = new Date(e); while (d <= end) { if (d.getDay() !== 0 && d.getDay() !== 6) c++; d.setDate(d.getDate() + 1); } return c; }
 function dayOfWeekFr(d) { return JOURS_FULL[(d.getDay() + 6) % 7]; }
-function formatDateFr(d) { return `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`; }
+function formatDateShort(d) { return `${d.getDate()} ${MOIS[d.getMonth()].slice(0, 3)}`; }
+
+// Phrase dynamique liée au projet le plus proche
+function getProjectQuote(projects) {
+  const now = new Date(); const todayStr = toYMD(now);
+  // Trouver le projet le plus proche (en cours ou à venir)
+  const upcoming = projects
+    .filter((p) => p.dateFin >= todayStr)
+    .sort((a, b) => (a.dateDebut > b.dateDebut ? 1 : -1));
+
+  if (!upcoming.length) return { msg: "Pas de projet en vue — profites-en pour préparer la suite", icon: "🧭" };
+
+  const hot = upcoming[0];
+  const daysUntil = Math.ceil((new Date(hot.dateDebut) - now) / 86400000);
+  const daysLeft = Math.ceil((new Date(hot.dateFin) - now) / 86400000);
+  const isActive = hot.dateDebut <= todayStr;
+
+  if (isActive && daysLeft <= 3) return { msg: `${hot.title} — dernière ligne droite ! On envoie du lourd`, icon: "🔥", color: hot.color };
+  if (isActive) return { msg: `${hot.title} en cours — on tient un truc incroyable`, icon: "🎬", color: hot.color };
+  if (daysUntil <= 2) return { msg: `${hot.title} dans ${daysUntil}j — préparez-vous, ça va être énorme !`, icon: "⚡", color: hot.color };
+  if (daysUntil <= 7) return { msg: `${hot.title} arrive cette semaine — la team est prête`, icon: "🚀", color: hot.color };
+  return { msg: `Prochain projet : ${hot.title} — ${hot.branche}`, icon: "📌", color: hot.color };
+}
 
 function Sparkles({ active }) {
   if (!active) return null;
@@ -99,10 +69,10 @@ export default function MonPlanning() {
   const [absences, setAbsences] = useState([]);
   const [profile, setProfile] = useState(null);
   const [calDate, setCalDate] = useState(new Date());
-  const [view, setView] = useState("month"); // month | week | day
-  const [selectedDate, setSelectedDate] = useState(null); // panel latéral
+  const [view, setView] = useState("month");
+  const [selectedDate, setSelectedDate] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(""); // "absence" | "projet" | "note" | "choose"
+  const [modalType, setModalType] = useState("");
   const [form, setForm] = useState({ type: "", dateDebut: "", dateFin: "", demiJournee: "", commentaire: "" });
   const [projForm, setProjForm] = useState({ nom: "", branche: "", dateDebut: "", dateFin: "", description: "" });
   const [noteForm, setNoteForm] = useState({ contenu: "", dateDebut: "" });
@@ -120,10 +90,8 @@ export default function MonPlanning() {
   const [gcalSelectedIds, setGcalSelectedIds] = useState([]);
   const [gcalConnected, setGcalConnected] = useState(false);
   const [showCalPicker, setShowCalPicker] = useState(false);
-
   const [projects, setProjects] = useState([]);
 
-  // Mes missions = projets où mon userId est dans les assignees
   const myMissions = useMemo(() => {
     if (!profile?.userId) return [];
     return projects.filter((p) => Array.isArray(p.assignees) && p.assignees.some((a) => String(a) === String(profile.userId) || String(a._id || a.id || a) === String(profile.userId)));
@@ -141,23 +109,17 @@ export default function MonPlanning() {
       const absData = await absRes.json(); setAbsences(absData.items || []);
       try { const profData = await profRes.json(); if (profData.items?.length) setProfile(profData.items[0]); } catch {}
       try { const projData = await projRes.json(); setProjects((projData.items || []).map(normalizeProject).filter((p) => p.dateDebut && p.dateFin)); } catch {}
-      // Google Calendar — fetch calendriers + events
       try {
         const calRes = await fetch("/api/planning/google-calendar/calendars", { cache: "no-store" });
         const calData = await calRes.json();
-        if (calData.connected) {
-          setGcalConnected(true);
-          setGcalCalendars(calData.calendars || []);
-          setGcalSelectedIds(calData.selectedIds || []);
-        }
+        if (calData.connected) { setGcalConnected(true); setGcalCalendars(calData.calendars || []); setGcalSelectedIds(calData.selectedIds || []); }
         const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
-        const from = new Date(y, m, 1).toISOString();
-        const to = new Date(y, m + 2, 0).toISOString();
+        const from = new Date(y, m - 1, 1).toISOString(); const to = new Date(y, m + 2, 0).toISOString();
         const gcRes = await fetch(`/api/planning/google-calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { cache: "no-store" });
         const gcData = await gcRes.json();
         if (gcData.items) setGcalEvents(gcData.items);
       } catch {}
-      setTimeout(() => setLoaded(true), 100);
+      setTimeout(() => setLoaded(true), 80);
     })();
     return () => { cancelled = true; };
   }, []);
@@ -170,9 +132,8 @@ export default function MonPlanning() {
     return { credit, pris, reste: credit - pris };
   }, [absences, profile]);
   const vibe = useMemo(() => getVibe(solde.reste), [solde.reste]);
-  const dailyQuote = useMemo(() => getDailyQuote(), []);
+  const projectQuote = useMemo(() => getProjectQuote(projects), [projects]);
 
-  // Récap absences par type
   const absRecap = useMemo(() => {
     const year = new Date().getFullYear();
     const thisYear = absences.filter((a) => a.statut === "valide" && a.dateDebut?.startsWith(String(year)));
@@ -180,7 +141,6 @@ export default function MonPlanning() {
       conge: thisYear.filter((a) => a.type === "conge").reduce((s, a) => s + countWorkDays(a.dateDebut, a.dateFin, a.demiJournee), 0),
       tt: thisYear.filter((a) => a.type === "tt").reduce((s, a) => s + countWorkDays(a.dateDebut, a.dateFin, a.demiJournee), 0),
       maladie: thisYear.filter((a) => a.type === "maladie").reduce((s, a) => s + countWorkDays(a.dateDebut, a.dateFin, a.demiJournee), 0),
-      autre: thisYear.filter((a) => a.type === "absence_autre").reduce((s, a) => s + countWorkDays(a.dateDebut, a.dateFin, a.demiJournee), 0),
     };
   }, [absences]);
 
@@ -188,26 +148,19 @@ export default function MonPlanning() {
   const calEvents = useMemo(() => {
     const map = {};
     const add = (dateStr, event) => { if (!map[dateStr]) map[dateStr] = []; map[dateStr].push(event); };
-    if (showProjets) { for (const p of projects) { const d = new Date(p.dateDebut); const end = new Date(p.dateFin); while (d <= end) { add(toYMD(d), { type: "projet", ...p }); d.setDate(d.getDate() + 1); } } }
-    if (showMissions) { for (const p of myMissions) { const d = new Date(p.dateDebut); const end = new Date(p.dateFin); while (d <= end) { const k = toYMD(d); const ex = map[k]?.find((e) => e.type === "projet" && e.id === p.id); if (ex) ex.isMine = true; else add(k, { type: "mission", ...p, isMine: true }); d.setDate(d.getDate() + 1); } } }
-    if (showAbsences) { for (const a of absences) { const d = new Date(a.dateDebut); const end = new Date(a.dateFin); while (d <= end) { add(toYMD(d), { type: "absence", ...a, absType: ABSENCE_TYPES.find((t) => t.value === a.type) }); d.setDate(d.getDate() + 1); } } }
+    if (showProjets) { for (const p of projects) { const d = new Date(p.dateDebut + "T12:00:00"); const end = new Date(p.dateFin + "T12:00:00"); while (d <= end) { add(toYMD(d), { type: "projet", ...p }); d.setDate(d.getDate() + 1); } } }
+    if (showMissions) { for (const p of myMissions) { const d = new Date(p.dateDebut + "T12:00:00"); const end = new Date(p.dateFin + "T12:00:00"); while (d <= end) { const k = toYMD(d); const ex = map[k]?.find((e) => e.type === "projet" && e.id === p.id); if (ex) ex.isMine = true; else add(k, { type: "mission", ...p, isMine: true }); d.setDate(d.getDate() + 1); } } }
+    if (showAbsences) { for (const a of absences) { const d = new Date(a.dateDebut + "T12:00:00"); const end = new Date(a.dateFin + "T12:00:00"); while (d <= end) { add(toYMD(d), { type: "absence", ...a, absType: ABSENCE_TYPES.find((t) => t.value === a.type) }); d.setDate(d.getDate() + 1); } } }
     if (showGcal) {
       for (const ev of gcalEvents) {
         if (!ev.start) continue;
         const isAllDay = !String(ev.start).includes("T");
-        // Parse to local dates
         const startLocal = new Date(ev.start);
         const endLocal = ev.end ? new Date(ev.end) : startLocal;
         const startDate = isAllDay ? String(ev.start).slice(0, 10) : toYMD(startLocal);
         let endDate;
-        if (isAllDay) {
-          // All-day: Google sets end to exclusive next day
-          const ed = new Date(ev.end || ev.start); ed.setDate(ed.getDate() - 1);
-          endDate = String(ev.end || ev.start).slice(0, 10) > startDate ? toYMD(ed) : startDate;
-        } else {
-          endDate = toYMD(endLocal);
-        }
-        // Extract start/end hours for time-grid positioning
+        if (isAllDay) { const ed = new Date(ev.end || ev.start); ed.setDate(ed.getDate() - 1); endDate = String(ev.end || ev.start).slice(0, 10) > startDate ? toYMD(ed) : startDate; }
+        else { endDate = toYMD(endLocal); }
         const startHour = isAllDay ? null : startLocal.getHours() + startLocal.getMinutes() / 60;
         const endHour = isAllDay ? null : endLocal.getHours() + endLocal.getMinutes() / 60;
         const sourceCal = gcalCalendars.find((c) => c.id === ev.calendarId);
@@ -220,221 +173,107 @@ export default function MonPlanning() {
     return map;
   }, [projects, myMissions, absences, gcalEvents, gcalCalendars, showProjets, showMissions, showAbsences, showGcal]);
 
-  // Calendar days for month view
   const calDays = useMemo(() => {
     const y = calDate.getFullYear(), m = calDate.getMonth();
     const first = new Date(y, m, 1); let start = (first.getDay() + 6) % 7;
     const sd = new Date(first); sd.setDate(sd.getDate() - start);
-    const days = [];
-    for (let i = 0; i < 42; i++) { const d = new Date(sd); d.setDate(d.getDate() + i); days.push(d); if (i >= 27 && d.getMonth() !== m) break; }
-    return days;
+    const days = []; for (let i = 0; i < 42; i++) { const d = new Date(sd); d.setDate(d.getDate() + i); days.push(d); if (i >= 27 && d.getMonth() !== m) break; } return days;
   }, [calDate]);
 
-  // Week days for week view
   const weekDays = useMemo(() => {
-    const d = new Date(calDate); const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const mon = new Date(d); mon.setDate(diff);
-    return Array.from({ length: 7 }, (_, i) => { const dd = new Date(mon); dd.setDate(dd.getDate() + i); return dd; });
+    const d = new Date(calDate); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const mon = new Date(d); mon.setDate(diff); return Array.from({ length: 7 }, (_, i) => { const dd = new Date(mon); dd.setDate(dd.getDate() + i); return dd; });
   }, [calDate]);
 
-  // Events for selected date (panel) — grouped by branch
   const selectedEvents = useMemo(() => {
     if (!selectedDate) return { projs: [], missions: [], abs: [], gcalByBranch: {} };
-    const key = toYMD(selectedDate);
-    const all = calEvents[key] || [];
-
-    // Group gcal events by calendar name (= branch)
+    const key = toYMD(selectedDate); const all = calEvents[key] || [];
     const gcalByBranch = {};
-    for (const e of all.filter((e) => e.type === "gcal")) {
-      const branch = e.calendarName || "Agenda";
-      if (!gcalByBranch[branch]) gcalByBranch[branch] = { color: e.color, events: [] };
-      gcalByBranch[branch].events.push(e);
-    }
-
-    return {
-      projs: all.filter((e) => e.type === "projet" && !e.isMine),
-      missions: all.filter((e) => (e.type === "projet" && e.isMine) || e.type === "mission"),
-      abs: all.filter((e) => e.type === "absence"),
-      gcalByBranch,
-    };
+    for (const e of all.filter((e) => e.type === "gcal")) { const branch = e.calendarName || "Agenda"; if (!gcalByBranch[branch]) gcalByBranch[branch] = { color: e.color, events: [] }; gcalByBranch[branch].events.push(e); }
+    return { projs: all.filter((e) => e.type === "projet" && !e.isMine), missions: all.filter((e) => (e.type === "projet" && e.isMine) || e.type === "mission"), abs: all.filter((e) => e.type === "absence"), gcalByBranch };
   }, [selectedDate, calEvents]);
 
-  function handleDayClick(date) {
-    setSelectedDate(date);
-  }
+  function handleDayClick(date) { setSelectedDate(date); }
 
   async function toggleGcalCalendar(calId) {
     const newIds = gcalSelectedIds.includes(calId) ? gcalSelectedIds.filter((id) => id !== calId) : [...gcalSelectedIds, calId];
     setGcalSelectedIds(newIds);
-    // Save d'abord, puis attendre avant de refetch
-    const saveRes = await fetch("/api/planning/google-calendar/calendars", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ calendarIds: newIds }),
-    });
+    const saveRes = await fetch("/api/planning/google-calendar/calendars", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ calendarIds: newIds }) });
     if (!saveRes.ok) return;
-    // Refetch events
     await refetchGcalEvents();
   }
 
   async function refetchGcalEvents() {
     try {
       const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
-      const from = new Date(y, m, 1).toISOString();
-      const to = new Date(y, m + 2, 0).toISOString();
+      const from = new Date(y, m - 1, 1).toISOString(); const to = new Date(y, m + 2, 0).toISOString();
       const gcRes = await fetch(`/api/planning/google-calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { cache: "no-store" });
-      const gcData = await gcRes.json();
-      if (gcData.items) setGcalEvents(gcData.items);
+      const gcData = await gcRes.json(); if (gcData.items) setGcalEvents(gcData.items);
     } catch {}
   }
 
-  function openChoose(dateStr) {
-    setEditId(null);
-    setModalType("choose");
-    setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" });
-    setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" });
-    setNoteForm({ contenu: "", dateDebut: dateStr || "" });
-    setModalOpen(true);
-  }
-
-  function openAbsenceForm(dateStr) {
-    setEditId(null);
-    setModalType("absence");
-    setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" });
-    setModalOpen(true);
-  }
-
-  function openProjForm(dateStr) {
-    setModalType("projet");
-    setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" });
-    setModalOpen(true);
-  }
-
-  function openNoteForm(dateStr) {
-    setModalType("note");
-    setNoteForm({ contenu: "", dateDebut: dateStr || toYMD(new Date()) });
-    setModalOpen(true);
-  }
-
+  function openChoose(dateStr) { setEditId(null); setModalType("choose"); setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" }); setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" }); setNoteForm({ contenu: "", dateDebut: dateStr || "" }); setModalOpen(true); }
+  function openAbsenceForm(dateStr) { setEditId(null); setModalType("absence"); setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" }); setModalOpen(true); }
+  function openProjForm(dateStr) { setModalType("projet"); setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" }); setModalOpen(true); }
+  function openNoteForm(dateStr) { setModalType("note"); setNoteForm({ contenu: "", dateDebut: dateStr || toYMD(new Date()) }); setModalOpen(true); }
   function openNew() { openChoose(""); }
-
-  function openEdit(absence) {
-    setEditId(String(absence._id));
-    setForm({ type: absence.type || "", dateDebut: absence.dateDebut, dateFin: absence.dateFin, demiJournee: absence.demiJournee || "", commentaire: absence.commentaire || "" });
-    setModalOpen(true);
-  }
+  function openEdit(absence) { setEditId(String(absence._id)); setModalType("absence"); setForm({ type: absence.type || "", dateDebut: absence.dateDebut, dateFin: absence.dateFin, demiJournee: absence.demiJournee || "", commentaire: absence.commentaire || "" }); setModalOpen(true); }
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.type) { alert("Choisis un type d'absence"); return; }
-    if (form.dateDebut > form.dateFin) { alert("La date de fin doit être après le début"); return; }
-    setSaving(true);
-    const body = { type: form.type, dateDebut: form.dateDebut, dateFin: form.dateFin, demiJournee: form.demiJournee || null, commentaire: form.commentaire };
+    e.preventDefault(); if (!form.type) { alert("Choisis un type"); return; } if (form.dateDebut > form.dateFin) { alert("Date fin > début"); return; }
+    setSaving(true); const body = { type: form.type, dateDebut: form.dateDebut, dateFin: form.dateFin, demiJournee: form.demiJournee || null, commentaire: form.commentaire };
     const url = editId ? `/api/employee-absences/${editId}` : "/api/employee-absences";
     const res = await fetch(url, { method: editId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    const data = await res.json(); setSaving(false);
-    if (!res.ok) { alert(data.error || "Erreur"); return; }
-    if (editId) { setAbsences((prev) => prev.map((a) => (String(a._id) === editId ? data.item : a))); }
+    const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur"); return; }
+    if (editId) setAbsences((prev) => prev.map((a) => (String(a._id) === editId ? data.item : a)));
     else { setAbsences((prev) => [data.item, ...prev]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); }
     setModalOpen(false);
   }
-
   async function handleSubmitProjet(e) {
-    e.preventDefault();
-    if (!projForm.nom) { alert("Le nom du projet est obligatoire"); return; }
-    setSaving(true);
+    e.preventDefault(); if (!projForm.nom) { alert("Nom obligatoire"); return; } setSaving(true);
     const body = { nom: projForm.nom, branche: projForm.branche, dateDebut: projForm.dateDebut, dateFin: projForm.dateFin, brief: projForm.description, statut: "En cours" };
     const res = await fetch("/api/contrats", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    const data = await res.json(); setSaving(false);
-    if (!res.ok) { alert(data.error || "Erreur"); return; }
-    const newProj = normalizeProject(data.item || data);
-    if (newProj.dateDebut && newProj.dateFin) setProjects((prev) => [...prev, newProj]);
-    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
-    setModalOpen(false);
+    const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur"); return; }
+    const np = normalizeProject(data.item || data); if (np.dateDebut && np.dateFin) setProjects((prev) => [...prev, np]);
+    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); setModalOpen(false);
   }
-
   async function handleSubmitNote(e) {
-    e.preventDefault();
-    if (!noteForm.contenu) { alert("La note ne peut pas être vide"); return; }
-    // Pour l'instant, on stocke les notes comme des events Google Calendar
-    // TODO: créer une collection notes dédiée si besoin
-    setSaving(true);
+    e.preventDefault(); if (!noteForm.contenu) { alert("Note vide"); return; } setSaving(true);
     const body = { title: noteForm.contenu, start: `${noteForm.dateDebut}T09:00:00`, end: `${noteForm.dateDebut}T09:30:00` };
     const res = await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    const data = await res.json(); setSaving(false);
-    if (!res.ok) { alert(data.error || "Erreur — vérifie que Google Agenda est connecté"); return; }
+    const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur Google Agenda"); return; }
     if (data.item) setGcalEvents((prev) => [...prev, data.item]);
-    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
-    setModalOpen(false);
+    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); setModalOpen(false);
   }
-
-  async function handleDelete(id) {
-    if (!confirm("Supprimer cette demande ?")) return;
-    const res = await fetch(`/api/employee-absences/${id}`, { method: "DELETE" });
-    if (res.ok) setAbsences((prev) => prev.filter((a) => String(a._id) !== id));
-  }
+  async function handleDelete(id) { if (!confirm("Supprimer ?")) return; const res = await fetch(`/api/employee-absences/${id}`, { method: "DELETE" }); if (res.ok) setAbsences((prev) => prev.filter((a) => String(a._id) !== id)); }
 
   const today = toYMD(new Date());
   const month = calDate.getMonth();
   const pct = Math.max(3, (solde.reste / solde.credit) * 100);
+  const hours = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
 
-  function navPrev() {
-    setSelectedDate(null);
-    setCalDate((d) => {
-      const n = new Date(d);
-      if (view === "month") n.setMonth(n.getMonth() - 1);
-      else if (view === "week") n.setDate(n.getDate() - 7);
-      else n.setDate(n.getDate() - 1);
-      return n;
-    });
-  }
-  function navNext() {
-    setSelectedDate(null);
-    setCalDate((d) => {
-      const n = new Date(d);
-      if (view === "month") n.setMonth(n.getMonth() + 1);
-      else if (view === "week") n.setDate(n.getDate() + 7);
-      else n.setDate(n.getDate() + 1);
-      return n;
-    });
-  }
+  function navPrev() { setSelectedDate(null); setCalDate((d) => { const n = new Date(d); if (view === "month") n.setMonth(n.getMonth() - 1); else if (view === "week") n.setDate(n.getDate() - 7); else n.setDate(n.getDate() - 1); return n; }); }
+  function navNext() { setSelectedDate(null); setCalDate((d) => { const n = new Date(d); if (view === "month") n.setMonth(n.getMonth() + 1); else if (view === "week") n.setDate(n.getDate() + 7); else n.setDate(n.getDate() + 1); return n; }); }
   function goToday() { setSelectedDate(null); setCalDate(new Date()); }
 
   function calLabel() {
     if (view === "month") return `${MOIS[calDate.getMonth()]} ${calDate.getFullYear()}`;
-    if (view === "week") { const s = weekDays[0]; const e = weekDays[6]; return `${s.getDate()} ${MOIS[s.getMonth()].slice(0, 3)} — ${e.getDate()} ${MOIS[e.getMonth()].slice(0, 3)} ${e.getFullYear()}`; }
-    return `${dayOfWeekFr(calDate)} ${formatDateFr(calDate)}`;
+    if (view === "week") return `${formatDateShort(weekDays[0])} — ${formatDateShort(weekDays[6])} ${weekDays[6].getFullYear()}`;
+    return `${dayOfWeekFr(calDate)} ${calDate.getDate()} ${MOIS[calDate.getMonth()]}`;
   }
 
-  function renderCellEvents(events, compact) {
+  // Render cell events for MONTH view — compact, hierarchical
+  function renderMonthCell(events) {
     const projs = events.filter((e) => e.type === "projet" || e.type === "mission");
-    const abs = events.find((e) => e.type === "absence");
+    const abs = events.filter((e) => e.type === "absence");
     const gcals = events.filter((e) => e.type === "gcal");
-    const projLimit = compact ? 2 : 5;
-    const gcalLimit = compact ? 2 : 4;
-    const totalExtra = Math.max(0, projs.length - projLimit) + Math.max(0, gcals.length - gcalLimit);
     return (
-      <div className={styles.calEvents}>
-        {/* PROJETS — gros, prioritaires */}
-        {projs.slice(0, projLimit).map((p, j) => (
-          <div key={`p${j}`} className={`${styles.calEvtProj} ${p.isMine ? styles.calEvtMine : ""}`} style={{ "--ec": p.color }}>
-            {p.isMine ? "👤" : "🎬"} {compact ? (p.title.length > 12 ? p.title.slice(0, 12) + "…" : p.title) : p.title}
-          </div>
-        ))}
-        {/* ABSENCES — moyennes */}
-        {abs && (
-          <div className={`${styles.calEvtAbs} ${abs.statut === "en_attente" ? styles.calEvtPending : ""}`} style={{ "--ec": abs.absType?.color || "#888" }}>
-            {abs.absType?.icon} {abs.absType?.label}
-          </div>
-        )}
-        {/* RDV GOOGLE — petits, discrets */}
-        {gcals.slice(0, gcalLimit).map((g, j) => (
-          <div key={`g${j}`} className={styles.calEvtRdv} style={{ "--ec": g.color || "#4285f4" }}>
-            <span className={styles.calEvtRdvDot} /> {compact ? (g.title.length > 12 ? g.title.slice(0, 12) + "…" : g.title) : g.title}
-          </div>
-        ))}
-        {totalExtra > 0 && <div className={styles.calEvtMore}>+{totalExtra}</div>}
-      </div>
+      <>
+        {projs.slice(0, 3).map((p, j) => <div key={`p${j}`} className={styles.mEvtProj} style={{ "--ec": p.color }}>{p.isMine ? "👤 " : ""}{p.title.length > 14 ? p.title.slice(0, 14) + "…" : p.title}</div>)}
+        {abs.slice(0, 1).map((a, j) => <div key={`a${j}`} className={styles.mEvtAbs} style={{ "--ec": a.absType?.color }}>{a.absType?.icon} {a.absType?.label}</div>)}
+        {gcals.slice(0, 3).map((g, j) => <div key={`g${j}`} className={styles.mEvtRdv} style={{ "--ec": g.color }}><span className={styles.mDot} />{g.title.length > 14 ? g.title.slice(0, 14) + "…" : g.title}</div>)}
+        {(projs.length + abs.length + gcals.length) > 7 && <div className={styles.mEvtMore}>+{projs.length + abs.length + gcals.length - 7}</div>}
+      </>
     );
   }
 
@@ -442,101 +281,85 @@ export default function MonPlanning() {
     <div className={styles.page}>
       {showConfetti && <div className={styles.confettiWrap} aria-hidden="true">{Array.from({ length: 20 }).map((_, i) => <span key={i} className={styles.confetti} style={{ "--ci": i }} />)}</div>}
 
-      {/* ═══ PHRASE DU JOUR ═══ */}
-      <div className={`${styles.quoteHero} ${loaded ? styles.quoteLoaded : ""}`} onMouseEnter={() => setVibeHover(true)} onMouseLeave={() => setVibeHover(false)}>
+      {/* ═══ PHRASE PROJET CHAUD ═══ */}
+      <div className={`${styles.hotBar} ${loaded ? styles.hotBarLoaded : ""}`} onMouseEnter={() => setVibeHover(true)} onMouseLeave={() => setVibeHover(false)}>
         <Sparkles active={vibeHover} />
-        <span className={`${styles.quoteEmoji} ${loaded ? styles.quoteEmojiAnim : ""}`}>{dailyQuote.emoji}</span>
-        <div className={styles.quoteCenter}>
-          <p className={styles.quoteMsg}>{dailyQuote.msg}</p>
-          {dailyQuote.author && <span className={styles.quoteAuthor}>— {dailyQuote.author}</span>}
-        </div>
+        <span className={styles.hotIcon}>{projectQuote.icon}</span>
+        <span className={styles.hotMsg}>{projectQuote.msg}</span>
+        {projectQuote.color && <span className={styles.hotDot} style={{ background: projectQuote.color }} />}
       </div>
 
       {/* ═══ TOOLBAR ═══ */}
       <div className={styles.toolbar}>
         <div className={styles.toggles}>
-          <button className={`${styles.toggle} ${showProjets ? styles.toggleOn : ""}`} style={{ "--tg": "#e11d48" }} onClick={() => setShowProjets((v) => !v)}>
-            <span className={styles.toggleDot} /> 🎬 Projets <span className={styles.toggleCount}>{projects.length}</span>
+          <button className={`${styles.tg} ${showProjets ? styles.tgOn : ""}`} style={{ "--tgc": "#e11d48" }} onClick={() => setShowProjets((v) => !v)}>
+            <span className={styles.tgDot} /> Projets <span className={styles.tgN}>{projects.length}</span>
           </button>
-          <button className={`${styles.toggle} ${showMissions ? styles.toggleOn : ""}`} style={{ "--tg": "#7c3aed" }} onClick={() => setShowMissions((v) => !v)}>
-            <span className={styles.toggleDot} /> 👤 Mes missions <span className={styles.toggleCount}>{myMissions.length}</span>
+          <button className={`${styles.tg} ${showMissions ? styles.tgOn : ""}`} style={{ "--tgc": "#7c3aed" }} onClick={() => setShowMissions((v) => !v)}>
+            <span className={styles.tgDot} /> Missions <span className={styles.tgN}>{myMissions.length}</span>
           </button>
-          <button className={`${styles.toggle} ${showAbsences ? styles.toggleOn : ""}`} style={{ "--tg": "#10b981" }} onClick={() => setShowAbsences((v) => !v)}>
-            <span className={styles.toggleDot} /> 🌴 Absences <span className={styles.toggleCount}>{absences.length}</span>
+          <button className={`${styles.tg} ${showAbsences ? styles.tgOn : ""}`} style={{ "--tgc": "#10b981" }} onClick={() => setShowAbsences((v) => !v)}>
+            <span className={styles.tgDot} /> Absences <span className={styles.tgN}>{absences.length}</span>
           </button>
           {gcalConnected && (
             <>
-              <button className={`${styles.toggle} ${showGcal ? styles.toggleOn : ""}`} style={{ "--tg": "#4285f4" }} onClick={() => setShowGcal((v) => !v)}>
-                <span className={styles.toggleDot} /> 📅 Agenda <span className={styles.toggleCount}>{gcalEvents.length}</span>
+              <button className={`${styles.tg} ${showGcal ? styles.tgOn : ""}`} style={{ "--tgc": "#4285f4" }} onClick={() => setShowGcal((v) => !v)}>
+                <span className={styles.tgDot} /> Agenda <span className={styles.tgN}>{gcalEvents.length}</span>
               </button>
-              <button className={styles.toggleGear} onClick={() => setShowCalPicker((v) => !v)} title="Choisir les agendas">⚙️</button>
+              <button className={styles.gearBtn} onClick={() => setShowCalPicker((v) => !v)}>⚙</button>
             </>
           )}
         </div>
         <button className={styles.addBtn} onClick={openNew}>+ Ajouter</button>
       </div>
 
-      {/* ═══ CALENDAR PICKER (dropdown) ═══ */}
+      {/* Calendar picker */}
       {showCalPicker && (
         <div className={styles.calPicker}>
-          <div className={styles.calPickerHeader}>
-            <span className={styles.calPickerTitle}>📅 Tes agendas Google</span>
-            <button className={styles.calPickerClose} onClick={() => setShowCalPicker(false)}>✕</button>
-          </div>
-          <div className={styles.calPickerList}>
-            {gcalCalendars.map((cal) => {
-              const isOn = gcalSelectedIds.includes(cal.id);
-              return (
-                <button key={cal.id} className={`${styles.calPickerItem} ${isOn ? styles.calPickerItemOn : ""}`}
-                  style={{ "--cpb": cal.backgroundColor || "#4285f4" }}
-                  onClick={() => toggleGcalCalendar(cal.id)}>
-                  <span className={styles.calPickerDot} />
-                  <span className={styles.calPickerName}>{cal.summary}</span>
-                  {cal.primary && <span className={styles.calPickerPrimary}>Principal</span>}
-                  <span className={styles.calPickerCheck}>{isOn ? "✓" : ""}</span>
-                </button>
-              );
-            })}
-          </div>
-          {gcalCalendars.length === 0 && <p className={styles.calPickerEmpty}>Aucun agenda trouvé</p>}
+          <div className={styles.cpHead}><span className={styles.cpTitle}>Agendas Google</span><button className={styles.cpClose} onClick={() => setShowCalPicker(false)}>✕</button></div>
+          {gcalCalendars.map((cal) => {
+            const isOn = gcalSelectedIds.includes(cal.id);
+            return (<button key={cal.id} className={`${styles.cpItem} ${isOn ? styles.cpItemOn : ""}`} style={{ "--cpb": cal.backgroundColor || "#4285f4" }} onClick={() => toggleGcalCalendar(cal.id)}>
+              <span className={styles.cpDot} /><span className={styles.cpName}>{cal.summary}</span>{isOn && <span className={styles.cpCheck}>✓</span>}
+            </button>);
+          })}
         </div>
       )}
 
-      {/* ═══ CALENDAR TOOLBAR ═══ */}
-      <div className={styles.calBar}>
-        <div className={styles.calNavGroup}>
-          <button className={styles.calNav} onClick={navPrev}><span className={styles.calNavArrow}>‹</span></button>
-          <button className={styles.calTodayBtn} onClick={goToday}>Aujourd'hui</button>
-          <button className={styles.calNav} onClick={navNext}><span className={styles.calNavArrow}>›</span></button>
+      {/* ═══ CALENDAR NAV ═══ */}
+      <div className={styles.calNav2}>
+        <div className={styles.navGroup}>
+          <button className={styles.navBtn} onClick={navPrev}>‹</button>
+          <button className={styles.todayBtn} onClick={goToday}>Aujourd'hui</button>
+          <button className={styles.navBtn} onClick={navNext}>›</button>
         </div>
-        <h2 className={styles.calTitle}>{calLabel()}</h2>
-        <div className={styles.viewSwitch}>
-          <button className={`${styles.viewBtn} ${view === "month" ? styles.viewBtnOn : ""}`} onClick={() => setView("month")}>Mois</button>
-          <button className={`${styles.viewBtn} ${view === "week" ? styles.viewBtnOn : ""}`} onClick={() => setView("week")}>Semaine</button>
-          <button className={`${styles.viewBtn} ${view === "day" ? styles.viewBtnOn : ""}`} onClick={() => setView("day")}>Jour</button>
+        <h2 className={styles.calLabel}>{calLabel()}</h2>
+        <div className={styles.viewSw}>
+          {["month", "week", "day"].map((v) => (
+            <button key={v} className={`${styles.vBtn} ${view === v ? styles.vBtnOn : ""}`} onClick={() => setView(v)}>
+              {v === "month" ? "Mois" : v === "week" ? "Semaine" : "Jour"}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* ═══ MAIN AREA : Calendar + Panel ═══ */}
-      <div className={styles.mainArea}>
-
-        {/* CALENDAR */}
+      {/* ═══ MAIN: Calendar + Panel ═══ */}
+      <div className={styles.main}>
         <div className={`${styles.calWrap} ${loaded ? styles.calLoaded : ""}`}>
 
           {/* VUE MOIS */}
           {view === "month" && (
-            <div className={styles.calGrid7}>
-              {JOURS_HEAD.map((j) => <div key={j} className={styles.calHeader}>{j}</div>)}
+            <div className={styles.mGrid}>
+              {JOURS_HEAD.map((j) => <div key={j} className={styles.mHead}>{j}</div>)}
               {calDays.map((d, i) => {
-                const key = toYMD(d); const isMonth = d.getMonth() === month; const isToday = key === today;
-                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                const key = toYMD(d); const isMonth = d.getMonth() === month; const isToday2 = key === today;
                 const events = calEvents[key] || []; const isSelected = selectedDate && toYMD(selectedDate) === key;
                 return (
-                  <div key={i} className={[styles.calDay, isToday && styles.calToday, !isMonth && styles.calOther, isWeekend && styles.calWeekend, isMonth && styles.calClickable, isSelected && styles.calSelected].filter(Boolean).join(" ")}
+                  <div key={i} className={[styles.mDay, isToday2 && styles.mDayToday, !isMonth && styles.mDayOther, isSelected && styles.mDaySelected].filter(Boolean).join(" ")}
                     onClick={() => isMonth && handleDayClick(d)} role={isMonth ? "button" : undefined} tabIndex={isMonth ? 0 : undefined}
                     onKeyDown={(e) => { if (isMonth && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleDayClick(d); } }}>
-                    <span className={styles.calNum}>{d.getDate()}</span>
-                    {events.length > 0 ? renderCellEvents(events, true) : isMonth && <span className={styles.calPlus}>+</span>}
+                    <span className={styles.mNum}>{d.getDate()}</span>
+                    <div className={styles.mEvents}>{renderMonthCell(events)}</div>
                   </div>
                 );
               })}
@@ -544,415 +367,150 @@ export default function MonPlanning() {
           )}
 
           {/* VUE SEMAINE — TIME GRID */}
-          {view === "week" && (() => {
-            const HOUR_START = 7;
-            const HOUR_END = 21;
-            const hours = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
+          {view === "week" && (
+            <div className={styles.tgWrap}>
+              <div className={styles.tgAllDay}>
+                <div className={styles.tgTimeLabel} />
+                {weekDays.map((d, i) => {
+                  const key = toYMD(d); const events = calEvents[key] || [];
+                  const allDay = events.filter((e) => (e.type === "gcal" && e.isAllDay) || e.type === "projet" || e.type === "mission" || e.type === "absence");
+                  return (<div key={i} className={styles.tgAllDayCell}>
+                    {allDay.slice(0, 4).map((ev, j) => {
+                      const c = ev.type === "absence" ? (ev.absType?.color || "#888") : ev.color || "#4285f4";
+                      const label = ev.type === "projet" || ev.type === "mission" ? `${ev.isMine ? "👤 " : ""}${ev.title}` : ev.type === "absence" ? `${ev.absType?.icon} ${ev.absType?.label}` : ev.title;
+                      return <div key={j} className={styles.tgADEvt} style={{ "--adc": c }}>{label.length > 16 ? label.slice(0, 16) + "…" : label}</div>;
+                    })}
+                    {allDay.length > 4 && <div className={styles.tgADMore}>+{allDay.length - 4}</div>}
+                  </div>);
+                })}
+              </div>
+              <div className={styles.tgHead}>
+                <div className={styles.tgTimeLabel} />
+                {weekDays.map((d, i) => {
+                  const key = toYMD(d); const isToday2 = key === today; const isSel = selectedDate && toYMD(selectedDate) === key;
+                  return (<div key={i} className={`${styles.tgHCell} ${isToday2 ? styles.tgHToday : ""} ${isSel ? styles.tgHSel : ""}`} onClick={() => handleDayClick(d)} role="button" tabIndex={0}>
+                    <span className={styles.tgHDay}>{JOURS_HEAD[i]}</span>
+                    <span className={`${styles.tgHNum} ${isToday2 ? styles.tgHNumToday : ""}`}>{d.getDate()}</span>
+                  </div>);
+                })}
+              </div>
+              <div className={styles.tgBody}>
+                <div className={styles.tgTimes}>{hours.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
+                <div className={styles.tgCols}>
+                  {weekDays.map((d, i) => {
+                    const key = toYMD(d); const isToday2 = key === today;
+                    const timed = (calEvents[key] || []).filter((e) => e.type === "gcal" && !e.isAllDay && e.startHour != null);
+                    return (<div key={i} className={`${styles.tgCol} ${isToday2 ? styles.tgColToday : ""}`} onClick={() => handleDayClick(d)}>
+                      {hours.map((h) => <div key={h} className={styles.tgSlot} />)}
+                      {timed.map((ev, j) => {
+                        const top = ((ev.startHour - HOUR_START) / (HOUR_END - HOUR_START)) * 100;
+                        const height = Math.max(2.5, ((ev.endHour - ev.startHour) / (HOUR_END - HOUR_START)) * 100);
+                        return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, "--evc": ev.color }}>
+                          <span className={styles.tgEvtTitle}>{ev.title}</span>
+                          <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")}</span>
+                        </div>);
+                      })}
+                    </div>);
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* VUE JOUR — TIME GRID */}
+          {view === "day" && (() => {
+            const key = toYMD(calDate); const events = calEvents[key] || [];
+            const allDay = events.filter((e) => e.type !== "gcal" || e.isAllDay);
+            const timed = events.filter((e) => e.type === "gcal" && !e.isAllDay && e.startHour != null);
             return (
               <div className={styles.tgWrap}>
-                {/* All-day row */}
-                <div className={styles.tgAllDay}>
-                  <div className={styles.tgTimeLabel} />
-                  {weekDays.map((d, i) => {
-                    const key = toYMD(d);
-                    const events = calEvents[key] || [];
-                    const allDay = events.filter((e) => e.type === "gcal" && e.isAllDay);
-                    const projsDay = events.filter((e) => e.type === "projet" || e.type === "mission");
-                    const absDay = events.filter((e) => e.type === "absence");
-                    return (
-                      <div key={i} className={styles.tgAllDayCell}>
-                        {projsDay.map((p, j) => (
-                          <div key={`p${j}`} className={styles.tgAllDayEvt} style={{ background: `${p.color}22`, color: p.color, borderLeft: `3px solid ${p.color}` }}>
-                            {p.isMine ? "👤" : "🎬"} {p.title.length > 14 ? p.title.slice(0, 14) + "…" : p.title}
-                          </div>
-                        ))}
-                        {absDay.map((a, j) => (
-                          <div key={`a${j}`} className={styles.tgAllDayEvt} style={{ background: `${a.absType?.color || "#888"}18`, color: a.absType?.color, borderLeft: `2px solid ${a.absType?.color}` }}>
-                            {a.absType?.icon} {a.absType?.label}
-                          </div>
-                        ))}
-                        {allDay.map((g, j) => (
-                          <div key={`g${j}`} className={styles.tgAllDayEvt} style={{ background: `${g.color}18`, color: g.color, borderLeft: `2px solid ${g.color}` }}>
-                            {g.title.length > 14 ? g.title.slice(0, 14) + "…" : g.title}
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Header */}
-                <div className={styles.tgHeader}>
-                  <div className={styles.tgTimeLabel} />
-                  {weekDays.map((d, i) => {
-                    const key = toYMD(d);
-                    const isToday2 = key === today;
-                    const isSelected2 = selectedDate && toYMD(selectedDate) === key;
-                    return (
-                      <div key={i} className={`${styles.tgHeaderCell} ${isToday2 ? styles.tgHeaderToday : ""} ${isSelected2 ? styles.tgHeaderSelected : ""}`}
-                        onClick={() => handleDayClick(d)} role="button" tabIndex={0}>
-                        <span className={styles.tgHeaderDay}>{JOURS_HEAD[i]}</span>
-                        <span className={`${styles.tgHeaderNum} ${isToday2 ? styles.tgHeaderNumToday : ""}`}>{d.getDate()}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Time grid body */}
-                <div className={styles.tgBody}>
-                  <div className={styles.tgTimes}>
-                    {hours.map((h) => (
-                      <div key={h} className={styles.tgTimeLine}>
-                        <span className={styles.tgTimeText}>{String(h).padStart(2, "0")}:00</span>
-                      </div>
-                    ))}
+                {allDay.length > 0 && (
+                  <div className={styles.dayAllDay}>
+                    {allDay.map((ev, j) => {
+                      const c = ev.type === "absence" ? (ev.absType?.color || "#888") : ev.color || "#4285f4";
+                      const label = ev.type === "projet" || ev.type === "mission" ? `${ev.isMine ? "👤 " : "🎬 "}${ev.title} · ${ev.branche}` : ev.type === "absence" ? `${ev.absType?.icon} ${ev.absType?.label}` : ev.title;
+                      return <div key={j} className={styles.dayADEvt} style={{ "--adc": c }}>{label}</div>;
+                    })}
                   </div>
-                  <div className={styles.tgColumns}>
-                    {weekDays.map((d, i) => {
-                      const key = toYMD(d);
-                      const isToday2 = key === today;
-                      const events = (calEvents[key] || []).filter((e) => e.type === "gcal" && !e.isAllDay && e.startHour != null);
-                      return (
-                        <div key={i} className={`${styles.tgCol} ${isToday2 ? styles.tgColToday : ""}`}
-                          onClick={() => handleDayClick(d)}>
-                          {/* Hour grid lines */}
-                          {hours.map((h) => <div key={h} className={styles.tgHourSlot} />)}
-                          {/* Positioned events */}
-                          {events.map((ev, j) => {
-                            const top = ((ev.startHour - HOUR_START) / (HOUR_END - HOUR_START)) * 100;
-                            const height = Math.max(2, ((ev.endHour - ev.startHour) / (HOUR_END - HOUR_START)) * 100);
-                            return (
-                              <div key={j} className={styles.tgEvent} style={{
-                                top: `${top}%`, height: `${height}%`,
-                                background: `${ev.color}20`, borderLeft: `3px solid ${ev.color}`, color: ev.color,
-                              }}>
-                                <span className={styles.tgEventTitle}>{ev.title}</span>
-                                <span className={styles.tgEventTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} - {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
+                )}
+                <div className={styles.dayGrid}>
+                  <div className={styles.tgTimes}>{hours.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
+                  <div className={styles.dayCol}>
+                    {hours.map((h) => <div key={h} className={styles.tgSlot} />)}
+                    {timed.map((ev, j) => {
+                      const top = ((ev.startHour - HOUR_START) / (HOUR_END - HOUR_START)) * 100;
+                      const height = Math.max(3, ((ev.endHour - ev.startHour) / (HOUR_END - HOUR_START)) * 100);
+                      return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, "--evc": ev.color }}>
+                        <span className={styles.tgEvtTitle}>{ev.title}</span>
+                        <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} - {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
+                        {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName}</span>}
+                      </div>);
                     })}
                   </div>
                 </div>
               </div>
             );
           })()}
-
-          {/* VUE JOUR */}
-          {view === "day" && (() => {
-            const key = toYMD(calDate); const events = calEvents[key] || [];
-            const isWeekend = calDate.getDay() === 0 || calDate.getDay() === 6;
-            const projs = events.filter((e) => e.type === "projet" || e.type === "mission");
-            const absList = events.filter((e) => e.type === "absence");
-            return (
-              <div className={styles.dayView}>
-                <div className={styles.dayDate}>{dayOfWeekFr(calDate)} {formatDateFr(calDate)}</div>
-                {isWeekend && <div className={styles.dayEmpty}>Week-end 😌</div>}
-                {!isWeekend && !events.length && <div className={styles.dayEmpty}>Rien de prévu — journée libre</div>}
-                {projs.length > 0 && (
-                  <div className={styles.daySection}>
-                    <h3 className={styles.daySectionTitle}>Projets</h3>
-                    {projs.map((p, j) => (
-                      <div key={j} className={styles.dayEvt} style={{ "--dc": p.color }}>
-                        <span className={styles.dayEvtIcon}>{p.isMine ? "👤" : "🎬"}</span>
-                        <div>
-                          <div className={styles.dayEvtTitle}>{p.title}</div>
-                          <div className={styles.dayEvtMeta}>{p.branche} · {p.statut}</div>
-                        </div>
-                        {p.isMine && <span className={styles.dayEvtBadge}>Ma mission</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {absList.length > 0 && (
-                  <div className={styles.daySection}>
-                    <h3 className={styles.daySectionTitle}>Absences</h3>
-                    {absList.map((a, j) => (
-                      <div key={j} className={styles.dayEvt} style={{ "--dc": a.absType?.color || "#888" }}>
-                        <span className={styles.dayEvtIcon}>{a.absType?.icon}</span>
-                        <div>
-                          <div className={styles.dayEvtTitle}>{a.absType?.label}</div>
-                          <div className={styles.dayEvtMeta}>{STATUT_LABELS[a.statut]?.label}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {!isWeekend && (
-                  <button className={styles.dayAddBtn} onClick={() => openAbsenceForm(key)}>+ Poser une absence ce jour</button>
-                )}
-              </div>
-            );
-          })()}
         </div>
 
-        {/* ═══ PANEL LATÉRAL — détail du jour ═══ */}
+        {/* ═══ PANEL ═══ */}
         {selectedDate && (() => {
-          const dateStr = toYMD(selectedDate);
-          const isFuture = dateStr >= today;
-          const isToday2 = dateStr === today;
+          const dateStr = toYMD(selectedDate); const isFuture = dateStr >= today;
           return (
-          <aside className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <div>
-                <div className={styles.panelDay}>{dayOfWeekFr(selectedDate)}</div>
-                <div className={styles.panelDate}>{selectedDate.getDate()} {MOIS[selectedDate.getMonth()]}</div>
-                {isToday2 && <span className={styles.panelTodayTag}>Aujourd'hui</span>}
-              </div>
-              <button className={styles.panelClose} onClick={() => setSelectedDate(null)}>✕</button>
-            </div>
-
-            {/* Projets du jour */}
-            {selectedEvents.projs.length > 0 && (
-              <div className={styles.panelSection}>
-                <h3 className={styles.panelSecTitle}>🎬 Projets</h3>
-                {selectedEvents.projs.map((p, j) => (
-                  <div key={j} className={styles.panelEvt} style={{ "--pc": p.color }}>
-                    <div className={styles.panelEvtTitle}>{p.title}</div>
-                    <div className={styles.panelEvtMeta}>{p.branche} · {p.statut}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Mes missions */}
-            {selectedEvents.missions.length > 0 && (
-              <div className={styles.panelSection}>
-                <h3 className={styles.panelSecTitle}>👤 Mes missions</h3>
-                {selectedEvents.missions.map((p, j) => (
-                  <div key={j} className={styles.panelEvt} style={{ "--pc": p.color }}>
-                    <div className={styles.panelEvtTitle}>{p.title}</div>
-                    <div className={styles.panelEvtMeta}>{p.branche} · {p.statut}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Absences */}
-            {selectedEvents.abs.length > 0 && (
-              <div className={styles.panelSection}>
-                <h3 className={styles.panelSecTitle}>🌴 Absences</h3>
-                {selectedEvents.abs.map((a, j) => {
-                  const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" };
-                  const canModify = a.statut === "en_attente" && a.dateDebut >= today;
-                  return (
-                    <div key={j} className={styles.panelEvt} style={{ "--pc": a.absType?.color || "#888" }}>
-                      <div className={styles.panelEvtTitle}>{a.absType?.icon} {a.absType?.label}</div>
-                      <span className={`${styles.panelEvtStatut} ${styles[s.cls]}`}>{s.label}</span>
-                      {canModify && (
-                        <div className={styles.panelEvtActions}>
-                          <button className={styles.panelEditBtn} onClick={() => openEdit(a)}>Modifier</button>
-                          <button className={styles.panelDeleteBtn} onClick={() => handleDelete(String(a._id))}>Supprimer</button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Google Agenda — groupé par branche/calendrier */}
-            {Object.keys(selectedEvents.gcalByBranch).length > 0 && (
-              <div className={styles.panelSection}>
-                <h3 className={styles.panelSecTitle}>📅 Agenda</h3>
-                {Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (
-                  <div key={branch} className={styles.panelBranch}>
-                    <div className={styles.panelBranchHeader}>
-                      <span className={styles.panelBranchDot} style={{ background: data.color }} />
-                      <span className={styles.panelBranchName}>{branch}</span>
-                      <span className={styles.panelBranchCount}>{data.events.length}</span>
-                    </div>
-                    {data.events.map((g, j) => (
-                      <div key={j} className={styles.panelRdv}>
-                        <span className={styles.panelRdvTitle}>{g.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && Object.keys(selectedEvents.gcalByBranch).length === 0 && (
-              <div className={styles.panelEmpty}>Rien de prévu ce jour</div>
-            )}
-
-            {/* Actions — hub générique */}
-            {isFuture && (
-              <div className={styles.panelActions}>
-                <h3 className={styles.panelSecTitle}>Ajouter</h3>
-                <button className={styles.panelActionBtn} style={{ "--pab": "#10b981" }} onClick={() => openAbsenceForm(dateStr)}>
-                  🌴 Poser une absence
-                </button>
-                <button className={styles.panelActionBtn} style={{ "--pab": "#7c3aed" }} onClick={() => openProjForm(dateStr)}>
-                  🎬 Ajouter un projet
-                </button>
-                <button className={styles.panelActionBtn} style={{ "--pab": "#f59e0b" }} onClick={() => openNoteForm(dateStr)}>
-                  📝 Ajouter une note
-                </button>
-              </div>
-            )}
-          </aside>
+            <aside className={styles.panel}>
+              <div className={styles.pHead}><div><div className={styles.pDay}>{dayOfWeekFr(selectedDate)}</div><div className={styles.pDate}>{selectedDate.getDate()} {MOIS[selectedDate.getMonth()]}</div></div><button className={styles.pClose} onClick={() => setSelectedDate(null)}>✕</button></div>
+              {selectedEvents.projs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🎬 Projets</h3>{selectedEvents.projs.map((p, j) => <div key={j} className={styles.pEvt} style={{ "--pc": p.color }}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div></div>)}</div>)}
+              {selectedEvents.missions.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>👤 Mes missions</h3>{selectedEvents.missions.map((p, j) => <div key={j} className={styles.pEvt} style={{ "--pc": p.color }}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div></div>)}</div>)}
+              {selectedEvents.abs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🌴 Absences</h3>{selectedEvents.abs.map((a, j) => { const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" }; const canMod = a.statut === "en_attente" && a.dateDebut >= today; return (<div key={j} className={styles.pEvt} style={{ "--pc": a.absType?.color || "#888" }}><div className={styles.pEvtTitle}>{a.absType?.icon} {a.absType?.label}</div><span className={`${styles.pStatut} ${styles[s.cls]}`}>{s.label}</span>{canMod && <div className={styles.pActions}><button className={styles.pEditBtn} onClick={() => openEdit(a)}>Modifier</button><button className={styles.pDelBtn} onClick={() => handleDelete(String(a._id))}>Supprimer</button></div>}</div>); })}</div>)}
+              {Object.keys(selectedEvents.gcalByBranch).length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>📅 Agenda</h3>{Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (<div key={branch} className={styles.pBranch}><div className={styles.pBranchHead}><span className={styles.pBranchDot} style={{ background: data.color }} /><span className={styles.pBranchName}>{branch}</span><span className={styles.pBranchN}>{data.events.length}</span></div>{data.events.map((g, j) => <div key={j} className={styles.pRdv}>{g.title}</div>)}</div>))}</div>)}
+              {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && Object.keys(selectedEvents.gcalByBranch).length === 0 && <div className={styles.pEmpty}>Rien de prévu</div>}
+              {isFuture && (<div className={styles.pAddSec}><h3 className={styles.pSecTitle}>Ajouter</h3><button className={styles.pAddBtn} style={{ "--pab": "#10b981" }} onClick={() => openAbsenceForm(dateStr)}>🌴 Absence</button><button className={styles.pAddBtn} style={{ "--pab": "#7c3aed" }} onClick={() => openProjForm(dateStr)}>🎬 Projet</button><button className={styles.pAddBtn} style={{ "--pab": "#f59e0b" }} onClick={() => openNoteForm(dateStr)}>📝 Note</button></div>)}
+            </aside>
           );
         })()}
       </div>
 
-      {/* ═══ MES ABSENCES (compact, en bas) ═══ */}
+      {/* ═══ MES ABSENCES ═══ */}
       {absences.length > 0 && (
-        <section className={styles.absSection}>
+        <section className={styles.absSec}>
           <h2 className={styles.secTitle}>Mes absences</h2>
           <div className={styles.absList}>
             {absences.map((a) => {
               const t = ABSENCE_TYPES.find((t) => t.value === a.type); const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" };
               const canEdit = a.statut === "en_attente" && a.dateDebut >= today; const jours = countWorkDays(a.dateDebut, a.dateFin, a.demiJournee);
-              return (
-                <div key={String(a._id)} className={styles.absCard} style={{ "--ac": t?.color || "#888" }}>
-                  <span className={styles.absIcon}>{t?.icon || "📋"}</span>
-                  <div className={styles.absBody}>
-                    <div className={styles.absTop}>
-                      <span className={styles.absType}>{t?.label}</span>
-                      <span className={`${styles.absStatut} ${styles[s.cls]}`}>{s.label}</span>
-                      <span className={styles.absDates}>{a.dateDebut === a.dateFin ? a.dateDebut : `${a.dateDebut} → ${a.dateFin}`}</span>
-                      <span className={styles.absJours}>{jours}j</span>
-                    </div>
-                    {a.commentaire && <p className={styles.absComment}>{a.commentaire}</p>}
-                    {a.motifRefus && <p className={styles.absRefus}>Motif : {a.motifRefus}</p>}
-                  </div>
-                  {canEdit && (
-                    <div className={styles.absActions}>
-                      <button className={styles.editBtn} onClick={() => openEdit(a)}>Modifier</button>
-                      <button className={styles.deleteBtn} onClick={() => handleDelete(String(a._id))}>Supprimer</button>
-                    </div>
-                  )}
-                </div>
-              );
+              return (<div key={String(a._id)} className={styles.absCard} style={{ "--ac": t?.color || "#888" }}>
+                <span className={styles.absIcon}>{t?.icon || "📋"}</span>
+                <div className={styles.absBody}><div className={styles.absTop}><span className={styles.absType}>{t?.label}</span><span className={`${styles.absStatut} ${styles[s.cls]}`}>{s.label}</span><span className={styles.absDates}>{a.dateDebut === a.dateFin ? a.dateDebut : `${a.dateDebut} → ${a.dateFin}`}</span><span className={styles.absJours}>{jours}j</span></div>{a.commentaire && <p className={styles.absComment}>{a.commentaire}</p>}{a.motifRefus && <p className={styles.absRefus}>Motif : {a.motifRefus}</p>}</div>
+                {canEdit && <div className={styles.absActions}><button className={styles.editBtn} onClick={() => openEdit(a)}>Modifier</button><button className={styles.deleteBtn} onClick={() => handleDelete(String(a._id))}>Supprimer</button></div>}
+              </div>);
             })}
           </div>
         </section>
       )}
 
       {/* ═══ MODALE ═══ */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalType === "choose" ? "Que veux-tu ajouter ?" : modalType === "absence" ? (editId ? "Modifier l'absence" : "Poser une absence") : modalType === "projet" ? "Ajouter un projet" : "Ajouter une note"} size="sm">
-
-        {/* CHOIX : absence / projet / note */}
-        {modalType === "choose" && (
-          <div className={styles.chooseGrid}>
-            <button className={styles.chooseCard} style={{ "--cc": "#10b981" }} onClick={() => { setModalType("absence"); }}>
-              <span className={styles.chooseIcon}>🌴</span>
-              <span className={styles.chooseLabel}>Absence</span>
-              <span className={styles.chooseDesc}>Congé, TT, maladie...</span>
-            </button>
-            <button className={styles.chooseCard} style={{ "--cc": "#7c3aed" }} onClick={() => { setModalType("projet"); }}>
-              <span className={styles.chooseIcon}>🎬</span>
-              <span className={styles.chooseLabel}>Projet</span>
-              <span className={styles.chooseDesc}>Tournage, scéno, event...</span>
-            </button>
-            <button className={styles.chooseCard} style={{ "--cc": "#f59e0b" }} onClick={() => { setModalType("note"); }}>
-              <span className={styles.chooseIcon}>📝</span>
-              <span className={styles.chooseLabel}>Note</span>
-              <span className={styles.chooseDesc}>Rappel, idée, memo...</span>
-            </button>
-          </div>
-        )}
-
-        {/* ABSENCE */}
-        {modalType === "absence" && (
-          <form onSubmit={handleSubmit} className={styles.form}>
-            {!editId && (
-              <div className={styles.recapBar}>
-                <div className={styles.recapItem} style={{ "--rc": "#10b981" }}>
-                  <span className={styles.recapIcon}>🌴</span>
-                  <div className={styles.recapData}><span className={styles.recapValue}>{absRecap.conge}j</span><span className={styles.recapLabel}>Congés</span></div>
-                </div>
-                <div className={styles.recapItem} style={{ "--rc": "#8b5cf6" }}>
-                  <span className={styles.recapIcon}>🏡</span>
-                  <div className={styles.recapData}><span className={styles.recapValue}>{absRecap.tt}j</span><span className={styles.recapLabel}>TT</span></div>
-                </div>
-                <div className={styles.recapItem} style={{ "--rc": "#f43f5e" }}>
-                  <span className={styles.recapIcon}>🤧</span>
-                  <div className={styles.recapData}><span className={styles.recapValue}>{absRecap.maladie}j</span><span className={styles.recapLabel}>Maladie</span></div>
-                </div>
-                <div className={styles.recapVibe}>
-                  <span className={styles.recapVibeEmoji}>{vibe.emoji}</span>
-                  <div className={styles.recapVibeText}>
-                    <span className={styles.recapVibeMsg}>{vibe.msg}</span>
-                    {vibe.sub && <span className={styles.recapVibeSub}>{vibe.sub}</span>}
-                  </div>
-                  <span className={styles.recapReste}>{solde.reste}j restants</span>
-                </div>
-              </div>
-            )}
-            <p className={styles.formHint}>Quel type ?</p>
-            <div className={styles.typeGrid}>
-              {ABSENCE_TYPES.map((t) => (
-                <button key={t.value} type="button" className={`${styles.typeCard} ${form.type === t.value ? styles.typeCardOn : ""}`} style={{ "--tc": t.color, "--tcbg": t.gradient }}
-                  onClick={() => setForm((f) => ({ ...f, type: t.value }))}>
-                  <span className={styles.tcIcon}>{t.icon}</span>
-                  <span className={styles.tcLabel}>{t.label}</span>
-                  <span className={styles.tcDesc}>{t.desc}</span>
-                </button>
-              ))}
-            </div>
-            <div className={styles.fieldRow}>
-              <label className={styles.field}>Du <input type="date" value={form.dateDebut} onChange={(e) => setForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label>
-              <label className={styles.field}>Au <input type="date" value={form.dateFin} onChange={(e) => setForm((f) => ({ ...f, dateFin: e.target.value }))} required /></label>
-            </div>
-            <label className={styles.field}>Demi-journée ?
-              <select value={form.demiJournee} onChange={(e) => setForm((f) => ({ ...f, demiJournee: e.target.value }))}><option value="">Journée complète</option><option value="matin">Matin</option><option value="apres-midi">Après-midi</option></select>
-            </label>
-            <label className={styles.field}>Un petit mot ?
-              <textarea value={form.commentaire} onChange={(e) => setForm((f) => ({ ...f, commentaire: e.target.value }))} rows={2} placeholder="Voyage, recharge, aventure..." />
-            </label>
-            <div className={styles.formActions}>
-              <button type="button" className={styles.backBtn} onClick={() => editId ? setModalOpen(false) : setModalType("choose")}>← Retour</button>
-              <button type="submit" className={styles.submitBtn} disabled={saving || !form.type}>{saving ? "Envoi..." : editId ? "Modifier" : "C'est parti ! 🚀"}</button>
-            </div>
-          </form>
-        )}
-
-        {/* PROJET */}
-        {modalType === "projet" && (
-          <form onSubmit={handleSubmitProjet} className={styles.form}>
-            <label className={styles.field}>Nom du projet
-              <input value={projForm.nom} onChange={(e) => setProjForm((f) => ({ ...f, nom: e.target.value }))} required placeholder="Ex: Tournage Clip X" />
-            </label>
-            <label className={styles.field}>Branche
-              <select value={projForm.branche} onChange={(e) => setProjForm((f) => ({ ...f, branche: e.target.value }))}>
-                <option value="">— Choisir —</option>
-                <option value="Agency">Agency</option>
-                <option value="CreativeGen">CreativeGen</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="SFX">SFX</option>
-              </select>
-            </label>
-            <div className={styles.fieldRow}>
-              <label className={styles.field}>Du <input type="date" value={projForm.dateDebut} onChange={(e) => setProjForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label>
-              <label className={styles.field}>Au <input type="date" value={projForm.dateFin} onChange={(e) => setProjForm((f) => ({ ...f, dateFin: e.target.value }))} required /></label>
-            </div>
-            <label className={styles.field}>Description
-              <textarea value={projForm.description} onChange={(e) => setProjForm((f) => ({ ...f, description: e.target.value }))} rows={2} placeholder="Contexte, objectifs..." />
-            </label>
-            <div className={styles.formActions}>
-              <button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button>
-              <button type="submit" className={styles.submitBtn} disabled={saving || !projForm.nom}>{saving ? "Création..." : "Créer le projet 🎬"}</button>
-            </div>
-          </form>
-        )}
-
-        {/* NOTE */}
-        {modalType === "note" && (
-          <form onSubmit={handleSubmitNote} className={styles.form}>
-            <label className={styles.field}>Date
-              <input type="date" value={noteForm.dateDebut} onChange={(e) => setNoteForm((f) => ({ ...f, dateDebut: e.target.value }))} required />
-            </label>
-            <label className={styles.field}>Note
-              <textarea value={noteForm.contenu} onChange={(e) => setNoteForm((f) => ({ ...f, contenu: e.target.value }))} rows={3} required placeholder="Rappel, idée, pensée du jour..." />
-            </label>
-            <div className={styles.formActions}>
-              <button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button>
-              <button type="submit" className={styles.submitBtn} disabled={saving || !noteForm.contenu}>{saving ? "Ajout..." : "Ajouter la note 📝"}</button>
-            </div>
-          </form>
-        )}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalType === "choose" ? "Ajouter" : modalType === "absence" ? (editId ? "Modifier" : "Absence") : modalType === "projet" ? "Projet" : "Note"} size="sm">
+        {modalType === "choose" && (<div className={styles.chooseGrid}><button className={styles.chooseCard} style={{ "--cc": "#10b981" }} onClick={() => setModalType("absence")}><span className={styles.chooseIcon}>🌴</span><span className={styles.chooseLabel}>Absence</span></button><button className={styles.chooseCard} style={{ "--cc": "#7c3aed" }} onClick={() => setModalType("projet")}><span className={styles.chooseIcon}>🎬</span><span className={styles.chooseLabel}>Projet</span></button><button className={styles.chooseCard} style={{ "--cc": "#f59e0b" }} onClick={() => setModalType("note")}><span className={styles.chooseIcon}>📝</span><span className={styles.chooseLabel}>Note</span></button></div>)}
+        {modalType === "absence" && (<form onSubmit={handleSubmit} className={styles.form}>
+          {!editId && (<div className={styles.recapBar}><div className={styles.recapItem} style={{ "--rc": "#10b981" }}><span>🌴</span><strong>{absRecap.conge}j</strong> congés</div><div className={styles.recapItem} style={{ "--rc": "#8b5cf6" }}><span>🏡</span><strong>{absRecap.tt}j</strong> TT</div><div className={styles.recapItem} style={{ "--rc": "#f43f5e" }}><span>🤧</span><strong>{absRecap.maladie}j</strong> maladie</div><div className={styles.recapVibe}>{vibe.emoji} {vibe.msg} — <strong>{solde.reste}j restants</strong></div></div>)}
+          <div className={styles.typeGrid}>{ABSENCE_TYPES.map((t) => (<button key={t.value} type="button" className={`${styles.typeCard} ${form.type === t.value ? styles.typeCardOn : ""}`} style={{ "--tc": t.color, "--tcbg": t.gradient }} onClick={() => setForm((f) => ({ ...f, type: t.value }))}><span className={styles.tcIcon}>{t.icon}</span><span className={styles.tcLabel}>{t.label}</span></button>))}</div>
+          <div className={styles.fieldRow}><label className={styles.field}>Du<input type="date" value={form.dateDebut} onChange={(e) => setForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label><label className={styles.field}>Au<input type="date" value={form.dateFin} onChange={(e) => setForm((f) => ({ ...f, dateFin: e.target.value }))} required /></label></div>
+          <label className={styles.field}>Demi-journée ?<select value={form.demiJournee} onChange={(e) => setForm((f) => ({ ...f, demiJournee: e.target.value }))}><option value="">Complète</option><option value="matin">Matin</option><option value="apres-midi">Après-midi</option></select></label>
+          <label className={styles.field}>Un mot ?<textarea value={form.commentaire} onChange={(e) => setForm((f) => ({ ...f, commentaire: e.target.value }))} rows={2} placeholder="Voyage, recharge..." /></label>
+          <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => editId ? setModalOpen(false) : setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !form.type}>{saving ? "..." : "C'est parti 🚀"}</button></div>
+        </form>)}
+        {modalType === "projet" && (<form onSubmit={handleSubmitProjet} className={styles.form}>
+          <label className={styles.field}>Nom<input value={projForm.nom} onChange={(e) => setProjForm((f) => ({ ...f, nom: e.target.value }))} required placeholder="Tournage Clip X" /></label>
+          <label className={styles.field}>Branche<select value={projForm.branche} onChange={(e) => setProjForm((f) => ({ ...f, branche: e.target.value }))}><option value="">—</option><option>Agency</option><option>CreativeGen</option><option>Entertainment</option><option>SFX</option></select></label>
+          <div className={styles.fieldRow}><label className={styles.field}>Du<input type="date" value={projForm.dateDebut} onChange={(e) => setProjForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label><label className={styles.field}>Au<input type="date" value={projForm.dateFin} onChange={(e) => setProjForm((f) => ({ ...f, dateFin: e.target.value }))} required /></label></div>
+          <label className={styles.field}>Description<textarea value={projForm.description} onChange={(e) => setProjForm((f) => ({ ...f, description: e.target.value }))} rows={2} /></label>
+          <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !projForm.nom}>{saving ? "..." : "Créer 🎬"}</button></div>
+        </form>)}
+        {modalType === "note" && (<form onSubmit={handleSubmitNote} className={styles.form}>
+          <label className={styles.field}>Date<input type="date" value={noteForm.dateDebut} onChange={(e) => setNoteForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label>
+          <label className={styles.field}>Note<textarea value={noteForm.contenu} onChange={(e) => setNoteForm((f) => ({ ...f, contenu: e.target.value }))} rows={3} required placeholder="Rappel, idée..." /></label>
+          <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !noteForm.contenu}>{saving ? "..." : "Ajouter 📝"}</button></div>
+        </form>)}
       </Modal>
     </div>
   );
