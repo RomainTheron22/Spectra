@@ -21,6 +21,7 @@ const MAIN_LINKS = [
   { label: "Météo du jour", to: "/meteo-du-jour", resource: "meteoQuotidien" },
   { label: "Météo de la semaine", to: "/meteo-de-la-semaine", resource: "meteoDuJour" },
   { label: "Planning Perso", to: "/planning-perso", resource: "planningPerso" },
+  { label: "Mon Planning", to: "/mon-planning", resource: "employeeAbsences" },
   { label: "Drive", to: "/drive", resource: "drive" },
   { label: "Admin", to: "/admin", resource: "admin" },
 ];
@@ -71,6 +72,14 @@ const MENU = [
         to: "/finances/facturation-revenus",
         resource: "facturationRevenus",
       },
+    ],
+  },
+  {
+    id: "menu-5",
+    label: "RH & Planning",
+    items: [
+      { label: "Profils Employés", to: "/rh/profils", resource: "employeeProfiles" },
+      { label: "Pilotage RH", to: "/rh/pilotage", resource: "pilotageRh" },
     ],
   },
   {

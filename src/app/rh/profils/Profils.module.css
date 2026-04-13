@@ -1,0 +1,242 @@
+.page {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.pageTitle {
+  font-size: 26px;
+  font-weight: 900;
+  background: linear-gradient(90deg, #0284c7, #0ea5e9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+.headerActions {
+  display: flex;
+  gap: 12px;
+}
+
+/* ── Buttons ── */
+.primaryButton {
+  background: linear-gradient(90deg, #0284c7, #0ea5e9);
+  color: white;
+  font-weight: 800;
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  box-shadow: 0 8px 20px rgba(2, 132, 199, 0.18);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.primaryButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(2, 132, 199, 0.25);
+}
+.submitBtn { composes: primaryButton; }
+.secondaryBtn {
+  background: white;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  color: var(--color-text);
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.secondaryBtn:hover { background: #f8fafc; border-color: rgba(15, 23, 42, 0.22); }
+.dangerBtn {
+  background: white;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  color: #dc2626;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.dangerBtn:hover { background: rgba(220, 38, 38, 0.06); border-color: rgba(220, 38, 38, 0.4); }
+
+/* ── Stats ── */
+.statsRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.statCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.06);
+}
+.statValue {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--color-text);
+}
+.statLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
+/* ── Toggle ── */
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+/* ── Grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.profileCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  position: relative;
+}
+.profileCard:hover {
+  border-color: var(--brand-blue-500);
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.12);
+}
+.profileHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.profileName {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+.contratBadge {
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 8px;
+  padding: 3px 8px;
+  border: 1px solid;
+}
+.profileMeta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+.inactiveBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(220, 38, 38, 0.12);
+  color: #991b1b;
+  border-radius: 8px;
+  padding: 2px 6px;
+}
+
+/* ── Form ── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.fieldLabel select,
+.fieldLabel input,
+.fieldLabel textarea {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color 120ms ease;
+}
+.fieldLabel select:focus,
+.fieldLabel input:focus {
+  outline: none;
+  border-color: var(--brand-blue-500);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+}
+.fieldRow {
+  display: flex;
+  gap: 12px;
+}
+.fieldRow > * { flex: 1; }
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* ── Jours de présence ── */
+.joursRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.jourBtn {
+  width: 48px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.jourBtn:hover {
+  border-color: var(--brand-blue-500);
+}
+.jourBtnActive {
+  background: linear-gradient(90deg, #0284c7, #0ea5e9);
+  color: white;
+  border-color: transparent;
+}

@@ -39,6 +39,10 @@ export const PERMISSION_RESOURCES = Object.freeze([
   { key: "kitsMachines",       label: "Kits & Machines",          group: "equipements" },
   { key: "checklistsEpi",      label: "Checklists & EPI",         group: "equipements" },
   { key: "historiqueEquip",    label: "Historique Equipements",   group: "equipements" },
+  // ── RH & Planning ──
+  { key: "employeeProfiles",   label: "Profils Employés",         group: "rh" },
+  { key: "employeeAbsences",   label: "Absences & Congés",        group: "rh" },
+  { key: "pilotageRh",         label: "Pilotage RH",              group: "rh" },
 ]);
 
 export const GROUP_LABELS = Object.freeze({
@@ -48,6 +52,7 @@ export const GROUP_LABELS = Object.freeze({
   reseau:       "Réseau & Équipe",
   finances:     "Finances",
   equipements:  "Equipements",
+  rh:           "RH & Planning",
 });
 
 const SUPPORTED_ACTIONS_BY_RESOURCE = Object.freeze({
@@ -71,6 +76,9 @@ const SUPPORTED_ACTIONS_BY_RESOURCE = Object.freeze({
   kitsMachines:       ["view", "create", "edit", "delete"],
   checklistsEpi:      ["view", "create", "edit", "delete"],
   historiqueEquip:    ["view", "export"],
+  employeeProfiles:   ["view", "create", "edit", "delete"],
+  employeeAbsences:   ["view", "create", "edit", "delete"],
+  pilotageRh:         ["view"],
 });
 
 const PATH_RESOURCE_RULES = [
@@ -97,6 +105,10 @@ const PATH_RESOURCE_RULES = [
   { test: (p) => p.startsWith("/equipements/checklists-epi"),       resource: "checklistsEpi" },
   { test: (p) => p.startsWith("/equipements/historique"),           resource: "historiqueEquip" },
   { test: (p) => p.startsWith("/equipements"),                      resource: "kitsMachines" },
+  { test: (p) => p.startsWith("/rh/profils"),                       resource: "employeeProfiles" },
+  { test: (p) => p.startsWith("/rh/absences"),                      resource: "employeeAbsences" },
+  { test: (p) => p.startsWith("/rh/pilotage"),                      resource: "pilotageRh" },
+  { test: (p) => p.startsWith("/mon-planning"),                     resource: "employeeAbsences" },
 ];
 
 export function normalizeRoleName(value) {
@@ -129,6 +141,8 @@ export function createAdminPermissions() {
 export function createInvitePermissions() {
   const matrix = createPermissionMatrix(false);
   matrix.dashboard.view = true;
+  matrix.employeeAbsences.view = true;
+  matrix.employeeAbsences.create = true;
   return matrix;
 }
 
@@ -324,6 +338,31 @@ export const RESOURCE_FIELDS = Object.freeze({
     { key: "responsable",     label: "Responsable" },
     { key: "cout",            label: "Coût de l'intervention" },
     { key: "description",     label: "Description" },
+  ],
+  // ── RH & Planning ──
+  employeeProfiles: [
+    { key: "nomPrenom",       label: "Nom & Prénom" },
+    { key: "contrat",         label: "Type de contrat" },
+    { key: "pole",            label: "Pôle" },
+    { key: "entite",          label: "Entité" },
+    { key: "joursPresence",   label: "Jours de présence" },
+    { key: "dateDebut",       label: "Date d'entrée" },
+    { key: "dateFin",         label: "Date de fin de contrat" },
+    { key: "congesAnnuels",   label: "Crédit congés annuel" },
+  ],
+  employeeAbsences: [
+    { key: "type",            label: "Type d'absence" },
+    { key: "dates",           label: "Dates" },
+    { key: "statut",          label: "Statut" },
+    { key: "commentaire",     label: "Commentaire" },
+    { key: "motifRefus",      label: "Motif de refus" },
+  ],
+  pilotageRh: [
+    { key: "remplissage",     label: "Taux de remplissage" },
+    { key: "zonesRouges",     label: "Zones rouges" },
+    { key: "demandes",        label: "Demandes en attente" },
+    { key: "finsContrat",     label: "Fins de contrat proches" },
+    { key: "tendances",       label: "Tendances absences" },
   ],
   // ── Planning Perso ──
   planningPerso: [
