@@ -102,7 +102,7 @@
 .weekColClickable:hover { border-color: #7c3aed; box-shadow: 0 3px 10px rgba(124,58,237,0.06); transform: translateY(-1px); }
 .weekColToday { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.02); }
 .weekColSelected { border-color: #7c3aed; background: rgba(124,58,237,0.04); box-shadow: 0 0 0 2px rgba(124,58,237,0.1); }
-.weekColWeekend { opacity: 0.4; background: rgba(0,0,0,0.01); }
+.weekColWeekend { background: rgba(0,0,0,0.015); }
 .weekColHead { padding: 10px 10px 6px; border-bottom: 1px solid var(--color-border); display: flex; align-items: baseline; gap: 6px; }
 .weekColDay { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--color-text-muted); }
 .weekColNum { font-size: 18px; font-weight: 900; color: var(--color-text); line-height: 1; }
@@ -144,8 +144,12 @@
 .panelDeleteBtn { background: white; border: 1px solid rgba(244,63,94,0.18); color: #f43f5e; font-weight: 700; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 10px; transition: all 120ms ease; }
 .panelDeleteBtn:hover { background: rgba(244,63,94,0.03); }
 .panelEmpty { font-size: 13px; color: var(--color-text-muted); text-align: center; padding: 20px 0; font-style: italic; }
-.panelAbsBtn { width: 100%; padding: 10px; border: 2px dashed rgba(16,185,129,0.25); border-radius: 10px; background: rgba(16,185,129,0.03); color: #10b981; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 120ms ease; margin-top: 12px; }
-.panelAbsBtn:hover { border-color: #10b981; background: rgba(16,185,129,0.08); }
+.panelTodayTag { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; background: linear-gradient(135deg, #7c3aed, #a855f6); color: white; padding: 2px 7px; border-radius: 5px; margin-top: 4px; }
+.panelActions { margin-top: 12px; border-top: 1px solid var(--color-border); padding-top: 12px; }
+.panelActionBtn { width: 100%; padding: 10px 12px; border: 1.5px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text); font-weight: 700; font-size: 12px; cursor: pointer; transition: all 120ms ease; text-align: left; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+.panelActionBtn:hover:not(:disabled) { border-color: var(--pab); color: var(--pab); background: color-mix(in srgb, var(--pab) 4%, white); }
+.panelActionBtn:disabled { opacity: 0.5; cursor: default; }
+.panelSoon { font-size: 9px; font-weight: 800; background: rgba(0,0,0,0.05); padding: 1px 6px; border-radius: 4px; margin-left: auto; color: var(--color-text-muted); }
 
 /* ═══ ABSENCES ═══ */
 .absSection { margin-bottom: 20px; animation: fadeUp 350ms ease 0.3s both; }
@@ -194,5 +198,5 @@
 .submitBtn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* ═══ RESPONSIVE ═══ */
-@media (max-width: 900px) { .mainArea { flex-direction: column; } .panel { width: 100%; position: static; } .weekView { grid-template-columns: repeat(5, 1fr); } .weekColWeekend { display: none; } }
+@media (max-width: 900px) { .mainArea { flex-direction: column; } .panel { width: 100%; position: static; } .weekView { grid-template-columns: repeat(7, 1fr); } }
 @media (max-width: 600px) { .typeGrid { grid-template-columns: 1fr; } .fieldRow { flex-direction: column; } .page { padding: 12px; } .calBar { gap: 8px; } .viewSwitch { width: 100%; } .viewBtn { flex: 1; } }

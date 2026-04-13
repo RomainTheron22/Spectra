@@ -94,8 +94,9 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ item: result });
   }
 
-  // L'employé peut modifier sa propre demande si encore en_attente
-  if (absence.userId === viewerId && absence.statut === "en_attente") {
+  // L'employé peut modifier sa propre demande si encore en_attente ET date pas passée
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (absence.userId === viewerId && absence.statut === "en_attente" && absence.dateDebut >= todayStr) {
     const allowed = ["type", "dateDebut", "dateFin", "demiJournee", "commentaire"];
     const updates = { updatedAt: new Date() };
     for (const key of allowed) {
@@ -135,6 +136,10 @@ export async function DELETE(request, { params }) {
   }
   if (!isAdmin(gate) && absence.statut !== "en_attente") {
     return NextResponse.json({ error: "Impossible de supprimer une absence déjà traitée." }, { status: 400 });
+  }
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (!isAdmin(gate) && absence.dateDebut < todayStr) {
+    return NextResponse.json({ error: "Impossible de supprimer une absence passée." }, { status: 400 });
   }
 
   await db.collection(COLLECTION).deleteOne({ _id: oid });

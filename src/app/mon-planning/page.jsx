@@ -147,8 +147,6 @@ export default function MonPlanning() {
   }, [selectedDate, calEvents]);
 
   function handleDayClick(date) {
-    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-    if (isWeekend) return;
     setSelectedDate(date);
   }
 
@@ -302,14 +300,14 @@ export default function MonPlanning() {
               {JOURS_HEAD.map((j) => <div key={j} className={styles.calHeader}>{j}</div>)}
               {calDays.map((d, i) => {
                 const key = toYMD(d); const isMonth = d.getMonth() === month; const isToday = key === today;
-                const isWeekend = d.getDay() === 0 || d.getDay() === 6; const canClick = isMonth && !isWeekend;
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                 const events = calEvents[key] || []; const isSelected = selectedDate && toYMD(selectedDate) === key;
                 return (
-                  <div key={i} className={[styles.calDay, isToday && styles.calToday, !isMonth && styles.calOther, isWeekend && styles.calWeekend, canClick && styles.calClickable, isSelected && styles.calSelected].filter(Boolean).join(" ")}
-                    onClick={() => canClick && handleDayClick(d)} role={canClick ? "button" : undefined} tabIndex={canClick ? 0 : undefined}
-                    onKeyDown={(e) => { if (canClick && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleDayClick(d); } }}>
+                  <div key={i} className={[styles.calDay, isToday && styles.calToday, !isMonth && styles.calOther, isWeekend && styles.calWeekend, isMonth && styles.calClickable, isSelected && styles.calSelected].filter(Boolean).join(" ")}
+                    onClick={() => isMonth && handleDayClick(d)} role={isMonth ? "button" : undefined} tabIndex={isMonth ? 0 : undefined}
+                    onKeyDown={(e) => { if (isMonth && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleDayClick(d); } }}>
                     <span className={styles.calNum}>{d.getDate()}</span>
-                    {renderCellEvents(events, true)}
+                    {events.length > 0 ? renderCellEvents(events, true) : isMonth && <span className={styles.calPlus}>+</span>}
                   </div>
                 );
               })}
@@ -325,9 +323,9 @@ export default function MonPlanning() {
                 const canClick = !isWeekend; const events = calEvents[key] || [];
                 const isSelected = selectedDate && toYMD(selectedDate) === key;
                 return (
-                  <div key={i} className={[styles.weekCol, isToday && styles.weekColToday, isWeekend && styles.weekColWeekend, !isWeekend && styles.weekColClickable, isSelected && styles.weekColSelected].filter(Boolean).join(" ")}
-                    onClick={() => !isWeekend && handleDayClick(d)} role={!isWeekend ? "button" : undefined} tabIndex={!isWeekend ? 0 : undefined}
-                    onKeyDown={(e) => { if (!isWeekend && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleDayClick(d); } }}>
+                  <div key={i} className={[styles.weekCol, isToday && styles.weekColToday, isWeekend && styles.weekColWeekend, styles.weekColClickable, isSelected && styles.weekColSelected].filter(Boolean).join(" ")}
+                    onClick={() => handleDayClick(d)} role="button" tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleDayClick(d); } }}>
                     <div className={styles.weekColHead}>
                       <span className={styles.weekColDay}>{JOURS_HEAD[i]}</span>
                       <span className={styles.weekColNum}>{d.getDate()}</span>
@@ -391,12 +389,17 @@ export default function MonPlanning() {
         </div>
 
         {/* ═══ PANEL LATÉRAL — détail du jour ═══ */}
-        {selectedDate && (
+        {selectedDate && (() => {
+          const dateStr = toYMD(selectedDate);
+          const isFuture = dateStr >= today;
+          const isToday2 = dateStr === today;
+          return (
           <aside className={styles.panel}>
             <div className={styles.panelHeader}>
               <div>
                 <div className={styles.panelDay}>{dayOfWeekFr(selectedDate)}</div>
                 <div className={styles.panelDate}>{selectedDate.getDate()} {MOIS[selectedDate.getMonth()]}</div>
+                {isToday2 && <span className={styles.panelTodayTag}>Aujourd'hui</span>}
               </div>
               <button className={styles.panelClose} onClick={() => setSelectedDate(null)}>✕</button>
             </div>
@@ -433,11 +436,12 @@ export default function MonPlanning() {
                 <h3 className={styles.panelSecTitle}>🌴 Absences</h3>
                 {selectedEvents.abs.map((a, j) => {
                   const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" };
+                  const canModify = a.statut === "en_attente" && a.dateDebut >= today;
                   return (
                     <div key={j} className={styles.panelEvt} style={{ "--pc": a.absType?.color || "#888" }}>
                       <div className={styles.panelEvtTitle}>{a.absType?.icon} {a.absType?.label}</div>
                       <span className={`${styles.panelEvtStatut} ${styles[s.cls]}`}>{s.label}</span>
-                      {a.statut === "en_attente" && (
+                      {canModify && (
                         <div className={styles.panelEvtActions}>
                           <button className={styles.panelEditBtn} onClick={() => openEdit(a)}>Modifier</button>
                           <button className={styles.panelDeleteBtn} onClick={() => handleDelete(String(a._id))}>Supprimer</button>
@@ -453,12 +457,24 @@ export default function MonPlanning() {
               <div className={styles.panelEmpty}>Rien de prévu ce jour</div>
             )}
 
-            {/* Bouton poser absence — toujours en bas */}
-            <button className={styles.panelAbsBtn} onClick={() => openAbsenceForm(toYMD(selectedDate))}>
-              🌴 Poser une absence ce jour
-            </button>
+            {/* Actions — hub générique */}
+            {isFuture && (
+              <div className={styles.panelActions}>
+                <h3 className={styles.panelSecTitle}>Ajouter</h3>
+                <button className={styles.panelActionBtn} style={{ "--pab": "#10b981" }} onClick={() => openAbsenceForm(dateStr)}>
+                  🌴 Poser une absence
+                </button>
+                <button className={styles.panelActionBtn} style={{ "--pab": "#7c3aed" }} disabled>
+                  🎬 Ajouter un projet <span className={styles.panelSoon}>bientôt</span>
+                </button>
+                <button className={styles.panelActionBtn} style={{ "--pab": "#f59e0b" }} disabled>
+                  📝 Ajouter une note <span className={styles.panelSoon}>bientôt</span>
+                </button>
+              </div>
+            )}
           </aside>
-        )}
+          );
+        })()}
       </div>
 
       {/* ═══ MES ABSENCES (compact, en bas) ═══ */}
@@ -468,7 +484,7 @@ export default function MonPlanning() {
           <div className={styles.absList}>
             {absences.map((a) => {
               const t = ABSENCE_TYPES.find((t) => t.value === a.type); const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" };
-              const canEdit = a.statut === "en_attente"; const jours = countWorkDays(a.dateDebut, a.dateFin, a.demiJournee);
+              const canEdit = a.statut === "en_attente" && a.dateDebut >= today; const jours = countWorkDays(a.dateDebut, a.dateFin, a.demiJournee);
               return (
                 <div key={String(a._id)} className={styles.absCard} style={{ "--ac": t?.color || "#888" }}>
                   <span className={styles.absIcon}>{t?.icon || "📋"}</span>
