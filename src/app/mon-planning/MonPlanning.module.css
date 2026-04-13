@@ -91,20 +91,42 @@
 .calEvtRdvDot { width: 4px; height: 4px; border-radius: 50%; background: var(--ec); flex-shrink: 0; }
 .calEvtMore { font-size: 7px; color: var(--color-text-muted); font-weight: 700; padding: 1px 4px; }
 
-/* ═══ VUE SEMAINE ═══ */
-.weekView { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.weekCol { border: 1.5px solid var(--color-border); border-radius: 10px; min-height: 200px; display: flex; flex-direction: column; transition: all 120ms ease; overflow: hidden; }
-.weekColClickable { cursor: pointer; }
-.weekColClickable:hover { border-color: #7c3aed; box-shadow: 0 3px 10px rgba(124,58,237,0.06); transform: translateY(-1px); }
-.weekColToday { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.02); }
-.weekColSelected { border-color: #7c3aed; background: rgba(124,58,237,0.04); box-shadow: 0 0 0 2px rgba(124,58,237,0.1); }
-.weekColWeekend { background: rgba(0,0,0,0.015); }
-.weekColHead { padding: 10px 10px 6px; border-bottom: 1px solid var(--color-border); display: flex; align-items: baseline; gap: 6px; }
-.weekColDay { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--color-text-muted); }
-.weekColNum { font-size: 18px; font-weight: 900; color: var(--color-text); line-height: 1; }
-.weekColToday .weekColNum { background: linear-gradient(135deg, #7c3aed, #a855f6); color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
-.weekColBody { padding: 8px; flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.weekColEmpty { font-size: 11px; color: var(--color-text-muted); font-style: italic; padding: 8px 0; text-align: center; }
+/* ═══ VUE SEMAINE — TIME GRID ═══ */
+.tgWrap { display: flex; flex-direction: column; }
+
+/* All-day row */
+.tgAllDay { display: grid; grid-template-columns: 52px repeat(7, 1fr); gap: 1px; margin-bottom: 2px; min-height: 24px; }
+.tgAllDayCell { display: flex; flex-wrap: wrap; gap: 2px; padding: 2px; }
+.tgAllDayEvt { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* Header */
+.tgHeader { display: grid; grid-template-columns: 52px repeat(7, 1fr); gap: 1px; border-bottom: 1px solid var(--color-border); }
+.tgHeaderCell { text-align: center; padding: 8px 4px; cursor: pointer; transition: background 120ms ease; border-radius: 8px 8px 0 0; }
+.tgHeaderCell:hover { background: rgba(124,58,237,0.03); }
+.tgHeaderToday { background: rgba(124,58,237,0.04); }
+.tgHeaderSelected { background: rgba(124,58,237,0.06); }
+.tgHeaderDay { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted); }
+.tgHeaderNum { display: inline-flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: var(--color-text); width: 32px; height: 32px; line-height: 1; }
+.tgHeaderNumToday { background: linear-gradient(135deg, #7c3aed, #a855f6); color: white; border-radius: 50%; font-size: 14px; }
+
+/* Body — time labels + columns */
+.tgBody { display: grid; grid-template-columns: 52px 1fr; max-height: 600px; overflow-y: auto; }
+.tgTimes { display: flex; flex-direction: column; }
+.tgTimeLine { height: 48px; display: flex; align-items: flex-start; justify-content: flex-end; padding-right: 8px; }
+.tgTimeText { font-size: 10px; font-weight: 700; color: var(--color-text-muted); transform: translateY(-6px); }
+
+.tgColumns { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.tgCol { position: relative; border-left: 1px solid var(--color-border); min-height: 0; cursor: pointer; }
+.tgCol:hover { background: rgba(124,58,237,0.015); }
+.tgColToday { background: rgba(124,58,237,0.025); }
+.tgHourSlot { height: 48px; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.tgHourSlot:nth-child(odd) { border-bottom-style: dashed; }
+
+/* Positioned events */
+.tgEvent { position: absolute; left: 2px; right: 2px; border-radius: 6px; padding: 3px 6px; overflow: hidden; z-index: 1; transition: box-shadow 120ms ease; cursor: pointer; display: flex; flex-direction: column; }
+.tgEvent:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 2; }
+.tgEventTitle { font-size: 10px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tgEventTime { font-size: 8px; font-weight: 600; opacity: 0.7; }
 
 /* ═══ VUE JOUR ═══ */
 .dayView { padding: 8px; }

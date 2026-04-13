@@ -84,7 +84,7 @@ const CONGE_VIBES = [
   { min: 0, emoji: "⚡", msg: "0 jour. Batterie à 100%. Tu as tout donné — et la team le sait", sub: "Full power. Respect." },
 ];
 function getVibe(j) { for (const v of CONGE_VIBES) { if (j >= v.min) return v; } return CONGE_VIBES[CONGE_VIBES.length - 1]; }
-function toYMD(d) { return d.toISOString().slice(0, 10); }
+function toYMD(d) { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, "0"); const day = String(d.getDate()).padStart(2, "0"); return `${y}-${m}-${day}`; }
 function countWorkDays(s, e, half) { if (half) return 0.5; let c = 0; const d = new Date(s); const end = new Date(e); while (d <= end) { if (d.getDay() !== 0 && d.getDay() !== 6) c++; d.setDate(d.getDate() + 1); } return c; }
 function dayOfWeekFr(d) { return JOURS_FULL[(d.getDay() + 6) % 7]; }
 function formatDateFr(d) { return `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`; }
@@ -194,20 +194,27 @@ export default function MonPlanning() {
     if (showGcal) {
       for (const ev of gcalEvents) {
         if (!ev.start) continue;
-        // Google Calendar dates can be ISO datetime or date-only
-        const startDate = String(ev.start).slice(0, 10);
-        const endRaw = ev.end ? String(ev.end).slice(0, 10) : startDate;
-        // All-day events: Google sets end to next day, so subtract 1
-        let endDate = endRaw;
-        if (ev.end && !ev.end.includes("T") && endRaw > startDate) {
-          const ed = new Date(endRaw); ed.setDate(ed.getDate() - 1); endDate = toYMD(ed);
+        const isAllDay = !String(ev.start).includes("T");
+        // Parse to local dates
+        const startLocal = new Date(ev.start);
+        const endLocal = ev.end ? new Date(ev.end) : startLocal;
+        const startDate = isAllDay ? String(ev.start).slice(0, 10) : toYMD(startLocal);
+        let endDate;
+        if (isAllDay) {
+          // All-day: Google sets end to exclusive next day
+          const ed = new Date(ev.end || ev.start); ed.setDate(ed.getDate() - 1);
+          endDate = String(ev.end || ev.start).slice(0, 10) > startDate ? toYMD(ed) : startDate;
+        } else {
+          endDate = toYMD(endLocal);
         }
-        // Find calendar color
+        // Extract start/end hours for time-grid positioning
+        const startHour = isAllDay ? null : startLocal.getHours() + startLocal.getMinutes() / 60;
+        const endHour = isAllDay ? null : endLocal.getHours() + endLocal.getMinutes() / 60;
         const sourceCal = gcalCalendars.find((c) => c.id === ev.calendarId);
         const evColor = sourceCal?.backgroundColor || "#4285f4";
         const calName = sourceCal?.summary || "";
-        const d = new Date(startDate); const end = new Date(endDate);
-        while (d <= end) { add(toYMD(d), { type: "gcal", title: ev.title, color: evColor, gcalId: ev.gcalId, calendarName: calName }); d.setDate(d.getDate() + 1); }
+        const d = new Date(startDate + "T12:00:00"); const end = new Date(endDate + "T12:00:00");
+        while (d <= end) { add(toYMD(d), { type: "gcal", title: ev.title, color: evColor, gcalId: ev.gcalId, calendarName: calName, startHour, endHour, isAllDay }); d.setDate(d.getDate() + 1); }
       }
     }
     return map;
@@ -536,31 +543,100 @@ export default function MonPlanning() {
             </div>
           )}
 
-          {/* VUE SEMAINE */}
-          {view === "week" && (
-            <div className={styles.weekView}>
-              {weekDays.map((d, i) => {
-                const key = toYMD(d); const isToday = key === today;
-                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                const canClick = !isWeekend; const events = calEvents[key] || [];
-                const isSelected = selectedDate && toYMD(selectedDate) === key;
-                return (
-                  <div key={i} className={[styles.weekCol, isToday && styles.weekColToday, isWeekend && styles.weekColWeekend, styles.weekColClickable, isSelected && styles.weekColSelected].filter(Boolean).join(" ")}
-                    onClick={() => handleDayClick(d)} role="button" tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleDayClick(d); } }}>
-                    <div className={styles.weekColHead}>
-                      <span className={styles.weekColDay}>{JOURS_HEAD[i]}</span>
-                      <span className={styles.weekColNum}>{d.getDate()}</span>
-                    </div>
-                    <div className={styles.weekColBody}>
-                      {renderCellEvents(events, false)}
-                      {!events.length && !isWeekend && <div className={styles.weekColEmpty}>Rien de prévu</div>}
-                    </div>
+          {/* VUE SEMAINE — TIME GRID */}
+          {view === "week" && (() => {
+            const HOUR_START = 7;
+            const HOUR_END = 21;
+            const hours = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
+            return (
+              <div className={styles.tgWrap}>
+                {/* All-day row */}
+                <div className={styles.tgAllDay}>
+                  <div className={styles.tgTimeLabel} />
+                  {weekDays.map((d, i) => {
+                    const key = toYMD(d);
+                    const events = calEvents[key] || [];
+                    const allDay = events.filter((e) => e.type === "gcal" && e.isAllDay);
+                    const projsDay = events.filter((e) => e.type === "projet" || e.type === "mission");
+                    const absDay = events.filter((e) => e.type === "absence");
+                    return (
+                      <div key={i} className={styles.tgAllDayCell}>
+                        {projsDay.map((p, j) => (
+                          <div key={`p${j}`} className={styles.tgAllDayEvt} style={{ background: `${p.color}22`, color: p.color, borderLeft: `3px solid ${p.color}` }}>
+                            {p.isMine ? "👤" : "🎬"} {p.title.length > 14 ? p.title.slice(0, 14) + "…" : p.title}
+                          </div>
+                        ))}
+                        {absDay.map((a, j) => (
+                          <div key={`a${j}`} className={styles.tgAllDayEvt} style={{ background: `${a.absType?.color || "#888"}18`, color: a.absType?.color, borderLeft: `2px solid ${a.absType?.color}` }}>
+                            {a.absType?.icon} {a.absType?.label}
+                          </div>
+                        ))}
+                        {allDay.map((g, j) => (
+                          <div key={`g${j}`} className={styles.tgAllDayEvt} style={{ background: `${g.color}18`, color: g.color, borderLeft: `2px solid ${g.color}` }}>
+                            {g.title.length > 14 ? g.title.slice(0, 14) + "…" : g.title}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Header */}
+                <div className={styles.tgHeader}>
+                  <div className={styles.tgTimeLabel} />
+                  {weekDays.map((d, i) => {
+                    const key = toYMD(d);
+                    const isToday2 = key === today;
+                    const isSelected2 = selectedDate && toYMD(selectedDate) === key;
+                    return (
+                      <div key={i} className={`${styles.tgHeaderCell} ${isToday2 ? styles.tgHeaderToday : ""} ${isSelected2 ? styles.tgHeaderSelected : ""}`}
+                        onClick={() => handleDayClick(d)} role="button" tabIndex={0}>
+                        <span className={styles.tgHeaderDay}>{JOURS_HEAD[i]}</span>
+                        <span className={`${styles.tgHeaderNum} ${isToday2 ? styles.tgHeaderNumToday : ""}`}>{d.getDate()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Time grid body */}
+                <div className={styles.tgBody}>
+                  <div className={styles.tgTimes}>
+                    {hours.map((h) => (
+                      <div key={h} className={styles.tgTimeLine}>
+                        <span className={styles.tgTimeText}>{String(h).padStart(2, "0")}:00</span>
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div className={styles.tgColumns}>
+                    {weekDays.map((d, i) => {
+                      const key = toYMD(d);
+                      const isToday2 = key === today;
+                      const events = (calEvents[key] || []).filter((e) => e.type === "gcal" && !e.isAllDay && e.startHour != null);
+                      return (
+                        <div key={i} className={`${styles.tgCol} ${isToday2 ? styles.tgColToday : ""}`}
+                          onClick={() => handleDayClick(d)}>
+                          {/* Hour grid lines */}
+                          {hours.map((h) => <div key={h} className={styles.tgHourSlot} />)}
+                          {/* Positioned events */}
+                          {events.map((ev, j) => {
+                            const top = ((ev.startHour - HOUR_START) / (HOUR_END - HOUR_START)) * 100;
+                            const height = Math.max(2, ((ev.endHour - ev.startHour) / (HOUR_END - HOUR_START)) * 100);
+                            return (
+                              <div key={j} className={styles.tgEvent} style={{
+                                top: `${top}%`, height: `${height}%`,
+                                background: `${ev.color}20`, borderLeft: `3px solid ${ev.color}`, color: ev.color,
+                              }}>
+                                <span className={styles.tgEventTitle}>{ev.title}</span>
+                                <span className={styles.tgEventTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} - {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* VUE JOUR */}
           {view === "day" && (() => {
