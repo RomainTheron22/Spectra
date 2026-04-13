@@ -191,9 +191,27 @@ export default function MonPlanning() {
     if (showProjets) { for (const p of projects) { const d = new Date(p.dateDebut); const end = new Date(p.dateFin); while (d <= end) { add(toYMD(d), { type: "projet", ...p }); d.setDate(d.getDate() + 1); } } }
     if (showMissions) { for (const p of myMissions) { const d = new Date(p.dateDebut); const end = new Date(p.dateFin); while (d <= end) { const k = toYMD(d); const ex = map[k]?.find((e) => e.type === "projet" && e.id === p.id); if (ex) ex.isMine = true; else add(k, { type: "mission", ...p, isMine: true }); d.setDate(d.getDate() + 1); } } }
     if (showAbsences) { for (const a of absences) { const d = new Date(a.dateDebut); const end = new Date(a.dateFin); while (d <= end) { add(toYMD(d), { type: "absence", ...a, absType: ABSENCE_TYPES.find((t) => t.value === a.type) }); d.setDate(d.getDate() + 1); } } }
-    if (showGcal) { for (const ev of gcalEvents) { if (!ev.start) continue; const startDate = ev.start.slice(0, 10); const endDate = ev.end ? ev.end.slice(0, 10) : startDate; const d = new Date(startDate); const end = new Date(endDate); while (d <= end) { add(toYMD(d), { type: "gcal", title: ev.title, color: "#4285f4", gcalId: ev.gcalId }); d.setDate(d.getDate() + 1); } } }
+    if (showGcal) {
+      for (const ev of gcalEvents) {
+        if (!ev.start) continue;
+        // Google Calendar dates can be ISO datetime or date-only
+        const startDate = String(ev.start).slice(0, 10);
+        const endRaw = ev.end ? String(ev.end).slice(0, 10) : startDate;
+        // All-day events: Google sets end to next day, so subtract 1
+        let endDate = endRaw;
+        if (ev.end && !ev.end.includes("T") && endRaw > startDate) {
+          const ed = new Date(endRaw); ed.setDate(ed.getDate() - 1); endDate = toYMD(ed);
+        }
+        // Find calendar color
+        const sourceCal = gcalCalendars.find((c) => c.id === ev.calendarId);
+        const evColor = sourceCal?.backgroundColor || "#4285f4";
+        const calName = sourceCal?.summary || "";
+        const d = new Date(startDate); const end = new Date(endDate);
+        while (d <= end) { add(toYMD(d), { type: "gcal", title: ev.title, color: evColor, gcalId: ev.gcalId, calendarName: calName }); d.setDate(d.getDate() + 1); }
+      }
+    }
     return map;
-  }, [projects, myMissions, absences, gcalEvents, showProjets, showMissions, showAbsences, showGcal]);
+  }, [projects, myMissions, absences, gcalEvents, gcalCalendars, showProjets, showMissions, showAbsences, showGcal]);
 
   // Calendar days for month view
   const calDays = useMemo(() => {
@@ -215,13 +233,14 @@ export default function MonPlanning() {
 
   // Events for selected date (panel)
   const selectedEvents = useMemo(() => {
-    if (!selectedDate) return { projs: [], missions: [], abs: [] };
+    if (!selectedDate) return { projs: [], missions: [], abs: [], gcals: [] };
     const key = toYMD(selectedDate);
     const all = calEvents[key] || [];
     return {
       projs: all.filter((e) => e.type === "projet" && !e.isMine),
       missions: all.filter((e) => (e.type === "projet" && e.isMine) || e.type === "mission"),
       abs: all.filter((e) => e.type === "absence"),
+      gcals: all.filter((e) => e.type === "gcal"),
     };
   }, [selectedDate, calEvents]);
 
@@ -232,17 +251,25 @@ export default function MonPlanning() {
   async function toggleGcalCalendar(calId) {
     const newIds = gcalSelectedIds.includes(calId) ? gcalSelectedIds.filter((id) => id !== calId) : [...gcalSelectedIds, calId];
     setGcalSelectedIds(newIds);
-    await fetch("/api/planning/google-calendar/calendars", {
+    // Save d'abord, puis attendre avant de refetch
+    const saveRes = await fetch("/api/planning/google-calendar/calendars", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ calendarIds: newIds }),
     });
-    // Refetch events avec les nouveaux calendriers
-    const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
-    const from = new Date(y, m, 1).toISOString();
-    const to = new Date(y, m + 2, 0).toISOString();
-    const gcRes = await fetch(`/api/planning/google-calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { cache: "no-store" });
-    const gcData = await gcRes.json();
-    if (gcData.items) setGcalEvents(gcData.items);
+    if (!saveRes.ok) return;
+    // Refetch events
+    await refetchGcalEvents();
+  }
+
+  async function refetchGcalEvents() {
+    try {
+      const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
+      const from = new Date(y, m, 1).toISOString();
+      const to = new Date(y, m + 2, 0).toISOString();
+      const gcRes = await fetch(`/api/planning/google-calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { cache: "no-store" });
+      const gcData = await gcRes.json();
+      if (gcData.items) setGcalEvents(gcData.items);
+    } catch {}
   }
 
   function openChoose(dateStr) {
@@ -377,7 +404,7 @@ export default function MonPlanning() {
         ))}
         {projs.length > limit && <div className={styles.calEvtMore}>+{projs.length - limit}</div>}
         {gcals.slice(0, compact ? 1 : 3).map((g, j) => (
-          <div key={`g${j}`} className={styles.calEvt} style={{ "--ec": "#4285f4" }}>
+          <div key={`g${j}`} className={styles.calEvt} style={{ "--ec": g.color || "#4285f4" }}>
             📅 {compact ? (g.title.length > 10 ? g.title.slice(0, 10) + "…" : g.title) : g.title}
           </div>
         ))}
@@ -634,7 +661,20 @@ export default function MonPlanning() {
               </div>
             )}
 
-            {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && (
+            {/* Google Agenda */}
+            {selectedEvents.gcals.length > 0 && (
+              <div className={styles.panelSection}>
+                <h3 className={styles.panelSecTitle}>📅 Google Agenda</h3>
+                {selectedEvents.gcals.map((g, j) => (
+                  <div key={j} className={styles.panelEvt} style={{ "--pc": g.color || "#4285f4" }}>
+                    <div className={styles.panelEvtTitle}>{g.title}</div>
+                    {g.calendarName && <div className={styles.panelEvtMeta}>{g.calendarName}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && selectedEvents.gcals.length === 0 && (
               <div className={styles.panelEmpty}>Rien de prévu ce jour</div>
             )}
 
