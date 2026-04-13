@@ -59,6 +59,17 @@ function getProjectQuote(projects) {
   return { msg: `Prochain projet : ${hot.title} — ${hot.branche}`, icon: "📌", color: hot.color };
 }
 
+// IA catégorisation — détecte si un event Google est une absence/TT/indispo
+const ABSENCE_KEYWORDS = ["absence", "congé", "conge", "congés", "vacances", "off", "repos", "jour off", "indispo", "indisponible", "maladie", "malade", "arrêt", "arret"];
+const TT_KEYWORDS = ["télétravail", "teletravail", "tt", "remote", "home office", "wfh", "travail maison"];
+
+function classifyGcalEvent(title) {
+  const t = (title || "").toLowerCase();
+  if (TT_KEYWORDS.some((kw) => t.includes(kw))) return "tt";
+  if (ABSENCE_KEYWORDS.some((kw) => t.includes(kw))) return "absence";
+  return "rdv";
+}
+
 function Sparkles({ active }) {
   if (!active) return null;
   return <div className={styles.sparklesWrap} aria-hidden="true">{Array.from({ length: 6 }).map((_, i) => <span key={i} className={styles.sparkle} style={{ "--i": i }} />)}</div>;
@@ -166,8 +177,10 @@ export default function MonPlanning() {
         const sourceCal = gcalCalendars.find((c) => c.id === ev.calendarId);
         const evColor = sourceCal?.backgroundColor || "#4285f4";
         const calName = sourceCal?.summary || "";
+        const classification = classifyGcalEvent(ev.title);
+        const forceAllDay = classification === "absence" || classification === "tt" || isAllDay;
         const d = new Date(startDate + "T12:00:00"); const end = new Date(endDate + "T12:00:00");
-        while (d <= end) { add(toYMD(d), { type: "gcal", title: ev.title, color: evColor, gcalId: ev.gcalId, calendarName: calName, startHour, endHour, isAllDay }); d.setDate(d.getDate() + 1); }
+        while (d <= end) { add(toYMD(d), { type: "gcal", title: ev.title, color: evColor, gcalId: ev.gcalId, calendarName: calName, startHour: forceAllDay ? null : startHour, endHour: forceAllDay ? null : endHour, isAllDay: forceAllDay, classification }); d.setDate(d.getDate() + 1); }
       }
     }
     return map;
@@ -399,13 +412,36 @@ export default function MonPlanning() {
                 <div className={styles.tgCols}>
                   {weekDays.map((d, i) => {
                     const key = toYMD(d); const isToday2 = key === today;
-                    const timed = (calEvents[key] || []).filter((e) => e.type === "gcal" && !e.isAllDay && e.startHour != null);
+                    const timed = (calEvents[key] || []).filter((e) => e.type === "gcal" && !e.isAllDay && e.startHour != null)
+                      .sort((a, b) => a.startHour - b.startHour);
+                    // Layout: detect overlaps and assign columns
+                    const laid = timed.map((ev) => ({ ...ev, col: 0, totalCols: 1 }));
+                    for (let a = 0; a < laid.length; a++) {
+                      for (let b = a + 1; b < laid.length; b++) {
+                        if (laid[b].startHour < laid[a].endHour) {
+                          if (laid[b].col === laid[a].col) laid[b].col = laid[a].col + 1;
+                          laid[a].totalCols = Math.max(laid[a].totalCols, laid[b].col + 1);
+                          laid[b].totalCols = Math.max(laid[b].totalCols, laid[b].col + 1);
+                        }
+                      }
+                    }
+                    // Propagate max totalCols for overlapping groups
+                    for (let a = 0; a < laid.length; a++) {
+                      for (let b = a + 1; b < laid.length; b++) {
+                        if (laid[b].startHour < laid[a].endHour) {
+                          const maxC = Math.max(laid[a].totalCols, laid[b].totalCols);
+                          laid[a].totalCols = maxC; laid[b].totalCols = maxC;
+                        }
+                      }
+                    }
                     return (<div key={i} className={`${styles.tgCol} ${isToday2 ? styles.tgColToday : ""}`} onClick={() => handleDayClick(d)}>
                       {hours.map((h) => <div key={h} className={styles.tgSlot} />)}
-                      {timed.map((ev, j) => {
+                      {laid.map((ev, j) => {
                         const top = ((ev.startHour - HOUR_START) / (HOUR_END - HOUR_START)) * 100;
                         const height = Math.max(2.5, ((ev.endHour - ev.startHour) / (HOUR_END - HOUR_START)) * 100);
-                        return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, "--evc": ev.color }}>
+                        const width = 100 / ev.totalCols;
+                        const left = ev.col * width;
+                        return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}>
                           <span className={styles.tgEvtTitle}>{ev.title}</span>
                           <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")}</span>
                         </div>);
