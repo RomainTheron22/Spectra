@@ -228,7 +228,7 @@ export default function MonPlanning() {
   function openChoose(dateStr) { setEditId(null); setModalType("choose"); setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" }); setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" }); setNoteForm({ contenu: "", dateDebut: dateStr || "" }); setModalOpen(true); }
   function openAbsenceForm(dateStr) { setEditId(null); setModalType("absence"); setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" }); setModalOpen(true); }
   function openProjForm(dateStr) { setModalType("projet"); setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" }); setModalOpen(true); }
-  function openNoteForm(dateStr) { setModalType("note"); setNoteForm({ contenu: "", dateDebut: dateStr || toYMD(new Date()) }); setModalOpen(true); }
+  function openNoteForm(dateStr) { setModalType("note"); setNoteForm({ contenu: "", dateDebut: dateStr || toYMD(new Date()), heureDebut: "09:00", heureFin: "10:00", lieu: "", participants: "", allDay: false }); setModalOpen(true); }
   function openNew() { openChoose(""); }
   function openEdit(absence) { setEditId(String(absence._id)); setModalType("absence"); setForm({ type: absence.type || "", dateDebut: absence.dateDebut, dateFin: absence.dateFin, demiJournee: absence.demiJournee || "", commentaire: absence.commentaire || "" }); setModalOpen(true); }
 
@@ -239,7 +239,13 @@ export default function MonPlanning() {
     const res = await fetch(url, { method: editId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur"); return; }
     if (editId) setAbsences((prev) => prev.map((a) => (String(a._id) === editId ? data.item : a)));
-    else { setAbsences((prev) => [data.item, ...prev]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); }
+    else {
+      setAbsences((prev) => [data.item, ...prev]);
+      setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
+      // Push vers Google Agenda
+      const typeLabel = ABSENCE_TYPES.find((t) => t.value === form.type)?.label || form.type;
+      try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `${typeLabel}`, start: form.dateDebut, end: form.dateFin, allDay: true, description: form.commentaire || "" }) }); } catch {}
+    }
     setModalOpen(false);
   }
   async function handleSubmitProjet(e) {
@@ -248,11 +254,22 @@ export default function MonPlanning() {
     const res = await fetch("/api/contrats", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur"); return; }
     const np = normalizeProject(data.item || data); if (np.dateDebut && np.dateFin) setProjects((prev) => [...prev, np]);
-    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); setModalOpen(false);
+    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
+    // Push projet vers Google Agenda
+    try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `🎬 ${projForm.nom}${projForm.branche ? ` — ${projForm.branche}` : ""}`, start: projForm.dateDebut, end: projForm.dateFin, allDay: true, description: projForm.description || "" }) }); } catch {}
+    setModalOpen(false);
   }
   async function handleSubmitNote(e) {
-    e.preventDefault(); if (!noteForm.contenu) { alert("Note vide"); return; } setSaving(true);
-    const body = { title: noteForm.contenu, start: `${noteForm.dateDebut}T09:00:00`, end: `${noteForm.dateDebut}T09:30:00` };
+    e.preventDefault(); if (!noteForm.contenu) { alert("Titre obligatoire"); return; } setSaving(true);
+    const body = {
+      title: noteForm.contenu,
+      allDay: noteForm.allDay,
+      start: noteForm.allDay ? noteForm.dateDebut : `${noteForm.dateDebut}T${noteForm.heureDebut}:00`,
+      end: noteForm.allDay ? noteForm.dateDebut : `${noteForm.dateDebut}T${noteForm.heureFin}:00`,
+      description: "",
+      location: noteForm.lieu || "",
+      attendees: noteForm.participants ? noteForm.participants.split(",").map((e) => e.trim()).filter(Boolean) : [],
+    };
     const res = await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur Google Agenda"); return; }
     if (data.item) setGcalEvents((prev) => [...prev, data.item]);
@@ -500,7 +517,7 @@ export default function MonPlanning() {
               {selectedEvents.abs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🌴 Absences</h3>{selectedEvents.abs.map((a, j) => { const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" }; const canMod = a.statut === "en_attente" && a.dateDebut >= today; return (<div key={j} className={styles.pEvt} style={{ "--pc": a.absType?.color || "#888" }}><div className={styles.pEvtTitle}>{a.absType?.icon} {a.absType?.label}</div><span className={`${styles.pStatut} ${styles[s.cls]}`}>{s.label}</span>{canMod && <div className={styles.pActions}><button className={styles.pEditBtn} onClick={() => openEdit(a)}>Modifier</button><button className={styles.pDelBtn} onClick={() => handleDelete(String(a._id))}>Supprimer</button></div>}</div>); })}</div>)}
               {Object.keys(selectedEvents.gcalByBranch).length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>📅 Agenda</h3>{Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (<div key={branch} className={styles.pBranch}><div className={styles.pBranchHead}><span className={styles.pBranchDot} style={{ background: data.color }} /><span className={styles.pBranchName}>{branch}</span><span className={styles.pBranchN}>{data.events.length}</span></div>{data.events.map((g, j) => <div key={j} className={styles.pRdv}>{g.title}</div>)}</div>))}</div>)}
               {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && Object.keys(selectedEvents.gcalByBranch).length === 0 && <div className={styles.pEmpty}>Rien de prévu</div>}
-              {isFuture && (<div className={styles.pAddSec}><h3 className={styles.pSecTitle}>Ajouter</h3><button className={styles.pAddBtn} style={{ "--pab": "#10b981" }} onClick={() => openAbsenceForm(dateStr)}>🌴 Absence</button><button className={styles.pAddBtn} style={{ "--pab": "#7c3aed" }} onClick={() => openProjForm(dateStr)}>🎬 Projet</button><button className={styles.pAddBtn} style={{ "--pab": "#f59e0b" }} onClick={() => openNoteForm(dateStr)}>📝 Note</button></div>)}
+              {isFuture && (<div className={styles.pAddSec}><h3 className={styles.pSecTitle}>Ajouter</h3><button className={styles.pAddBtn} style={{ "--pab": "#10b981" }} onClick={() => openAbsenceForm(dateStr)}>🌴 Absence</button><button className={styles.pAddBtn} style={{ "--pab": "#7c3aed" }} onClick={() => openProjForm(dateStr)}>🎬 Projet</button><button className={styles.pAddBtn} style={{ "--pab": "#f59e0b" }} onClick={() => openNoteForm(dateStr)}>📅 Événement</button></div>)}
             </aside>
           );
         })()}
@@ -525,8 +542,8 @@ export default function MonPlanning() {
       )}
 
       {/* ═══ MODALE ═══ */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalType === "choose" ? "Ajouter" : modalType === "absence" ? (editId ? "Modifier" : "Absence") : modalType === "projet" ? "Projet" : "Note"} size="sm">
-        {modalType === "choose" && (<div className={styles.chooseGrid}><button className={styles.chooseCard} style={{ "--cc": "#10b981" }} onClick={() => setModalType("absence")}><span className={styles.chooseIcon}>🌴</span><span className={styles.chooseLabel}>Absence</span></button><button className={styles.chooseCard} style={{ "--cc": "#7c3aed" }} onClick={() => setModalType("projet")}><span className={styles.chooseIcon}>🎬</span><span className={styles.chooseLabel}>Projet</span></button><button className={styles.chooseCard} style={{ "--cc": "#f59e0b" }} onClick={() => setModalType("note")}><span className={styles.chooseIcon}>📝</span><span className={styles.chooseLabel}>Note</span></button></div>)}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalType === "choose" ? "Ajouter" : modalType === "absence" ? (editId ? "Modifier" : "Absence") : modalType === "projet" ? "Projet" : "Événement"} size="sm">
+        {modalType === "choose" && (<div className={styles.chooseGrid}><button className={styles.chooseCard} style={{ "--cc": "#10b981" }} onClick={() => setModalType("absence")}><span className={styles.chooseIcon}>🌴</span><span className={styles.chooseLabel}>Absence</span></button><button className={styles.chooseCard} style={{ "--cc": "#7c3aed" }} onClick={() => setModalType("projet")}><span className={styles.chooseIcon}>🎬</span><span className={styles.chooseLabel}>Projet</span></button><button className={styles.chooseCard} style={{ "--cc": "#f59e0b" }} onClick={() => setModalType("note")}><span className={styles.chooseIcon}>📅</span><span className={styles.chooseLabel}>Événement</span></button></div>)}
         {modalType === "absence" && (<form onSubmit={handleSubmit} className={styles.form}>
           {!editId && (<div className={styles.recapBar}><div className={styles.recapItem} style={{ "--rc": "#10b981" }}><span>🌴</span><strong>{absRecap.conge}j</strong> congés</div><div className={styles.recapItem} style={{ "--rc": "#8b5cf6" }}><span>🏡</span><strong>{absRecap.tt}j</strong> TT</div><div className={styles.recapItem} style={{ "--rc": "#f43f5e" }}><span>🤧</span><strong>{absRecap.maladie}j</strong> maladie</div><div className={styles.recapVibe}>{vibe.emoji} {vibe.msg} — <strong>{solde.reste}j restants</strong></div></div>)}
           <div className={styles.typeGrid}>{ABSENCE_TYPES.map((t) => (<button key={t.value} type="button" className={`${styles.typeCard} ${form.type === t.value ? styles.typeCardOn : ""}`} style={{ "--tc": t.color, "--tcbg": t.gradient }} onClick={() => setForm((f) => ({ ...f, type: t.value }))}><span className={styles.tcIcon}>{t.icon}</span><span className={styles.tcLabel}>{t.label}</span></button>))}</div>
@@ -543,9 +560,18 @@ export default function MonPlanning() {
           <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !projForm.nom}>{saving ? "..." : "Créer 🎬"}</button></div>
         </form>)}
         {modalType === "note" && (<form onSubmit={handleSubmitNote} className={styles.form}>
+          <label className={styles.field}>Titre<input value={noteForm.contenu} onChange={(e) => setNoteForm((f) => ({ ...f, contenu: e.target.value }))} required placeholder="Réunion, RDV, rappel..." /></label>
           <label className={styles.field}>Date<input type="date" value={noteForm.dateDebut} onChange={(e) => setNoteForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label>
-          <label className={styles.field}>Note<textarea value={noteForm.contenu} onChange={(e) => setNoteForm((f) => ({ ...f, contenu: e.target.value }))} rows={3} required placeholder="Rappel, idée..." /></label>
-          <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !noteForm.contenu}>{saving ? "..." : "Ajouter 📝"}</button></div>
+          <label className={styles.fieldCheck}><input type="checkbox" checked={noteForm.allDay} onChange={(e) => setNoteForm((f) => ({ ...f, allDay: e.target.checked }))} /> Toute la journée</label>
+          {!noteForm.allDay && (
+            <div className={styles.fieldRow}>
+              <label className={styles.field}>De<input type="time" value={noteForm.heureDebut} onChange={(e) => setNoteForm((f) => ({ ...f, heureDebut: e.target.value }))} required /></label>
+              <label className={styles.field}>À<input type="time" value={noteForm.heureFin} onChange={(e) => setNoteForm((f) => ({ ...f, heureFin: e.target.value }))} required /></label>
+            </div>
+          )}
+          <label className={styles.field}>Lieu <span className={styles.fieldOpt}>(optionnel)</span><input value={noteForm.lieu} onChange={(e) => setNoteForm((f) => ({ ...f, lieu: e.target.value }))} placeholder="Bureau, visio, adresse..." /></label>
+          <label className={styles.field}>Participants <span className={styles.fieldOpt}>(emails séparés par des virgules)</span><input value={noteForm.participants} onChange={(e) => setNoteForm((f) => ({ ...f, participants: e.target.value }))} placeholder="nom@email.com, autre@email.com" /></label>
+          <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !noteForm.contenu}>{saving ? "..." : "Créer l'événement 📅"}</button></div>
         </form>)}
       </Modal>
     </div>

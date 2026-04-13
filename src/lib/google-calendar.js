@@ -177,19 +177,29 @@ export async function listEvents(accessToken, timeMin, timeMax, calendarId = "pr
  * Cree un evenement dans Google Calendar.
  */
 export async function createEvent(accessToken, event, calendarId = "primary") {
-    const body = {
-        summary: event.title || "Sans titre",
-        start: {
-            dateTime: new Date(event.start).toISOString(),
-            timeZone: event.timeZone || "Europe/Paris",
-        },
-        end: {
-            dateTime: new Date(event.end).toISOString(),
-            timeZone: event.timeZone || "Europe/Paris",
-        },
-    };
+    const tz = event.timeZone || "Europe/Paris";
+    const body = { summary: event.title || "Sans titre" };
+
+    // All-day vs timed event
+    if (event.allDay) {
+        body.start = { date: event.start.slice(0, 10) };
+        // Google all-day end is exclusive (next day)
+        const endDate = new Date(event.end || event.start);
+        endDate.setDate(endDate.getDate() + 1);
+        const y = endDate.getFullYear();
+        const m = String(endDate.getMonth() + 1).padStart(2, "0");
+        const d = String(endDate.getDate()).padStart(2, "0");
+        body.end = { date: `${y}-${m}-${d}` };
+    } else {
+        body.start = { dateTime: new Date(event.start).toISOString(), timeZone: tz };
+        body.end = { dateTime: new Date(event.end).toISOString(), timeZone: tz };
+    }
 
     if (event.description) body.description = event.description;
+    if (event.location) body.location = event.location;
+    if (Array.isArray(event.attendees) && event.attendees.length > 0) {
+        body.attendees = event.attendees.map((email) => ({ email }));
+    }
 
     const res = await fetch(`${GCAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events`, {
         method: "POST",
@@ -287,5 +297,7 @@ function normalizeEvent(gcalEvent) {
         isGoogleCalendar: true,
         htmlLink: gcalEvent.htmlLink || null,
         description: gcalEvent.description || "",
+        location: gcalEvent.location || "",
+        attendees: (gcalEvent.attendees || []).map((a) => a.email).filter(Boolean),
     };
 }

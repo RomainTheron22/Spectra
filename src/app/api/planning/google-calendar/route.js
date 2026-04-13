@@ -108,6 +108,9 @@ export async function POST(request) {
             start: body.start,
             end: body.end,
             description: body.description || "",
+            location: body.location || "",
+            attendees: body.attendees || [],
+            allDay: body.allDay || false,
         }, targetCalId);
 
         return Response.json({ item: { ...event, calendarId: targetCalId } });

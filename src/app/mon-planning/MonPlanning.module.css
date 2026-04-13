@@ -213,6 +213,9 @@
 .field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 700; color: var(--color-text); }
 .field select, .field input, .field textarea { font-size: 13px; font-weight: 500; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); transition: border-color 100ms; }
 .field select:focus, .field input:focus, .field textarea:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.06); }
+.fieldCheck { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--color-text); cursor: pointer; user-select: none; }
+.fieldCheck input[type="checkbox"] { width: 16px; height: 16px; accent-color: #7c3aed; cursor: pointer; }
+.fieldOpt { font-weight: 500; color: var(--color-text-muted); font-size: 10px; }
 .fieldRow { display: flex; gap: 6px; }
 .fieldRow > * { flex: 1; }
 .formActions { display: flex; justify-content: flex-end; gap: 6px; }
