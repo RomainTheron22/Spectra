@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import styles from "./MonPlanning.module.css";
 import Modal from "../../components/ui/Modal";
 
@@ -20,6 +20,7 @@ const HOUR_START_WEEK = 7;
 const HOUR_END_WEEK = 21;
 const HOUR_START_DAY = 0;
 const HOUR_END_DAY = 24;
+const DAY_SCROLL_TO = 8; // scroll auto vers 8h à l'ouverture
 
 const BRANCH_COLORS = { "Agency": "#e11d48", "CreativeGen": "#7c3aed", "Entertainment": "#0891b2", "SFX": "#ca8a04", "default": "#6b7280" };
 function projectColor(b) { return BRANCH_COLORS[b] || BRANCH_COLORS.default; }
@@ -93,7 +94,6 @@ export default function MonPlanning() {
   const [editId, setEditId] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [vibeHover, setVibeHover] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
   const [showProjets, setShowProjets] = useState(true);
   const [showMissions, setShowMissions] = useState(true);
   const [showAbsences, setShowAbsences] = useState(true);
@@ -104,6 +104,11 @@ export default function MonPlanning() {
   const [gcalConnected, setGcalConnected] = useState(false);
   const [showCalPicker, setShowCalPicker] = useState(false);
   const [projects, setProjects] = useState([]);
+  const dayGridRef = useRef(null);
+  const weekGridRef = useRef(null);
+  const [dragStart, setDragStart] = useState(null);
+  const [dragEnd, setDragEnd] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const myMissions = useMemo(() => {
     if (!profile?.userId) return [];
@@ -208,6 +213,44 @@ export default function MonPlanning() {
     return { projs: all.filter((e) => e.type === "projet" && !e.isMine), missions: all.filter((e) => (e.type === "projet" && e.isMine) || e.type === "mission"), abs: all.filter((e) => e.type === "absence"), gcalByBranch };
   }, [selectedDate, calEvents]);
 
+  // Scroll to 8h when switching views
+  useEffect(() => {
+    const ref = view === "day" ? dayGridRef : weekGridRef;
+    if (ref.current) {
+      const slotH = 48; // px per hour
+      ref.current.scrollTop = DAY_SCROLL_TO * slotH;
+    }
+  }, [view, calDate]);
+
+  // Drag to create event
+  function handleGridMouseDown(date, hour) {
+    setDragStart({ date: toYMD(date), hour });
+    setDragEnd({ date: toYMD(date), hour: hour + 0.5 });
+    setIsDragging(true);
+  }
+  function handleGridMouseMove(hour) {
+    if (!isDragging) return;
+    setDragEnd((prev) => prev ? { ...prev, hour: Math.max(hour + 0.25, (dragStart?.hour || 0) + 0.25) } : prev);
+  }
+  function handleGridMouseUp() {
+    if (!isDragging || !dragStart || !dragEnd) { setIsDragging(false); return; }
+    setIsDragging(false);
+    const startH = Math.floor(dragStart.hour);
+    const startM = Math.round((dragStart.hour % 1) * 60);
+    const endH = Math.floor(dragEnd.hour);
+    const endM = Math.round((dragEnd.hour % 1) * 60);
+    setNoteForm({
+      contenu: "",
+      dateDebut: dragStart.date,
+      heureDebut: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`,
+      heureFin: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+      lieu: "", participants: "", allDay: false,
+    });
+    setModalType("note");
+    setModalOpen(true);
+    setDragStart(null); setDragEnd(null);
+  }
+
   function handleDayClick(date) { setSelectedDate(date); }
 
   async function toggleGcalCalendar(calId) {
@@ -243,8 +286,7 @@ export default function MonPlanning() {
     if (editId) setAbsences((prev) => prev.map((a) => (String(a._id) === editId ? data.item : a)));
     else {
       setAbsences((prev) => [data.item, ...prev]);
-      setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
-      // Push vers Google Agenda — cherche l'agenda "Planning" ou "planning"
+            // Push vers Google Agenda — cherche l'agenda "Planning" ou "planning"
       const typeLabel = ABSENCE_TYPES.find((t) => t.value === form.type)?.label || form.type;
       const planningCal = gcalCalendars.find((c) => c.summary.toLowerCase().includes("planning"));
       const calId = planningCal ? planningCal.id : undefined;
@@ -262,8 +304,7 @@ export default function MonPlanning() {
     const res = await fetch("/api/contrats", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur"); return; }
     const np = normalizeProject(data.item || data); if (np.dateDebut && np.dateFin) setProjects((prev) => [...prev, np]);
-    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
-    const branchCal = projForm.branche ? gcalCalendars.find((c) => c.summary.toLowerCase().includes(projForm.branche.toLowerCase())) : null;
+        const branchCal = projForm.branche ? gcalCalendars.find((c) => c.summary.toLowerCase().includes(projForm.branche.toLowerCase())) : null;
     const projCalId = branchCal ? branchCal.id : undefined;
     try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `🎬 ${projForm.nomContrat}`, start: projForm.dateDebut, end: projForm.dateFin, allDay: true, description: projForm.brief || "", calendarId: projCalId }) }); await refetchGcalEvents(); } catch {}
     setModalOpen(false);
@@ -319,8 +360,6 @@ export default function MonPlanning() {
 
   return (
     <div className={styles.page}>
-      {showConfetti && <div className={styles.confettiWrap} aria-hidden="true">{Array.from({ length: 20 }).map((_, i) => <span key={i} className={styles.confetti} style={{ "--ci": i }} />)}</div>}
-
       {/* ═══ PHRASE PROJET CHAUD ═══ */}
       <div className={`${styles.hotBar} ${loaded ? styles.hotBarLoaded : ""}`} onMouseEnter={() => setVibeHover(true)} onMouseLeave={() => setVibeHover(false)}>
         <Sparkles active={vibeHover} />
@@ -375,9 +414,9 @@ export default function MonPlanning() {
         </div>
         <h2 className={styles.calLabel}>{calLabel()}</h2>
         <div className={styles.viewSw}>
-          {["month", "week", "day"].map((v) => (
+          {["day", "week", "month"].map((v) => (
             <button key={v} className={`${styles.vBtn} ${view === v ? styles.vBtnOn : ""}`} onClick={() => setView(v)}>
-              {v === "month" ? "Mois" : v === "week" ? "Semaine" : "Jour"}
+              {v === "day" ? "Jour" : v === "week" ? "Semaine" : "Mois"}
             </button>
           ))}
         </div>
@@ -434,7 +473,7 @@ export default function MonPlanning() {
                   </div>);
                 })}
               </div>
-              <div className={styles.tgBody}>
+              <div className={styles.tgBody} ref={weekGridRef}>
                 <div className={styles.tgTimes}>{hoursWeek.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
                 <div className={styles.tgCols}>
                   {weekDays.map((d, i) => {
@@ -496,10 +535,18 @@ export default function MonPlanning() {
                     })}
                   </div>
                 )}
-                <div className={styles.dayGrid}>
+                <div className={styles.dayGrid} ref={dayGridRef} onMouseUp={handleGridMouseUp} onMouseLeave={() => { if (isDragging) handleGridMouseUp(); }}>
                   <div className={styles.tgTimes}>{hoursDay.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
                   <div className={styles.dayCol}>
-                    {hoursDay.map((h) => <div key={h} className={styles.tgSlot} />)}
+                    {hoursDay.map((h) => (
+                      <div key={h} className={styles.tgSlot}
+                        onMouseDown={(e) => { e.preventDefault(); handleGridMouseDown(calDate, h); }}
+                        onMouseMove={() => handleGridMouseMove(h + 0.5)}>
+                        <div className={styles.tgSlotHalf}
+                          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleGridMouseDown(calDate, h + 0.5); }}
+                          onMouseMove={(e) => { e.stopPropagation(); handleGridMouseMove(h + 1); }} />
+                      </div>
+                    ))}
                     {(() => {
                       // Layout algorithm — same as week view
                       const sorted = [...timed].sort((a, b) => a.startHour - b.startHour);
@@ -518,7 +565,13 @@ export default function MonPlanning() {
                           if (laid[b].startHour < laid[a].endHour) { const mx = Math.max(laid[a].totalCols, laid[b].totalCols); laid[a].totalCols = mx; laid[b].totalCols = mx; }
                         }
                       }
-                      return laid.map((ev, j) => {
+                      // Drag preview
+                      const dragPreview = isDragging && dragStart && dragEnd && dragStart.date === toYMD(calDate);
+                      return (<>{dragPreview && (() => {
+                        const dTop = ((dragStart.hour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
+                        const dH = Math.max(1, ((dragEnd.hour - dragStart.hour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
+                        return <div className={styles.dragPreview} style={{ top: `${dTop}%`, height: `${dH}%` }} />;
+                      })()}{laid.map((ev, j) => {
                         const top = ((ev.startHour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
                         const height = Math.max(2, ((ev.endHour - ev.startHour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
                         const width = 100 / ev.totalCols;
@@ -528,7 +581,7 @@ export default function MonPlanning() {
                           <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} — {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
                           {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName}</span>}
                         </div>);
-                      });
+                      })}</>);
                     })()}
                   </div>
                 </div>

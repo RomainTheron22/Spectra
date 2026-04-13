@@ -121,7 +121,9 @@
 .tgCol { position: relative; border-left: 1px solid rgba(0,0,0,0.04); cursor: pointer; }
 .tgCol:hover { background: rgba(124,58,237,0.01); }
 .tgColToday { background: rgba(124,58,237,0.02); }
-.tgSlot { height: 48px; border-bottom: 1px solid rgba(0,0,0,0.03); }
+.tgSlot { height: 48px; border-bottom: 1px solid rgba(0,0,0,0.03); position: relative; cursor: crosshair; }
+.tgSlotHalf { position: absolute; bottom: 0; left: 0; right: 0; height: 50%; }
+.dragPreview { position: absolute; left: 4px; right: 4px; background: rgba(124,58,237,0.12); border: 2px dashed rgba(124,58,237,0.4); border-radius: 6px; z-index: 5; pointer-events: none; }
 
 .tgEvt { position: absolute; border-radius: 6px; padding: 4px 6px; overflow: hidden; z-index: 1; cursor: pointer; display: flex; flex-direction: column; background: color-mix(in srgb, var(--evc) 14%, white); border-left: 3px solid var(--evc); color: var(--evc); transition: box-shadow 120ms, transform 120ms; }
 .tgEvt:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.1); z-index: 2; transform: scale(1.01); }
