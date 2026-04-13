@@ -16,6 +16,10 @@ function createAuthInstance() {
 
   return betterAuth({
     baseURL: process.env.BETTER_AUTH_URL,
+    trustedOrigins: [
+      process.env.BETTER_AUTH_URL,
+      process.env.BETTER_AUTH_TRUSTED_ORIGIN,
+    ].filter(Boolean),
     database: mongodbAdapter(mongoDb, {
       client: mongoClient,
       transaction: false,
