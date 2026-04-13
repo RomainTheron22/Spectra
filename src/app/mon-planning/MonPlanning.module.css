@@ -26,23 +26,14 @@
 .sparkle:nth-child(5) { top: 40%; left: 80%; --sx: 16px; --sy: -8px; --ex: 32px; --ey: -20px; animation-delay: 0.8s; }
 .sparkle:nth-child(6) { top: 50%; left: 40%; --sx: -8px; --sy: -24px; --ex: -16px; --ey: -40px; animation-delay: 1.0s; }
 
-/* ═══ VIBE HERO ═══ */
-.vibeHero { display: flex; align-items: center; gap: 20px; padding: 20px 28px; border-radius: 16px; margin-bottom: 14px; position: relative; overflow: hidden; flex-wrap: wrap; opacity: 0; transform: translateY(12px); transition: opacity 350ms ease, transform 350ms ease; }
-.vibeLoaded { opacity: 1; transform: translateY(0); }
-.vibe_ocean { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #e0e7ff 100%); border: 1px solid rgba(124,58,237,0.08); }
-.vibe_warm { background: linear-gradient(135deg, #fef3c7 0%, #ffedd5 50%, #fce7f3 100%); border: 1px solid rgba(234,88,12,0.08); }
-.vibe_sunset { background: linear-gradient(135deg, #fce7f3 0%, #fae8ff 50%, #ede9fe 100%); border: 1px solid rgba(168,85,247,0.08); }
-.vibe_energy { background: linear-gradient(135deg, #ecfccb 0%, #fefce8 50%, #fff7ed 100%); border: 1px solid rgba(132,204,22,0.08); }
-.vibeEmoji { font-size: 44px; line-height: 1; flex-shrink: 0; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.06)); opacity: 0; transform: scale(0.5); transition: opacity 400ms ease 150ms, transform 400ms cubic-bezier(0.34,1.56,0.64,1) 150ms; position: relative; z-index: 2; }
-.vibeEmojiAnim { opacity: 1; transform: scale(1); animation: float 4s ease-in-out infinite 1s; }
-.vibeCenter { flex: 1; min-width: 200px; z-index: 2; }
-.vibeMsg { font-size: 19px; font-weight: 900; color: var(--color-text); margin: 0; line-height: 1.2; }
-.vibeSub { font-size: 12px; color: var(--color-text-muted); margin: 2px 0 8px; font-style: italic; }
-.vibeBarRow { display: flex; align-items: center; gap: 10px; }
-.vibeBar { flex: 1; height: 6px; background: rgba(0,0,0,0.04); border-radius: 3px; overflow: hidden; }
-.vibeBarFill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #7c3aed, #e11d48, #f59e0b); width: 0; }
-.vibeBarGo { animation: barGrow 1s cubic-bezier(0.22,1,0.36,1) 0.4s forwards; }
-.vibeCount { font-size: 12px; font-weight: 800; color: var(--color-text-muted); white-space: nowrap; }
+/* ═══ QUOTE HERO (phrase du jour) ═══ */
+.quoteHero { display: flex; align-items: center; gap: 18px; padding: 18px 28px; border-radius: 16px; margin-bottom: 14px; position: relative; overflow: hidden; flex-wrap: wrap; background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 40%, #fce7f3 100%); border: 1px solid rgba(124,58,237,0.08); opacity: 0; transform: translateY(12px); transition: opacity 350ms ease, transform 350ms ease; }
+.quoteLoaded { opacity: 1; transform: translateY(0); }
+.quoteEmoji { font-size: 36px; line-height: 1; flex-shrink: 0; opacity: 0; transform: scale(0.5); transition: opacity 400ms ease 150ms, transform 400ms cubic-bezier(0.34,1.56,0.64,1) 150ms; position: relative; z-index: 2; }
+.quoteEmojiAnim { opacity: 1; transform: scale(1); animation: float 4s ease-in-out infinite 1s; }
+.quoteCenter { flex: 1; min-width: 200px; z-index: 2; }
+.quoteMsg { font-size: 16px; font-weight: 800; color: var(--color-text); margin: 0; line-height: 1.35; font-style: italic; }
+.quoteAuthor { font-size: 12px; color: var(--color-text-muted); font-weight: 600; }
 
 /* ═══ TOOLBAR ═══ */
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -174,6 +165,18 @@
 .editBtn:hover { border-color: #7c3aed; color: #7c3aed; }
 .deleteBtn { background: white; border: 1px solid rgba(244,63,94,0.18); color: #f43f5e; font-weight: 700; border-radius: 7px; padding: 5px 10px; cursor: pointer; font-size: 10px; transition: all 120ms ease; }
 .deleteBtn:hover { background: rgba(244,63,94,0.03); }
+
+/* ═══ RECAP ABSENCES (dans modale) ═══ */
+.recapBar { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px; background: rgba(0,0,0,0.02); border-radius: 12px; margin-bottom: 4px; }
+.recapItem { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 120px; padding: 8px 10px; background: var(--color-surface); border-radius: 10px; border: 1px solid var(--color-border); border-left: 3px solid var(--rc); }
+.recapIcon { font-size: 18px; }
+.recapData { display: flex; flex-direction: column; }
+.recapValue { font-size: 16px; font-weight: 900; color: var(--rc); line-height: 1; }
+.recapLabel { font-size: 9px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.recapGauge { width: 100%; height: 3px; background: rgba(0,0,0,0.04); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+.recapGaugeFill { height: 100%; background: var(--rc); border-radius: 2px; transition: width 600ms ease; }
+.recapVibeMsg { width: 100%; font-size: 13px; font-weight: 700; color: var(--color-text); display: flex; align-items: center; gap: 6px; padding-top: 6px; }
+.recapReste { font-size: 11px; font-weight: 800; color: var(--color-text-muted); margin-left: auto; }
 
 /* ═══ MODALE ═══ */
 .form { display: flex; flex-direction: column; gap: 16px; }

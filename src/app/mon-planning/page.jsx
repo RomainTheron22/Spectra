@@ -37,19 +37,42 @@ function getFakeProjectsWithDates() {
   ];
 }
 
-const CONGE_VIBES = [
-  { min: 30, emoji: "🌏", msg: "Le monde entier est à toi", sub: "Six semaines d'aventure possibles", tone: "ocean" },
-  { min: 25, emoji: "🌅", msg: "Un mois de soleil t'attend", sub: "Ferme les yeux. Tu entends les vagues ?", tone: "ocean" },
-  { min: 20, emoji: "🗾", msg: "Trois semaines au Japon", sub: "Tokyo, Kyoto, ramen, cerisiers...", tone: "ocean" },
-  { min: 15, emoji: "🛤️", msg: "Road trip sans fin", sub: "La route, la musique, zéro notification", tone: "warm" },
-  { min: 10, emoji: "🏖️", msg: "Deux semaines les pieds dans le sable", sub: "Ton seul agenda : lever de soleil", tone: "warm" },
-  { min: 7, emoji: "🌺", msg: "Une semaine à Bali", sub: "Temples, rizières, couchers de soleil", tone: "warm" },
-  { min: 4, emoji: "🛫", msg: "City-trip à Lisbonne", sub: "Pastéis de nata et rooftops", tone: "sunset" },
-  { min: 2, emoji: "🏔️", msg: "Week-end à la montagne", sub: "L'air pur, le silence, les étoiles", tone: "sunset" },
-  { min: 1, emoji: "🧘‍♀️", msg: "24h rien que pour toi", sub: "Prends soin de toi.", tone: "sunset" },
-  { min: 0, emoji: "💫", msg: "Full energy", sub: "Tu as tout donné. La team est fière.", tone: "energy" },
+// Phrases du jour — inspirantes, contextuelles, rotatives
+const DAILY_QUOTES = [
+  { emoji: "🚀", msg: "Chaque jour est une nouvelle chance de créer quelque chose d'incroyable", author: "" },
+  { emoji: "🎬", msg: "Les meilleures histoires commencent par 'Et si on essayait ?'", author: "" },
+  { emoji: "✨", msg: "La créativité, c'est l'intelligence qui s'amuse", author: "Albert Einstein" },
+  { emoji: "🌟", msg: "Fais de chaque détail une oeuvre", author: "" },
+  { emoji: "💡", msg: "L'imagination est le début de la création", author: "George Bernard Shaw" },
+  { emoji: "🎯", msg: "Vise la lune. Même en cas d'échec, tu atterriras parmi les étoiles", author: "Oscar Wilde" },
+  { emoji: "🔥", msg: "Le talent, c'est l'audace que les autres n'ont pas eue", author: "" },
+  { emoji: "🌈", msg: "Après la pluie, le beau temps — et des projets encore plus fous", author: "" },
+  { emoji: "🎨", msg: "Chaque projet est une toile blanche. À toi de jouer.", author: "" },
+  { emoji: "⚡", msg: "L'énergie d'une équipe, c'est sa plus grande force créative", author: "" },
+  { emoji: "🌺", msg: "Prends le temps de bien faire. La qualité, ça se ressent.", author: "" },
+  { emoji: "🏔️", msg: "Les grands projets se construisent un pas après l'autre", author: "" },
+  { emoji: "🎭", msg: "Le spectacle continue — et il est magnifique", author: "" },
+  { emoji: "💫", msg: "Aujourd'hui est un bon jour pour faire avancer les choses", author: "" },
 ];
 
+function getDailyQuote() {
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
+}
+
+// Vibes congés — utilisées dans la modale
+const CONGE_VIBES = [
+  { min: 30, emoji: "🌏", msg: "Le monde entier est à toi" },
+  { min: 25, emoji: "🌅", msg: "Un mois de soleil t'attend" },
+  { min: 20, emoji: "🗾", msg: "Trois semaines au Japon" },
+  { min: 15, emoji: "🛤️", msg: "Road trip sans fin" },
+  { min: 10, emoji: "🏖️", msg: "Deux semaines les pieds dans le sable" },
+  { min: 7, emoji: "🌺", msg: "Une semaine à Bali" },
+  { min: 4, emoji: "🛫", msg: "City-trip à Lisbonne" },
+  { min: 2, emoji: "🏔️", msg: "Week-end à la montagne" },
+  { min: 1, emoji: "🧘‍♀️", msg: "24h rien que pour toi" },
+  { min: 0, emoji: "💫", msg: "Full energy !" },
+];
 function getVibe(j) { for (const v of CONGE_VIBES) { if (j >= v.min) return v; } return CONGE_VIBES[CONGE_VIBES.length - 1]; }
 function toYMD(d) { return d.toISOString().slice(0, 10); }
 function countWorkDays(s, e, half) { if (half) return 0.5; let c = 0; const d = new Date(s); const end = new Date(e); while (d <= end) { if (d.getDay() !== 0 && d.getDay() !== 6) c++; d.setDate(d.getDate() + 1); } return c; }
@@ -105,6 +128,19 @@ export default function MonPlanning() {
     return { credit, pris, reste: credit - pris };
   }, [absences, profile]);
   const vibe = useMemo(() => getVibe(solde.reste), [solde.reste]);
+  const dailyQuote = useMemo(() => getDailyQuote(), []);
+
+  // Récap absences par type
+  const absRecap = useMemo(() => {
+    const year = new Date().getFullYear();
+    const thisYear = absences.filter((a) => a.statut === "valide" && a.dateDebut?.startsWith(String(year)));
+    return {
+      conge: thisYear.filter((a) => a.type === "conge").reduce((s, a) => s + countWorkDays(a.dateDebut, a.dateFin, a.demiJournee), 0),
+      tt: thisYear.filter((a) => a.type === "tt").reduce((s, a) => s + countWorkDays(a.dateDebut, a.dateFin, a.demiJournee), 0),
+      maladie: thisYear.filter((a) => a.type === "maladie").reduce((s, a) => s + countWorkDays(a.dateDebut, a.dateFin, a.demiJournee), 0),
+      autre: thisYear.filter((a) => a.type === "absence_autre").reduce((s, a) => s + countWorkDays(a.dateDebut, a.dateFin, a.demiJournee), 0),
+    };
+  }, [absences]);
 
   // Build events map
   const calEvents = useMemo(() => {
@@ -243,17 +279,13 @@ export default function MonPlanning() {
     <div className={styles.page}>
       {showConfetti && <div className={styles.confettiWrap} aria-hidden="true">{Array.from({ length: 20 }).map((_, i) => <span key={i} className={styles.confetti} style={{ "--ci": i }} />)}</div>}
 
-      {/* ═══ VIBE HERO ═══ */}
-      <div className={`${styles.vibeHero} ${styles[`vibe_${vibe.tone}`] || ""} ${loaded ? styles.vibeLoaded : ""}`} onMouseEnter={() => setVibeHover(true)} onMouseLeave={() => setVibeHover(false)}>
+      {/* ═══ PHRASE DU JOUR ═══ */}
+      <div className={`${styles.quoteHero} ${loaded ? styles.quoteLoaded : ""}`} onMouseEnter={() => setVibeHover(true)} onMouseLeave={() => setVibeHover(false)}>
         <Sparkles active={vibeHover} />
-        <span className={`${styles.vibeEmoji} ${loaded ? styles.vibeEmojiAnim : ""}`}>{vibe.emoji}</span>
-        <div className={styles.vibeCenter}>
-          <h1 className={styles.vibeMsg}>{vibe.msg}</h1>
-          <p className={styles.vibeSub}>{vibe.sub}</p>
-          <div className={styles.vibeBarRow}>
-            <div className={styles.vibeBar}><div className={`${styles.vibeBarFill} ${loaded ? styles.vibeBarGo : ""}`} style={{ "--tw": `${pct}%` }} /></div>
-            <span className={styles.vibeCount}>{solde.reste}j / {solde.credit}</span>
-          </div>
+        <span className={`${styles.quoteEmoji} ${loaded ? styles.quoteEmojiAnim : ""}`}>{dailyQuote.emoji}</span>
+        <div className={styles.quoteCenter}>
+          <p className={styles.quoteMsg}>{dailyQuote.msg}</p>
+          {dailyQuote.author && <span className={styles.quoteAuthor}>— {dailyQuote.author}</span>}
         </div>
       </div>
 
@@ -514,6 +546,38 @@ export default function MonPlanning() {
       {/* ═══ MODALE ═══ */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editId ? "Modifier" : "Poser une absence"} size="sm">
         <form onSubmit={handleSubmit} className={styles.form}>
+
+          {/* Récap congés — visible uniquement en création */}
+          {!editId && (
+            <div className={styles.recapBar}>
+              <div className={styles.recapItem} style={{ "--rc": "#10b981" }}>
+                <span className={styles.recapIcon}>🌴</span>
+                <div className={styles.recapData}>
+                  <span className={styles.recapValue}>{absRecap.conge}j</span>
+                  <span className={styles.recapLabel}>Congés posés</span>
+                </div>
+                <div className={styles.recapGauge}><div className={styles.recapGaugeFill} style={{ width: `${Math.min(100, (absRecap.conge / solde.credit) * 100)}%` }} /></div>
+              </div>
+              <div className={styles.recapItem} style={{ "--rc": "#8b5cf6" }}>
+                <span className={styles.recapIcon}>🏡</span>
+                <div className={styles.recapData}>
+                  <span className={styles.recapValue}>{absRecap.tt}j</span>
+                  <span className={styles.recapLabel}>Télétravail</span>
+                </div>
+              </div>
+              <div className={styles.recapItem} style={{ "--rc": "#f43f5e" }}>
+                <span className={styles.recapIcon}>🤧</span>
+                <div className={styles.recapData}>
+                  <span className={styles.recapValue}>{absRecap.maladie}j</span>
+                  <span className={styles.recapLabel}>Maladie</span>
+                </div>
+              </div>
+              <div className={styles.recapVibeMsg}>
+                <span>{vibe.emoji}</span> {vibe.msg} <span className={styles.recapReste}>{solde.reste}j restants</span>
+              </div>
+            </div>
+          )}
+
           <p className={styles.formHint}>Quel type ?</p>
           <div className={styles.typeGrid}>
             {ABSENCE_TYPES.map((t) => (
