@@ -243,19 +243,59 @@ export default function MonPlanning() {
       <div className={styles.toolbar}>
         <div className={styles.toggles}>
           <button className={`${styles.toggle} ${showProjets ? styles.toggleOn : ""}`} style={{ "--tg": "#e11d48" }} onClick={() => setShowProjets((v) => !v)}>
-            <span className={styles.toggleDot} /> 🎬 Projets
+            <span className={styles.toggleDot} /> 🎬 Projets <span className={styles.toggleCount}>{projects.length}</span>
           </button>
           <button className={`${styles.toggle} ${showMissions ? styles.toggleOn : ""}`} style={{ "--tg": "#7c3aed" }} onClick={() => setShowMissions((v) => !v)}>
-            <span className={styles.toggleDot} /> 👤 Mes missions
+            <span className={styles.toggleDot} /> 👤 Mes missions <span className={styles.toggleCount}>{myMissions.length}</span>
           </button>
           <button className={`${styles.toggle} ${showAbsences ? styles.toggleOn : ""}`} style={{ "--tg": "#10b981" }} onClick={() => setShowAbsences((v) => !v)}>
-            <span className={styles.toggleDot} /> 🌴 Absences
+            <span className={styles.toggleDot} /> 🌴 Absences <span className={styles.toggleCount}>{absences.length}</span>
           </button>
         </div>
         <button className={styles.addBtn} onClick={openNew}>+ Poser une absence</button>
       </div>
 
-      {/* ═══ CALENDRIER UNIFIÉ ═══ */}
+      {/* ═══ LAYOUT PRINCIPAL : Semaine | Calendrier ═══ */}
+      <div className={styles.mainGrid}>
+
+      {/* ═══ MA SEMAINE (gauche) ═══ */}
+      <section className={`${styles.weekSection} ${loaded ? styles.weekLoaded : ""}`}>
+        <h2 className={styles.secTitle}>Ma semaine</h2>
+        <div className={styles.weekCards}>
+          {weekDays.map((d, i) => {
+            const dateStr = toYMD(d);
+            const isToday = dateStr === today;
+            const events = calEvents[dateStr] || [];
+            const projs = events.filter((e) => e.type === "projet" || e.type === "mission");
+            const abs = events.find((e) => e.type === "absence");
+            return (
+              <div key={i} className={`${styles.wkCard} ${isToday ? styles.wkToday : ""}`} onClick={() => handleDayClick(d, events)} role="button" tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleDayClick(d, events); } }}>
+                {isToday && <span className={styles.wkBadge}>Aujourd'hui</span>}
+                <div className={styles.wkHead}>
+                  <span className={styles.wkDay}>{JOURS_FULL[i]}</span>
+                  <span className={styles.wkDate}>{d.getDate()}</span>
+                </div>
+                <div className={styles.wkEvents}>
+                  {projs.map((p, j) => (
+                    <div key={j} className={styles.wkEvt} style={{ "--wc": p.color }}>
+                      {p.isMine ? "👤" : "🎬"} {p.title}
+                    </div>
+                  ))}
+                  {abs && (
+                    <div className={`${styles.wkEvt} ${styles.wkEvtAbs}`} style={{ "--wc": abs.absType?.color || "#888" }}>
+                      {abs.absType?.icon} {abs.absType?.label}
+                    </div>
+                  )}
+                  {!events.length && <div className={styles.wkFree}>Libre <span className={styles.wkAddHint}>+</span></div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ═══ CALENDRIER (droite) ═══ */}
       <section className={`${styles.calSection} ${loaded ? styles.calLoaded : ""}`}>
         <div className={styles.calToolbar}>
           <button className={styles.calNav} onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}><span className={styles.calNavArrow}>‹</span></button>
@@ -300,40 +340,7 @@ export default function MonPlanning() {
         </div>
       </section>
 
-      {/* ═══ MA SEMAINE EXPRESS ═══ */}
-      <section className={`${styles.weekSection} ${loaded ? styles.weekLoaded : ""}`}>
-        <h2 className={styles.secTitle}>Ma semaine</h2>
-        <div className={styles.weekCards}>
-          {weekDays.map((d, i) => {
-            const dateStr = toYMD(d);
-            const isToday = dateStr === today;
-            const events = calEvents[dateStr] || [];
-            const projs = events.filter((e) => e.type === "projet" || e.type === "mission");
-            const abs = events.find((e) => e.type === "absence");
-            return (
-              <div key={i} className={`${styles.wkCard} ${isToday ? styles.wkToday : ""}`} onClick={() => handleDayClick(d, events)} role="button" tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleDayClick(d, events); } }}>
-                {isToday && <span className={styles.wkBadge}>Aujourd'hui</span>}
-                <div className={styles.wkDay}>{JOURS_FULL[i]}</div>
-                <div className={styles.wkDate}>{d.getDate()} {MOIS[d.getMonth()].slice(0, 3)}</div>
-                <div className={styles.wkEvents}>
-                  {projs.map((p, j) => (
-                    <div key={j} className={styles.wkEvt} style={{ "--wc": p.color }}>
-                      {p.isMine ? "👤" : "🎬"} {p.title}
-                    </div>
-                  ))}
-                  {abs && (
-                    <div className={`${styles.wkEvt} ${styles.wkEvtAbs}`} style={{ "--wc": abs.absType?.color || "#888" }}>
-                      {abs.absType?.icon} {abs.absType?.label}
-                    </div>
-                  )}
-                  {!events.length && <div className={styles.wkFree}>Libre <span className={styles.wkAddHint}>+ ajouter</span></div>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      </div>{/* end mainGrid */}
 
       {/* ═══ MES ABSENCES (compact) ═══ */}
       {absences.length > 0 && (
