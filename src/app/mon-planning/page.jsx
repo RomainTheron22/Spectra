@@ -102,7 +102,10 @@ export default function MonPlanning() {
   const [view, setView] = useState("month"); // month | week | day
   const [selectedDate, setSelectedDate] = useState(null); // panel latéral
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState(""); // "absence" | "projet" | "note" | "choose"
   const [form, setForm] = useState({ type: "", dateDebut: "", dateFin: "", demiJournee: "", commentaire: "" });
+  const [projForm, setProjForm] = useState({ nom: "", branche: "", dateDebut: "", dateFin: "", description: "" });
+  const [noteForm, setNoteForm] = useState({ contenu: "", dateDebut: "" });
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState(null);
   const [loaded, setLoaded] = useState(false);
@@ -111,6 +114,8 @@ export default function MonPlanning() {
   const [showProjets, setShowProjets] = useState(true);
   const [showMissions, setShowMissions] = useState(true);
   const [showAbsences, setShowAbsences] = useState(true);
+  const [gcalEvents, setGcalEvents] = useState([]);
+  const [showGcal, setShowGcal] = useState(true);
 
   const [projects, setProjects] = useState([]);
 
@@ -132,6 +137,15 @@ export default function MonPlanning() {
       const absData = await absRes.json(); setAbsences(absData.items || []);
       try { const profData = await profRes.json(); if (profData.items?.length) setProfile(profData.items[0]); } catch {}
       try { const projData = await projRes.json(); setProjects((projData.items || []).map(normalizeProject).filter((p) => p.dateDebut && p.dateFin)); } catch {}
+      // Google Calendar
+      try {
+        const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
+        const from = new Date(y, m, 1).toISOString();
+        const to = new Date(y, m + 2, 0).toISOString();
+        const gcRes = await fetch(`/api/planning/google-calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { cache: "no-store" });
+        const gcData = await gcRes.json();
+        if (gcData.items) setGcalEvents(gcData.items);
+      } catch {}
       setTimeout(() => setLoaded(true), 100);
     })();
     return () => { cancelled = true; };
@@ -166,8 +180,9 @@ export default function MonPlanning() {
     if (showProjets) { for (const p of projects) { const d = new Date(p.dateDebut); const end = new Date(p.dateFin); while (d <= end) { add(toYMD(d), { type: "projet", ...p }); d.setDate(d.getDate() + 1); } } }
     if (showMissions) { for (const p of myMissions) { const d = new Date(p.dateDebut); const end = new Date(p.dateFin); while (d <= end) { const k = toYMD(d); const ex = map[k]?.find((e) => e.type === "projet" && e.id === p.id); if (ex) ex.isMine = true; else add(k, { type: "mission", ...p, isMine: true }); d.setDate(d.getDate() + 1); } } }
     if (showAbsences) { for (const a of absences) { const d = new Date(a.dateDebut); const end = new Date(a.dateFin); while (d <= end) { add(toYMD(d), { type: "absence", ...a, absType: ABSENCE_TYPES.find((t) => t.value === a.type) }); d.setDate(d.getDate() + 1); } } }
+    if (showGcal) { for (const ev of gcalEvents) { if (!ev.start) continue; const startDate = ev.start.slice(0, 10); const endDate = ev.end ? ev.end.slice(0, 10) : startDate; const d = new Date(startDate); const end = new Date(endDate); while (d <= end) { add(toYMD(d), { type: "gcal", title: ev.title, color: "#4285f4", gcalId: ev.gcalId }); d.setDate(d.getDate() + 1); } } }
     return map;
-  }, [projects, myMissions, absences, showProjets, showMissions, showAbsences]);
+  }, [projects, myMissions, absences, gcalEvents, showProjets, showMissions, showAbsences, showGcal]);
 
   // Calendar days for month view
   const calDays = useMemo(() => {
@@ -203,13 +218,35 @@ export default function MonPlanning() {
     setSelectedDate(date);
   }
 
+  function openChoose(dateStr) {
+    setEditId(null);
+    setModalType("choose");
+    setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" });
+    setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" });
+    setNoteForm({ contenu: "", dateDebut: dateStr || "" });
+    setModalOpen(true);
+  }
+
   function openAbsenceForm(dateStr) {
     setEditId(null);
+    setModalType("absence");
     setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" });
     setModalOpen(true);
   }
 
-  function openNew() { openAbsenceForm(""); }
+  function openProjForm(dateStr) {
+    setModalType("projet");
+    setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" });
+    setModalOpen(true);
+  }
+
+  function openNoteForm(dateStr) {
+    setModalType("note");
+    setNoteForm({ contenu: "", dateDebut: dateStr || toYMD(new Date()) });
+    setModalOpen(true);
+  }
+
+  function openNew() { openChoose(""); }
 
   function openEdit(absence) {
     setEditId(String(absence._id));
@@ -229,6 +266,35 @@ export default function MonPlanning() {
     if (!res.ok) { alert(data.error || "Erreur"); return; }
     if (editId) { setAbsences((prev) => prev.map((a) => (String(a._id) === editId ? data.item : a))); }
     else { setAbsences((prev) => [data.item, ...prev]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); }
+    setModalOpen(false);
+  }
+
+  async function handleSubmitProjet(e) {
+    e.preventDefault();
+    if (!projForm.nom) { alert("Le nom du projet est obligatoire"); return; }
+    setSaving(true);
+    const body = { nom: projForm.nom, branche: projForm.branche, dateDebut: projForm.dateDebut, dateFin: projForm.dateFin, brief: projForm.description, statut: "En cours" };
+    const res = await fetch("/api/contrats", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await res.json(); setSaving(false);
+    if (!res.ok) { alert(data.error || "Erreur"); return; }
+    const newProj = normalizeProject(data.item || data);
+    if (newProj.dateDebut && newProj.dateFin) setProjects((prev) => [...prev, newProj]);
+    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
+    setModalOpen(false);
+  }
+
+  async function handleSubmitNote(e) {
+    e.preventDefault();
+    if (!noteForm.contenu) { alert("La note ne peut pas être vide"); return; }
+    // Pour l'instant, on stocke les notes comme des events Google Calendar
+    // TODO: créer une collection notes dédiée si besoin
+    setSaving(true);
+    const body = { title: noteForm.contenu, start: `${noteForm.dateDebut}T09:00:00`, end: `${noteForm.dateDebut}T09:30:00` };
+    const res = await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await res.json(); setSaving(false);
+    if (!res.ok) { alert(data.error || "Erreur — vérifie que Google Agenda est connecté"); return; }
+    if (data.item) setGcalEvents((prev) => [...prev, data.item]);
+    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
     setModalOpen(false);
   }
 
@@ -270,19 +336,24 @@ export default function MonPlanning() {
     return `${dayOfWeekFr(calDate)} ${formatDateFr(calDate)}`;
   }
 
-  // Render events for a calendar cell
   function renderCellEvents(events, compact) {
     const projs = events.filter((e) => e.type === "projet" || e.type === "mission");
     const abs = events.find((e) => e.type === "absence");
+    const gcals = events.filter((e) => e.type === "gcal");
     const limit = compact ? 2 : 5;
     return (
       <div className={styles.calEvents}>
         {projs.slice(0, limit).map((p, j) => (
-          <div key={j} className={`${styles.calEvt} ${p.isMine ? styles.calEvtMine : ""}`} style={{ "--ec": p.color }}>
+          <div key={`p${j}`} className={`${styles.calEvt} ${p.isMine ? styles.calEvtMine : ""}`} style={{ "--ec": p.color }}>
             {p.isMine ? "👤" : "🎬"} {compact ? (p.title.length > 10 ? p.title.slice(0, 10) + "…" : p.title) : p.title}
           </div>
         ))}
         {projs.length > limit && <div className={styles.calEvtMore}>+{projs.length - limit}</div>}
+        {gcals.slice(0, compact ? 1 : 3).map((g, j) => (
+          <div key={`g${j}`} className={styles.calEvt} style={{ "--ec": "#4285f4" }}>
+            📅 {compact ? (g.title.length > 10 ? g.title.slice(0, 10) + "…" : g.title) : g.title}
+          </div>
+        ))}
         {abs && (
           <div className={`${styles.calEvt} ${styles.calEvtAbs} ${abs.statut === "en_attente" ? styles.calEvtPending : ""}`} style={{ "--ec": abs.absType?.color || "#888" }}>
             {abs.absType?.icon} {abs.absType?.label}
@@ -318,8 +389,13 @@ export default function MonPlanning() {
           <button className={`${styles.toggle} ${showAbsences ? styles.toggleOn : ""}`} style={{ "--tg": "#10b981" }} onClick={() => setShowAbsences((v) => !v)}>
             <span className={styles.toggleDot} /> 🌴 Absences <span className={styles.toggleCount}>{absences.length}</span>
           </button>
+          {gcalEvents.length > 0 && (
+            <button className={`${styles.toggle} ${showGcal ? styles.toggleOn : ""}`} style={{ "--tg": "#4285f4" }} onClick={() => setShowGcal((v) => !v)}>
+              <span className={styles.toggleDot} /> 📅 Google Agenda <span className={styles.toggleCount}>{gcalEvents.length}</span>
+            </button>
+          )}
         </div>
-        <button className={styles.addBtn} onClick={openNew}>+ Poser une absence</button>
+        <button className={styles.addBtn} onClick={openNew}>+ Ajouter</button>
       </div>
 
       {/* ═══ CALENDAR TOOLBAR ═══ */}
@@ -513,11 +589,11 @@ export default function MonPlanning() {
                 <button className={styles.panelActionBtn} style={{ "--pab": "#10b981" }} onClick={() => openAbsenceForm(dateStr)}>
                   🌴 Poser une absence
                 </button>
-                <button className={styles.panelActionBtn} style={{ "--pab": "#7c3aed" }} disabled>
-                  🎬 Ajouter un projet <span className={styles.panelSoon}>bientôt</span>
+                <button className={styles.panelActionBtn} style={{ "--pab": "#7c3aed" }} onClick={() => openProjForm(dateStr)}>
+                  🎬 Ajouter un projet
                 </button>
-                <button className={styles.panelActionBtn} style={{ "--pab": "#f59e0b" }} disabled>
-                  📝 Ajouter une note <span className={styles.panelSoon}>bientôt</span>
+                <button className={styles.panelActionBtn} style={{ "--pab": "#f59e0b" }} onClick={() => openNoteForm(dateStr)}>
+                  📝 Ajouter une note
                 </button>
               </div>
             )}
@@ -561,71 +637,128 @@ export default function MonPlanning() {
       )}
 
       {/* ═══ MODALE ═══ */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editId ? "Modifier" : "Poser une absence"} size="sm">
-        <form onSubmit={handleSubmit} className={styles.form}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalType === "choose" ? "Que veux-tu ajouter ?" : modalType === "absence" ? (editId ? "Modifier l'absence" : "Poser une absence") : modalType === "projet" ? "Ajouter un projet" : "Ajouter une note"} size="sm">
 
-          {/* Récap congés — visible uniquement en création */}
-          {!editId && (
-            <div className={styles.recapBar}>
-              <div className={styles.recapItem} style={{ "--rc": "#10b981" }}>
-                <span className={styles.recapIcon}>🌴</span>
-                <div className={styles.recapData}>
-                  <span className={styles.recapValue}>{absRecap.conge}j</span>
-                  <span className={styles.recapLabel}>Congés posés</span>
+        {/* CHOIX : absence / projet / note */}
+        {modalType === "choose" && (
+          <div className={styles.chooseGrid}>
+            <button className={styles.chooseCard} style={{ "--cc": "#10b981" }} onClick={() => { setModalType("absence"); }}>
+              <span className={styles.chooseIcon}>🌴</span>
+              <span className={styles.chooseLabel}>Absence</span>
+              <span className={styles.chooseDesc}>Congé, TT, maladie...</span>
+            </button>
+            <button className={styles.chooseCard} style={{ "--cc": "#7c3aed" }} onClick={() => { setModalType("projet"); }}>
+              <span className={styles.chooseIcon}>🎬</span>
+              <span className={styles.chooseLabel}>Projet</span>
+              <span className={styles.chooseDesc}>Tournage, scéno, event...</span>
+            </button>
+            <button className={styles.chooseCard} style={{ "--cc": "#f59e0b" }} onClick={() => { setModalType("note"); }}>
+              <span className={styles.chooseIcon}>📝</span>
+              <span className={styles.chooseLabel}>Note</span>
+              <span className={styles.chooseDesc}>Rappel, idée, memo...</span>
+            </button>
+          </div>
+        )}
+
+        {/* ABSENCE */}
+        {modalType === "absence" && (
+          <form onSubmit={handleSubmit} className={styles.form}>
+            {!editId && (
+              <div className={styles.recapBar}>
+                <div className={styles.recapItem} style={{ "--rc": "#10b981" }}>
+                  <span className={styles.recapIcon}>🌴</span>
+                  <div className={styles.recapData}><span className={styles.recapValue}>{absRecap.conge}j</span><span className={styles.recapLabel}>Congés</span></div>
                 </div>
-                <div className={styles.recapGauge}><div className={styles.recapGaugeFill} style={{ width: `${Math.min(100, (absRecap.conge / solde.credit) * 100)}%` }} /></div>
-              </div>
-              <div className={styles.recapItem} style={{ "--rc": "#8b5cf6" }}>
-                <span className={styles.recapIcon}>🏡</span>
-                <div className={styles.recapData}>
-                  <span className={styles.recapValue}>{absRecap.tt}j</span>
-                  <span className={styles.recapLabel}>Télétravail</span>
+                <div className={styles.recapItem} style={{ "--rc": "#8b5cf6" }}>
+                  <span className={styles.recapIcon}>🏡</span>
+                  <div className={styles.recapData}><span className={styles.recapValue}>{absRecap.tt}j</span><span className={styles.recapLabel}>TT</span></div>
+                </div>
+                <div className={styles.recapItem} style={{ "--rc": "#f43f5e" }}>
+                  <span className={styles.recapIcon}>🤧</span>
+                  <div className={styles.recapData}><span className={styles.recapValue}>{absRecap.maladie}j</span><span className={styles.recapLabel}>Maladie</span></div>
+                </div>
+                <div className={styles.recapVibe}>
+                  <span className={styles.recapVibeEmoji}>{vibe.emoji}</span>
+                  <div className={styles.recapVibeText}>
+                    <span className={styles.recapVibeMsg}>{vibe.msg}</span>
+                    {vibe.sub && <span className={styles.recapVibeSub}>{vibe.sub}</span>}
+                  </div>
+                  <span className={styles.recapReste}>{solde.reste}j restants</span>
                 </div>
               </div>
-              <div className={styles.recapItem} style={{ "--rc": "#f43f5e" }}>
-                <span className={styles.recapIcon}>🤧</span>
-                <div className={styles.recapData}>
-                  <span className={styles.recapValue}>{absRecap.maladie}j</span>
-                  <span className={styles.recapLabel}>Maladie</span>
-                </div>
-              </div>
-              <div className={styles.recapVibe}>
-                <span className={styles.recapVibeEmoji}>{vibe.emoji}</span>
-                <div className={styles.recapVibeText}>
-                  <span className={styles.recapVibeMsg}>{vibe.msg}</span>
-                  {vibe.sub && <span className={styles.recapVibeSub}>{vibe.sub}</span>}
-                </div>
-                <span className={styles.recapReste}>{solde.reste}j restants</span>
-              </div>
+            )}
+            <p className={styles.formHint}>Quel type ?</p>
+            <div className={styles.typeGrid}>
+              {ABSENCE_TYPES.map((t) => (
+                <button key={t.value} type="button" className={`${styles.typeCard} ${form.type === t.value ? styles.typeCardOn : ""}`} style={{ "--tc": t.color, "--tcbg": t.gradient }}
+                  onClick={() => setForm((f) => ({ ...f, type: t.value }))}>
+                  <span className={styles.tcIcon}>{t.icon}</span>
+                  <span className={styles.tcLabel}>{t.label}</span>
+                  <span className={styles.tcDesc}>{t.desc}</span>
+                </button>
+              ))}
             </div>
-          )}
+            <div className={styles.fieldRow}>
+              <label className={styles.field}>Du <input type="date" value={form.dateDebut} onChange={(e) => setForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label>
+              <label className={styles.field}>Au <input type="date" value={form.dateFin} onChange={(e) => setForm((f) => ({ ...f, dateFin: e.target.value }))} required /></label>
+            </div>
+            <label className={styles.field}>Demi-journée ?
+              <select value={form.demiJournee} onChange={(e) => setForm((f) => ({ ...f, demiJournee: e.target.value }))}><option value="">Journée complète</option><option value="matin">Matin</option><option value="apres-midi">Après-midi</option></select>
+            </label>
+            <label className={styles.field}>Un petit mot ?
+              <textarea value={form.commentaire} onChange={(e) => setForm((f) => ({ ...f, commentaire: e.target.value }))} rows={2} placeholder="Voyage, recharge, aventure..." />
+            </label>
+            <div className={styles.formActions}>
+              <button type="button" className={styles.backBtn} onClick={() => editId ? setModalOpen(false) : setModalType("choose")}>← Retour</button>
+              <button type="submit" className={styles.submitBtn} disabled={saving || !form.type}>{saving ? "Envoi..." : editId ? "Modifier" : "C'est parti ! 🚀"}</button>
+            </div>
+          </form>
+        )}
 
-          <p className={styles.formHint}>Quel type ?</p>
-          <div className={styles.typeGrid}>
-            {ABSENCE_TYPES.map((t) => (
-              <button key={t.value} type="button" className={`${styles.typeCard} ${form.type === t.value ? styles.typeCardOn : ""}`} style={{ "--tc": t.color, "--tcbg": t.gradient }}
-                onClick={() => setForm((f) => ({ ...f, type: t.value }))}>
-                <span className={styles.tcIcon}>{t.icon}</span>
-                <span className={styles.tcLabel}>{t.label}</span>
-                <span className={styles.tcDesc}>{t.desc}</span>
-              </button>
-            ))}
-          </div>
-          <div className={styles.fieldRow}>
-            <label className={styles.field}>Du <input type="date" value={form.dateDebut} onChange={(e) => setForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label>
-            <label className={styles.field}>Au <input type="date" value={form.dateFin} onChange={(e) => setForm((f) => ({ ...f, dateFin: e.target.value }))} required /></label>
-          </div>
-          <label className={styles.field}>Demi-journée ?
-            <select value={form.demiJournee} onChange={(e) => setForm((f) => ({ ...f, demiJournee: e.target.value }))}><option value="">Journée complète</option><option value="matin">Matin</option><option value="apres-midi">Après-midi</option></select>
-          </label>
-          <label className={styles.field}>Un petit mot ?
-            <textarea value={form.commentaire} onChange={(e) => setForm((f) => ({ ...f, commentaire: e.target.value }))} rows={2} placeholder="Voyage, recharge, aventure..." />
-          </label>
-          <div className={styles.formActions}>
-            <button type="button" className={styles.cancelBtn} onClick={() => setModalOpen(false)} disabled={saving}>Annuler</button>
-            <button type="submit" className={styles.submitBtn} disabled={saving || !form.type}>{saving ? "Envoi..." : editId ? "Modifier" : "C'est parti ! 🚀"}</button>
-          </div>
-        </form>
+        {/* PROJET */}
+        {modalType === "projet" && (
+          <form onSubmit={handleSubmitProjet} className={styles.form}>
+            <label className={styles.field}>Nom du projet
+              <input value={projForm.nom} onChange={(e) => setProjForm((f) => ({ ...f, nom: e.target.value }))} required placeholder="Ex: Tournage Clip X" />
+            </label>
+            <label className={styles.field}>Branche
+              <select value={projForm.branche} onChange={(e) => setProjForm((f) => ({ ...f, branche: e.target.value }))}>
+                <option value="">— Choisir —</option>
+                <option value="Agency">Agency</option>
+                <option value="CreativeGen">CreativeGen</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="SFX">SFX</option>
+              </select>
+            </label>
+            <div className={styles.fieldRow}>
+              <label className={styles.field}>Du <input type="date" value={projForm.dateDebut} onChange={(e) => setProjForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label>
+              <label className={styles.field}>Au <input type="date" value={projForm.dateFin} onChange={(e) => setProjForm((f) => ({ ...f, dateFin: e.target.value }))} required /></label>
+            </div>
+            <label className={styles.field}>Description
+              <textarea value={projForm.description} onChange={(e) => setProjForm((f) => ({ ...f, description: e.target.value }))} rows={2} placeholder="Contexte, objectifs..." />
+            </label>
+            <div className={styles.formActions}>
+              <button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button>
+              <button type="submit" className={styles.submitBtn} disabled={saving || !projForm.nom}>{saving ? "Création..." : "Créer le projet 🎬"}</button>
+            </div>
+          </form>
+        )}
+
+        {/* NOTE */}
+        {modalType === "note" && (
+          <form onSubmit={handleSubmitNote} className={styles.form}>
+            <label className={styles.field}>Date
+              <input type="date" value={noteForm.dateDebut} onChange={(e) => setNoteForm((f) => ({ ...f, dateDebut: e.target.value }))} required />
+            </label>
+            <label className={styles.field}>Note
+              <textarea value={noteForm.contenu} onChange={(e) => setNoteForm((f) => ({ ...f, contenu: e.target.value }))} rows={3} required placeholder="Rappel, idée, pensée du jour..." />
+            </label>
+            <div className={styles.formActions}>
+              <button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button>
+              <button type="submit" className={styles.submitBtn} disabled={saving || !noteForm.contenu}>{saving ? "Ajout..." : "Ajouter la note 📝"}</button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );
