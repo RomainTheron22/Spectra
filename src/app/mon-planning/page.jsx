@@ -116,6 +116,10 @@ export default function MonPlanning() {
   const [showAbsences, setShowAbsences] = useState(true);
   const [gcalEvents, setGcalEvents] = useState([]);
   const [showGcal, setShowGcal] = useState(true);
+  const [gcalCalendars, setGcalCalendars] = useState([]);
+  const [gcalSelectedIds, setGcalSelectedIds] = useState([]);
+  const [gcalConnected, setGcalConnected] = useState(false);
+  const [showCalPicker, setShowCalPicker] = useState(false);
 
   const [projects, setProjects] = useState([]);
 
@@ -137,8 +141,15 @@ export default function MonPlanning() {
       const absData = await absRes.json(); setAbsences(absData.items || []);
       try { const profData = await profRes.json(); if (profData.items?.length) setProfile(profData.items[0]); } catch {}
       try { const projData = await projRes.json(); setProjects((projData.items || []).map(normalizeProject).filter((p) => p.dateDebut && p.dateFin)); } catch {}
-      // Google Calendar
+      // Google Calendar — fetch calendriers + events
       try {
+        const calRes = await fetch("/api/planning/google-calendar/calendars", { cache: "no-store" });
+        const calData = await calRes.json();
+        if (calData.connected) {
+          setGcalConnected(true);
+          setGcalCalendars(calData.calendars || []);
+          setGcalSelectedIds(calData.selectedIds || []);
+        }
         const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
         const from = new Date(y, m, 1).toISOString();
         const to = new Date(y, m + 2, 0).toISOString();
@@ -216,6 +227,22 @@ export default function MonPlanning() {
 
   function handleDayClick(date) {
     setSelectedDate(date);
+  }
+
+  async function toggleGcalCalendar(calId) {
+    const newIds = gcalSelectedIds.includes(calId) ? gcalSelectedIds.filter((id) => id !== calId) : [...gcalSelectedIds, calId];
+    setGcalSelectedIds(newIds);
+    await fetch("/api/planning/google-calendar/calendars", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ calendarIds: newIds }),
+    });
+    // Refetch events avec les nouveaux calendriers
+    const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
+    const from = new Date(y, m, 1).toISOString();
+    const to = new Date(y, m + 2, 0).toISOString();
+    const gcRes = await fetch(`/api/planning/google-calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { cache: "no-store" });
+    const gcData = await gcRes.json();
+    if (gcData.items) setGcalEvents(gcData.items);
   }
 
   function openChoose(dateStr) {
@@ -389,14 +416,43 @@ export default function MonPlanning() {
           <button className={`${styles.toggle} ${showAbsences ? styles.toggleOn : ""}`} style={{ "--tg": "#10b981" }} onClick={() => setShowAbsences((v) => !v)}>
             <span className={styles.toggleDot} /> 🌴 Absences <span className={styles.toggleCount}>{absences.length}</span>
           </button>
-          {gcalEvents.length > 0 && (
-            <button className={`${styles.toggle} ${showGcal ? styles.toggleOn : ""}`} style={{ "--tg": "#4285f4" }} onClick={() => setShowGcal((v) => !v)}>
-              <span className={styles.toggleDot} /> 📅 Google Agenda <span className={styles.toggleCount}>{gcalEvents.length}</span>
-            </button>
+          {gcalConnected && (
+            <>
+              <button className={`${styles.toggle} ${showGcal ? styles.toggleOn : ""}`} style={{ "--tg": "#4285f4" }} onClick={() => setShowGcal((v) => !v)}>
+                <span className={styles.toggleDot} /> 📅 Agenda <span className={styles.toggleCount}>{gcalEvents.length}</span>
+              </button>
+              <button className={styles.toggleGear} onClick={() => setShowCalPicker((v) => !v)} title="Choisir les agendas">⚙️</button>
+            </>
           )}
         </div>
         <button className={styles.addBtn} onClick={openNew}>+ Ajouter</button>
       </div>
+
+      {/* ═══ CALENDAR PICKER (dropdown) ═══ */}
+      {showCalPicker && (
+        <div className={styles.calPicker}>
+          <div className={styles.calPickerHeader}>
+            <span className={styles.calPickerTitle}>📅 Tes agendas Google</span>
+            <button className={styles.calPickerClose} onClick={() => setShowCalPicker(false)}>✕</button>
+          </div>
+          <div className={styles.calPickerList}>
+            {gcalCalendars.map((cal) => {
+              const isOn = gcalSelectedIds.includes(cal.id);
+              return (
+                <button key={cal.id} className={`${styles.calPickerItem} ${isOn ? styles.calPickerItemOn : ""}`}
+                  style={{ "--cpb": cal.backgroundColor || "#4285f4" }}
+                  onClick={() => toggleGcalCalendar(cal.id)}>
+                  <span className={styles.calPickerDot} />
+                  <span className={styles.calPickerName}>{cal.summary}</span>
+                  {cal.primary && <span className={styles.calPickerPrimary}>Principal</span>}
+                  <span className={styles.calPickerCheck}>{isOn ? "✓" : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+          {gcalCalendars.length === 0 && <p className={styles.calPickerEmpty}>Aucun agenda trouvé</p>}
+        </div>
+      )}
 
       {/* ═══ CALENDAR TOOLBAR ═══ */}
       <div className={styles.calBar}>

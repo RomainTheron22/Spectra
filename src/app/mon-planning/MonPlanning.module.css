@@ -166,6 +166,25 @@
 .deleteBtn { background: white; border: 1px solid rgba(244,63,94,0.18); color: #f43f5e; font-weight: 700; border-radius: 7px; padding: 5px 10px; cursor: pointer; font-size: 10px; transition: all 120ms ease; }
 .deleteBtn:hover { background: rgba(244,63,94,0.03); }
 
+/* ═══ TOGGLE GEAR + CALENDAR PICKER ═══ */
+.toggleGear { background: none; border: 1px solid var(--color-border); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; transition: all 120ms ease; }
+.toggleGear:hover { border-color: #4285f4; background: rgba(66,133,244,0.04); }
+
+.calPicker { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); animation: fadeUp 200ms ease; }
+.calPickerHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.calPickerTitle { font-size: 14px; font-weight: 800; color: var(--color-text); }
+.calPickerClose { background: none; border: none; font-size: 16px; color: var(--color-text-muted); cursor: pointer; padding: 4px; }
+.calPickerClose:hover { color: var(--color-text); }
+.calPickerList { display: flex; flex-direction: column; gap: 4px; }
+.calPickerItem { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--color-border); border-radius: 10px; background: var(--color-surface); cursor: pointer; transition: all 120ms ease; text-align: left; width: 100%; }
+.calPickerItem:hover { border-color: var(--cpb, #4285f4); background: color-mix(in srgb, var(--cpb, #4285f4) 4%, white); }
+.calPickerItemOn { border-color: var(--cpb, #4285f4); background: color-mix(in srgb, var(--cpb, #4285f4) 8%, white); }
+.calPickerDot { width: 10px; height: 10px; border-radius: 50%; background: var(--cpb, #4285f4); flex-shrink: 0; }
+.calPickerName { flex: 1; font-size: 13px; font-weight: 700; color: var(--color-text); }
+.calPickerPrimary { font-size: 9px; font-weight: 800; background: rgba(66,133,244,0.1); color: #4285f4; padding: 2px 6px; border-radius: 4px; }
+.calPickerCheck { font-size: 14px; font-weight: 900; color: var(--cpb, #4285f4); width: 20px; text-align: center; }
+.calPickerEmpty { font-size: 13px; color: var(--color-text-muted); text-align: center; padding: 12px 0; }
+
 /* ═══ CHOOSE GRID (choix type dans modale) ═══ */
 .chooseGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .chooseCard { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 24px 14px; border: 2px solid var(--color-border); border-radius: 14px; background: var(--color-surface); cursor: pointer; transition: all 150ms ease; text-align: center; }

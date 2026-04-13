@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/planning/google-calendar/calendars
- * Liste les agendas Google Calendar de l'utilisateur.
+ * Liste les agendas Google Calendar de l'utilisateur + ceux sélectionnés.
  */
 export async function GET() {
     try {
@@ -21,20 +21,26 @@ export async function GET() {
 
         const connected = await hasCalendarScope(db, userId);
         if (!connected) {
-            return Response.json({ error: "Google Calendar non connecté." }, { status: 403 });
+            return Response.json({ error: "Google Calendar non connecté.", connected: false }, { status: 403 });
         }
 
         const tokens = await getGoogleTokens(db, userId);
         if (!tokens?.accessToken) {
-            return Response.json({ error: "Token Google expiré." }, { status: 403 });
+            return Response.json({ error: "Token Google expiré.", connected: false }, { status: 403 });
         }
 
         const calendars = await listCalendars(tokens.accessToken);
-
-        // Récupérer le calendrier sélectionné
         const prefs = await db.collection("user_preferences").findOne({ userId: String(userId) });
 
-        return Response.json({ calendars, selectedCalendarId: prefs?.selectedGcalId || null });
+        // Support ancien format (string) et nouveau (array)
+        let selectedIds = [];
+        if (Array.isArray(prefs?.selectedGcalIds)) {
+            selectedIds = prefs.selectedGcalIds;
+        } else if (prefs?.selectedGcalId) {
+            selectedIds = [prefs.selectedGcalId];
+        }
+
+        return Response.json({ calendars, selectedIds, connected: true });
     } catch (error) {
         return Response.json({ error: String(error?.message || "Erreur serveur.") }, { status: 500 });
     }
@@ -42,8 +48,8 @@ export async function GET() {
 
 /**
  * POST /api/planning/google-calendar/calendars
- * Sauvegarde le calendrier sélectionné pour l'utilisateur.
- * body: { calendarId }
+ * Sauvegarde les calendriers sélectionnés (multi-select).
+ * body: { calendarIds: string[] }
  */
 export async function POST(request) {
     try {
@@ -52,21 +58,19 @@ export async function POST(request) {
             return Response.json({ error: "Non authentifié." }, { status: 401 });
         }
 
-        const { calendarId } = await request.json();
-        if (!calendarId) {
-            return Response.json({ error: "calendarId manquant." }, { status: 400 });
-        }
+        const body = await request.json();
+        const calendarIds = Array.isArray(body.calendarIds) ? body.calendarIds : body.calendarId ? [body.calendarId] : [];
 
         const db = await getDb();
         const userId = String(session.user.id);
 
         await db.collection("user_preferences").updateOne(
             { userId },
-            { $set: { userId, selectedGcalId: calendarId, updatedAt: new Date() } },
+            { $set: { userId, selectedGcalIds: calendarIds, selectedGcalId: calendarIds[0] || "primary", updatedAt: new Date() } },
             { upsert: true }
         );
 
-        return Response.json({ ok: true });
+        return Response.json({ ok: true, selectedIds: calendarIds });
     } catch (error) {
         return Response.json({ error: String(error?.message || "Erreur serveur.") }, { status: 500 });
     }
