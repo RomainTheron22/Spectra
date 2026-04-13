@@ -129,6 +129,13 @@
 .tgEvtTime { font-size: 8px; font-weight: 600; opacity: 0.6; }
 .tgEvtCal { font-size: 7px; font-weight: 700; opacity: 0.5; }
 
+/* Day view events — larger, more detail */
+.tgEvtDay { position: absolute; border-radius: 8px; padding: 8px 12px; overflow: hidden; z-index: 1; cursor: pointer; display: flex; flex-direction: column; gap: 2px; background: color-mix(in srgb, var(--evc) 12%, white); border-left: 4px solid var(--evc); color: var(--evc); transition: box-shadow 120ms, transform 120ms; }
+.tgEvtDay:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); z-index: 2; transform: scale(1.005); }
+.tgEvtDay .tgEvtTitle { font-size: 13px; font-weight: 800; }
+.tgEvtDay .tgEvtTime { font-size: 11px; font-weight: 600; opacity: 0.7; }
+.tgEvtDay .tgEvtCal { font-size: 10px; font-weight: 600; opacity: 0.5; }
+
 /* Day view specifics */
 .dayAllDay { padding: 6px 0; border-bottom: 1px solid var(--color-border); margin-bottom: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
 .dayADEvt { font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 5px; background: color-mix(in srgb, var(--adc) 10%, white); color: var(--adc); border-left: 3px solid var(--adc); }

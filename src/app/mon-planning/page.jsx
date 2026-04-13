@@ -242,9 +242,11 @@ export default function MonPlanning() {
     else {
       setAbsences((prev) => [data.item, ...prev]);
       setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
-      // Push vers Google Agenda
+      // Push vers Google Agenda — cherche l'agenda "Planning" ou "planning"
       const typeLabel = ABSENCE_TYPES.find((t) => t.value === form.type)?.label || form.type;
-      try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `${typeLabel}`, start: form.dateDebut, end: form.dateFin, allDay: true, description: form.commentaire || "" }) }); } catch {}
+      const planningCal = gcalCalendars.find((c) => c.summary.toLowerCase().includes("planning"));
+      const calId = planningCal ? planningCal.id : undefined;
+      try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `${typeLabel}`, start: form.dateDebut, end: form.dateFin, allDay: true, description: form.commentaire || "", calendarId: calId }) }); await refetchGcalEvents(); } catch {}
     }
     setModalOpen(false);
   }
@@ -255,8 +257,10 @@ export default function MonPlanning() {
     const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur"); return; }
     const np = normalizeProject(data.item || data); if (np.dateDebut && np.dateFin) setProjects((prev) => [...prev, np]);
     setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
-    // Push projet vers Google Agenda
-    try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `🎬 ${projForm.nom}${projForm.branche ? ` — ${projForm.branche}` : ""}`, start: projForm.dateDebut, end: projForm.dateFin, allDay: true, description: projForm.description || "" }) }); } catch {}
+    // Push projet vers l'agenda de la branche
+    const branchCal = projForm.branche ? gcalCalendars.find((c) => c.summary.toLowerCase().includes(projForm.branche.toLowerCase())) : null;
+    const projCalId = branchCal ? branchCal.id : undefined;
+    try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `🎬 ${projForm.nom}`, start: projForm.dateDebut, end: projForm.dateFin, allDay: true, description: projForm.description || "", calendarId: projCalId }) }); await refetchGcalEvents(); } catch {}
     setModalOpen(false);
   }
   async function handleSubmitNote(e) {
@@ -490,15 +494,36 @@ export default function MonPlanning() {
                   <div className={styles.tgTimes}>{hours.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
                   <div className={styles.dayCol}>
                     {hours.map((h) => <div key={h} className={styles.tgSlot} />)}
-                    {timed.map((ev, j) => {
-                      const top = ((ev.startHour - HOUR_START) / (HOUR_END - HOUR_START)) * 100;
-                      const height = Math.max(3, ((ev.endHour - ev.startHour) / (HOUR_END - HOUR_START)) * 100);
-                      return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, "--evc": ev.color }}>
-                        <span className={styles.tgEvtTitle}>{ev.title}</span>
-                        <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} - {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
-                        {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName}</span>}
-                      </div>);
-                    })}
+                    {(() => {
+                      // Layout algorithm — same as week view
+                      const sorted = [...timed].sort((a, b) => a.startHour - b.startHour);
+                      const laid = sorted.map((ev) => ({ ...ev, col: 0, totalCols: 1 }));
+                      for (let a = 0; a < laid.length; a++) {
+                        for (let b = a + 1; b < laid.length; b++) {
+                          if (laid[b].startHour < laid[a].endHour) {
+                            if (laid[b].col === laid[a].col) laid[b].col = laid[a].col + 1;
+                            laid[a].totalCols = Math.max(laid[a].totalCols, laid[b].col + 1);
+                            laid[b].totalCols = Math.max(laid[b].totalCols, laid[b].col + 1);
+                          }
+                        }
+                      }
+                      for (let a = 0; a < laid.length; a++) {
+                        for (let b = a + 1; b < laid.length; b++) {
+                          if (laid[b].startHour < laid[a].endHour) { const mx = Math.max(laid[a].totalCols, laid[b].totalCols); laid[a].totalCols = mx; laid[b].totalCols = mx; }
+                        }
+                      }
+                      return laid.map((ev, j) => {
+                        const top = ((ev.startHour - HOUR_START) / (HOUR_END - HOUR_START)) * 100;
+                        const height = Math.max(3, ((ev.endHour - ev.startHour) / (HOUR_END - HOUR_START)) * 100);
+                        const width = 100 / ev.totalCols;
+                        const left = ev.col * width;
+                        return (<div key={j} className={styles.tgEvtDay} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}>
+                          <span className={styles.tgEvtTitle}>{ev.title}</span>
+                          <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} — {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
+                          {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName}</span>}
+                        </div>);
+                      });
+                    })()}
                   </div>
                 </div>
               </div>
