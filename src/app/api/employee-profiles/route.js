@@ -76,7 +76,7 @@ export async function POST(request) {
     dateFin: dateFin || null,
     pole: pole || null,
     entite: entite || null,
-    congesAnnuels: typeof congesAnnuels === "number" ? congesAnnuels : 25,
+    congesAnnuels: typeof congesAnnuels === "number" ? congesAnnuels : 30,
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
