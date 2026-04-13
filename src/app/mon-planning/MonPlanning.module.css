@@ -71,6 +71,30 @@
 .vBtn:hover { color: var(--color-text); }
 .vBtnOn { background: white; color: var(--color-text); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 
+/* ═══ MINI CALENDAR ═══ */
+.miniCal { width: 200px; flex-shrink: 0; position: sticky; top: 16px; }
+.miniCalNav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.miniCalBtn { background: none; border: none; font-size: 16px; font-weight: 900; color: var(--color-text-muted); cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: all 100ms; }
+.miniCalBtn:hover { color: var(--color-text); background: rgba(124,58,237,0.04); }
+.miniCalTitle { font-size: 12px; font-weight: 800; color: var(--color-text); }
+.miniCalGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.miniCalHead { text-align: center; font-size: 9px; font-weight: 800; color: var(--color-text-muted); padding: 4px 0; }
+.miniCalDay { background: none; border: none; font-size: 11px; font-weight: 600; color: var(--color-text); width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 100ms; margin: 0 auto; }
+.miniCalDay:hover { background: rgba(124,58,237,0.06); }
+.miniCalToday { background: #7c3aed; color: white; font-weight: 800; }
+.miniCalToday:hover { background: #6d28d9; }
+.miniCalOther { color: var(--color-text-muted); opacity: 0.3; }
+.miniCalSelected { background: rgba(124,58,237,0.12); color: #7c3aed; font-weight: 800; }
+.miniCalHasEvents { position: relative; }
+.miniCalHasEvents::after { content: ""; position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #7c3aed; opacity: 0.5; }
+.miniCalToday.miniCalHasEvents::after { background: white; }
+
+.miniCalendars { margin-top: 16px; }
+.miniCalLabel { font-size: 10px; font-weight: 800; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; }
+.miniCalItem { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+.miniCalDot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.miniCalName { font-size: 11px; font-weight: 600; color: var(--color-text-muted); }
+
 /* ═══ MAIN ═══ */
 .main { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
 .calWrap { flex: 1; min-width: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; padding: 18px; box-shadow: 0 4px 16px rgba(124,58,237,0.04); opacity: 0; overflow: hidden; }
@@ -171,7 +195,14 @@
 .pBranchDot { width: 6px; height: 6px; border-radius: 50%; }
 .pBranchName { font-size: 10px; font-weight: 800; color: var(--color-text); text-transform: uppercase; letter-spacing: 0.2px; }
 .pBranchN { font-size: 8px; font-weight: 800; opacity: 0.4; }
-.pRdv { font-size: 11px; color: var(--color-text-muted); padding: 2px 0 2px 14px; border-left: 1px solid var(--color-border); margin-left: 2px; font-weight: 600; }
+.pRdv { font-size: 11px; color: var(--color-text-muted); padding: 4px 0 4px 14px; border-left: 1px solid var(--color-border); margin-left: 2px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.pRdvTitle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pRdvBtns { display: flex; gap: 2px; opacity: 0; transition: opacity 100ms; flex-shrink: 0; }
+.pRdv:hover .pRdvBtns { opacity: 1; }
+.pMiniBtn { background: none; border: none; cursor: pointer; font-size: 11px; padding: 2px 4px; border-radius: 4px; transition: background 100ms; }
+.pMiniBtn:hover { background: rgba(0,0,0,0.05); }
+.deleteGcalBtn { background: none; border: 1px solid rgba(244,63,94,0.2); color: #f43f5e; font-weight: 700; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 12px; transition: all 100ms; }
+.deleteGcalBtn:hover { background: rgba(244,63,94,0.04); }
 .pEmpty { font-size: 12px; color: var(--color-text-muted); text-align: center; padding: 16px 0; font-style: italic; }
 .pAddSec { border-top: 1px solid var(--color-border); padding-top: 10px; margin-top: 8px; }
 .pAddBtn { width: 100%; padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font-weight: 700; font-size: 11px; cursor: pointer; text-align: left; margin-bottom: 4px; transition: all 100ms; }
@@ -235,5 +266,5 @@
 .submitBtn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* ═══ RESPONSIVE ═══ */
-@media (max-width: 900px) { .main { flex-direction: column; } .panel { width: 100%; position: static; } }
+@media (max-width: 900px) { .main { flex-direction: column; } .panel { width: 100%; position: static; } .miniCal { display: none; } }
 @media (max-width: 600px) { .chooseGrid, .typeGrid { grid-template-columns: 1fr 1fr; } .fieldRow { flex-direction: column; } .page { padding: 10px; } }

@@ -239,14 +239,15 @@ export default function MonPlanning() {
     const startM = Math.round((dragStart.hour % 1) * 60);
     const endH = Math.floor(dragEnd.hour);
     const endM = Math.round((dragEnd.hour % 1) * 60);
-    setNoteForm({
-      contenu: "",
-      dateDebut: dragStart.date,
-      heureDebut: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`,
-      heureFin: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
-      lieu: "", participants: "", allDay: false,
-    });
-    setModalType("note");
+    const heureDebut = `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`;
+    const heureFin = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+    const dateStr = dragStart.date;
+    // Pré-remplir tous les formulaires avec les heures
+    setForm({ type: "", dateDebut: dateStr, dateFin: dateStr, demiJournee: "", commentaire: "" });
+    setProjForm({ nomContrat: "", clientNom: "", branche: "", dateDebut: dateStr, dateFin: dateStr, lieu: "", brief: "" });
+    setNoteForm({ contenu: "", dateDebut: dateStr, heureDebut, heureFin, lieu: "", participants: "", allDay: false });
+    setEditId(null);
+    setModalType("choose");
     setModalOpen(true);
     setDragStart(null); setDragEnd(null);
   }
@@ -323,9 +324,43 @@ export default function MonPlanning() {
     const res = await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur Google Agenda"); return; }
     if (data.item) setGcalEvents((prev) => [...prev, data.item]);
-    setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); setModalOpen(false);
+    setModalOpen(false);
   }
   async function handleDelete(id) { if (!confirm("Supprimer ?")) return; const res = await fetch(`/api/employee-absences/${id}`, { method: "DELETE" }); if (res.ok) setAbsences((prev) => prev.filter((a) => String(a._id) !== id)); }
+
+  // Edit/delete Google Calendar events
+  async function handleDeleteGcalEvent(gcalId) {
+    if (!confirm("Supprimer cet événement de Google Agenda ?")) return;
+    const res = await fetch(`/api/planning/google-calendar/${gcalId}`, { method: "DELETE" });
+    if (res.ok) { setGcalEvents((prev) => prev.filter((e) => e.gcalId !== gcalId)); }
+    else { alert("Erreur lors de la suppression"); }
+  }
+
+  function openEditGcalEvent(ev) {
+    setNoteForm({
+      contenu: ev.title || "",
+      dateDebut: ev.startHour != null ? toYMD(new Date()) : "",
+      heureDebut: ev.startHour != null ? `${String(Math.floor(ev.startHour)).padStart(2, "0")}:${String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")}` : "09:00",
+      heureFin: ev.endHour != null ? `${String(Math.floor(ev.endHour)).padStart(2, "0")}:${String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}` : "10:00",
+      lieu: "", participants: "", allDay: ev.isAllDay || false,
+      gcalEditId: ev.gcalId,
+    });
+    setModalType("editGcal");
+    setModalOpen(true);
+  }
+
+  async function handleUpdateGcalEvent(e) {
+    e.preventDefault(); if (!noteForm.contenu) { alert("Titre obligatoire"); return; } setSaving(true);
+    const body = {
+      title: noteForm.contenu,
+      start: noteForm.allDay ? noteForm.dateDebut : `${noteForm.dateDebut}T${noteForm.heureDebut}:00`,
+      end: noteForm.allDay ? noteForm.dateDebut : `${noteForm.dateDebut}T${noteForm.heureFin}:00`,
+    };
+    const res = await fetch(`/api/planning/google-calendar/${noteForm.gcalEditId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    setSaving(false); if (!res.ok) { alert("Erreur lors de la modification"); return; }
+    await refetchGcalEvents();
+    setModalOpen(false);
+  }
 
   const today = toYMD(new Date());
   const month = calDate.getMonth();
@@ -422,8 +457,46 @@ export default function MonPlanning() {
         </div>
       </div>
 
-      {/* ═══ MAIN: Calendar + Panel ═══ */}
+      {/* ═══ MAIN: MiniCal + Calendar + Panel ═══ */}
       <div className={styles.main}>
+        {/* Mini calendar */}
+        <div className={styles.miniCal}>
+          <div className={styles.miniCalNav}>
+            <button className={styles.miniCalBtn} onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}>‹</button>
+            <span className={styles.miniCalTitle}>{MOIS[calDate.getMonth()].slice(0, 3)} {calDate.getFullYear()}</span>
+            <button className={styles.miniCalBtn} onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}>›</button>
+          </div>
+          <div className={styles.miniCalGrid}>
+            {["L","M","M","J","V","S","D"].map((d, i) => <div key={i} className={styles.miniCalHead}>{d}</div>)}
+            {(() => {
+              const y = calDate.getFullYear(), m = calDate.getMonth();
+              const first = new Date(y, m, 1); let start = (first.getDay() + 6) % 7;
+              const sd = new Date(first); sd.setDate(sd.getDate() - start);
+              const days = [];
+              for (let i = 0; i < 42; i++) { const d = new Date(sd); d.setDate(d.getDate() + i); days.push(d); }
+              return days.map((d, i) => {
+                const key = toYMD(d); const isMonth = d.getMonth() === m; const isToday2 = key === today;
+                const hasEvents = (calEvents[key] || []).length > 0;
+                const isSelected = selectedDate && toYMD(selectedDate) === key;
+                return <button key={i} className={[styles.miniCalDay, isToday2 && styles.miniCalToday, !isMonth && styles.miniCalOther, isSelected && styles.miniCalSelected, hasEvents && styles.miniCalHasEvents].filter(Boolean).join(" ")}
+                  onClick={() => { setCalDate(d); if (view === "day") setCalDate(d); handleDayClick(d); }}>{d.getDate()}</button>;
+              });
+            })()}
+          </div>
+          {/* Calendriers Google */}
+          {gcalConnected && gcalCalendars.length > 0 && (
+            <div className={styles.miniCalendars}>
+              <div className={styles.miniCalLabel}>Agendas</div>
+              {gcalCalendars.filter((c) => gcalSelectedIds.includes(c.id)).slice(0, 6).map((cal) => (
+                <div key={cal.id} className={styles.miniCalItem}>
+                  <span className={styles.miniCalDot} style={{ background: cal.backgroundColor || "#4285f4" }} />
+                  <span className={styles.miniCalName}>{cal.summary.length > 16 ? cal.summary.slice(0, 16) + "…" : cal.summary}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className={`${styles.calWrap} ${loaded ? styles.calLoaded : ""}`}>
 
           {/* VUE MOIS */}
@@ -599,7 +672,7 @@ export default function MonPlanning() {
               {selectedEvents.projs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🎬 Projets</h3>{selectedEvents.projs.map((p, j) => <div key={j} className={styles.pEvt} style={{ "--pc": p.color }}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div></div>)}</div>)}
               {selectedEvents.missions.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>👤 Mes missions</h3>{selectedEvents.missions.map((p, j) => <div key={j} className={styles.pEvt} style={{ "--pc": p.color }}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div></div>)}</div>)}
               {selectedEvents.abs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🌴 Absences</h3>{selectedEvents.abs.map((a, j) => { const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" }; const canMod = a.statut === "en_attente" && a.dateDebut >= today; return (<div key={j} className={styles.pEvt} style={{ "--pc": a.absType?.color || "#888" }}><div className={styles.pEvtTitle}>{a.absType?.icon} {a.absType?.label}</div><span className={`${styles.pStatut} ${styles[s.cls]}`}>{s.label}</span>{canMod && <div className={styles.pActions}><button className={styles.pEditBtn} onClick={() => openEdit(a)}>Modifier</button><button className={styles.pDelBtn} onClick={() => handleDelete(String(a._id))}>Supprimer</button></div>}</div>); })}</div>)}
-              {Object.keys(selectedEvents.gcalByBranch).length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>📅 Agenda</h3>{Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (<div key={branch} className={styles.pBranch}><div className={styles.pBranchHead}><span className={styles.pBranchDot} style={{ background: data.color }} /><span className={styles.pBranchName}>{branch}</span><span className={styles.pBranchN}>{data.events.length}</span></div>{data.events.map((g, j) => <div key={j} className={styles.pRdv}>{g.title}</div>)}</div>))}</div>)}
+              {Object.keys(selectedEvents.gcalByBranch).length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>📅 Agenda</h3>{Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (<div key={branch} className={styles.pBranch}><div className={styles.pBranchHead}><span className={styles.pBranchDot} style={{ background: data.color }} /><span className={styles.pBranchName}>{branch}</span><span className={styles.pBranchN}>{data.events.length}</span></div>{data.events.map((g, j) => <div key={j} className={styles.pRdv}><span className={styles.pRdvTitle}>{g.title}</span>{g.gcalId && <div className={styles.pRdvBtns}><button className={styles.pMiniBtn} onClick={() => { const d = toYMD(selectedDate); setNoteForm({ contenu: g.title, dateDebut: d, heureDebut: g.startHour != null ? `${String(Math.floor(g.startHour)).padStart(2,"0")}:${String(Math.round((g.startHour%1)*60)).padStart(2,"0")}` : "09:00", heureFin: g.endHour != null ? `${String(Math.floor(g.endHour)).padStart(2,"0")}:${String(Math.round((g.endHour%1)*60)).padStart(2,"0")}` : "10:00", lieu: "", participants: "", allDay: g.isAllDay || false, gcalEditId: g.gcalId }); setModalType("editGcal"); setModalOpen(true); }}>✏️</button><button className={styles.pMiniBtn} onClick={() => handleDeleteGcalEvent(g.gcalId)}>🗑</button></div>}</div>)}</div>))}</div>)}
               {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && Object.keys(selectedEvents.gcalByBranch).length === 0 && <div className={styles.pEmpty}>Rien de prévu</div>}
               {isFuture && (<div className={styles.pAddSec}><h3 className={styles.pSecTitle}>Ajouter</h3><button className={styles.pAddBtn} style={{ "--pab": "#10b981" }} onClick={() => openAbsenceForm(dateStr)}>🌴 Absence</button><button className={styles.pAddBtn} style={{ "--pab": "#7c3aed" }} onClick={() => openProjForm(dateStr)}>🎬 Projet</button><button className={styles.pAddBtn} style={{ "--pab": "#f59e0b" }} onClick={() => openNoteForm(dateStr)}>📅 Événement</button></div>)}
             </aside>
@@ -626,7 +699,7 @@ export default function MonPlanning() {
       )}
 
       {/* ═══ MODALE ═══ */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalType === "choose" ? "Ajouter" : modalType === "absence" ? (editId ? "Modifier" : "Absence") : modalType === "projet" ? "Projet" : "Événement"} size="sm">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalType === "choose" ? "Ajouter" : modalType === "absence" ? (editId ? "Modifier" : "Absence") : modalType === "projet" ? "Projet" : modalType === "editGcal" ? "Modifier l'événement" : "Événement"} size="sm">
         {modalType === "choose" && (<div className={styles.chooseGrid}><button className={styles.chooseCard} style={{ "--cc": "#10b981" }} onClick={() => setModalType("absence")}><span className={styles.chooseIcon}>🌴</span><span className={styles.chooseLabel}>Absence</span></button><button className={styles.chooseCard} style={{ "--cc": "#7c3aed" }} onClick={() => setModalType("projet")}><span className={styles.chooseIcon}>🎬</span><span className={styles.chooseLabel}>Projet</span></button><button className={styles.chooseCard} style={{ "--cc": "#f59e0b" }} onClick={() => setModalType("note")}><span className={styles.chooseIcon}>📅</span><span className={styles.chooseLabel}>Événement</span></button></div>)}
         {modalType === "absence" && (<form onSubmit={handleSubmit} className={styles.form}>
           {!editId && (<div className={styles.recapBar}><div className={styles.recapItem} style={{ "--rc": "#10b981" }}><span>🌴</span><strong>{absRecap.conge}j</strong> congés</div><div className={styles.recapItem} style={{ "--rc": "#8b5cf6" }}><span>🏡</span><strong>{absRecap.tt}j</strong> TT</div><div className={styles.recapItem} style={{ "--rc": "#f43f5e" }}><span>🤧</span><strong>{absRecap.maladie}j</strong> maladie</div><div className={styles.recapVibe}>{vibe.emoji} {vibe.msg} — <strong>{solde.reste}j restants</strong></div></div>)}
@@ -658,6 +731,20 @@ export default function MonPlanning() {
           <label className={styles.field}>Lieu <span className={styles.fieldOpt}>(optionnel)</span><input value={noteForm.lieu} onChange={(e) => setNoteForm((f) => ({ ...f, lieu: e.target.value }))} placeholder="Bureau, visio, adresse..." /></label>
           <label className={styles.field}>Participants <span className={styles.fieldOpt}>(emails séparés par des virgules)</span><input value={noteForm.participants} onChange={(e) => setNoteForm((f) => ({ ...f, participants: e.target.value }))} placeholder="nom@email.com, autre@email.com" /></label>
           <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !noteForm.contenu}>{saving ? "..." : "Créer l'événement 📅"}</button></div>
+        </form>)}
+        {modalType === "editGcal" && (<form onSubmit={handleUpdateGcalEvent} className={styles.form}>
+          <label className={styles.field}>Titre<input value={noteForm.contenu} onChange={(e) => setNoteForm((f) => ({ ...f, contenu: e.target.value }))} required /></label>
+          <label className={styles.field}>Date<input type="date" value={noteForm.dateDebut} onChange={(e) => setNoteForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label>
+          <label className={styles.fieldCheck}><input type="checkbox" checked={noteForm.allDay} onChange={(e) => setNoteForm((f) => ({ ...f, allDay: e.target.checked }))} /> Toute la journée</label>
+          {!noteForm.allDay && (<div className={styles.fieldRow}>
+            <label className={styles.field}>De<input type="time" value={noteForm.heureDebut} onChange={(e) => setNoteForm((f) => ({ ...f, heureDebut: e.target.value }))} required /></label>
+            <label className={styles.field}>À<input type="time" value={noteForm.heureFin} onChange={(e) => setNoteForm((f) => ({ ...f, heureFin: e.target.value }))} required /></label>
+          </div>)}
+          <div className={styles.formActions}>
+            <button type="button" className={styles.backBtn} onClick={() => setModalOpen(false)}>Annuler</button>
+            <button type="button" className={styles.deleteGcalBtn} onClick={() => { handleDeleteGcalEvent(noteForm.gcalEditId); setModalOpen(false); }}>Supprimer</button>
+            <button type="submit" className={styles.submitBtn} disabled={saving || !noteForm.contenu}>{saving ? "..." : "Enregistrer"}</button>
+          </div>
         </form>)}
       </Modal>
     </div>
