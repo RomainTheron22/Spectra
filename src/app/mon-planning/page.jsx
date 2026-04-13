@@ -5,10 +5,10 @@ import styles from "./MonPlanning.module.css";
 import Modal from "../../components/ui/Modal";
 
 const TYPE_OPTIONS = [
-  { value: "conge", label: "Congé", color: "#22c55e" },
-  { value: "tt", label: "Télétravail", color: "#0ea5e9" },
-  { value: "maladie", label: "Maladie", color: "#ef4444" },
-  { value: "absence_autre", label: "Autre absence", color: "#a855f7" },
+  { value: "conge", label: "Congé", color: "#22c55e", icon: "🌴", desc: "Vacances, repos, journée perso" },
+  { value: "tt", label: "Télétravail", color: "#0ea5e9", icon: "🏠", desc: "Je bosse de chez moi" },
+  { value: "maladie", label: "Maladie", color: "#ef4444", icon: "🤒", desc: "Arrêt maladie" },
+  { value: "absence_autre", label: "Autre", color: "#a855f7", icon: "📋", desc: "RDV, formation, perso..." },
 ];
 
 const STATUT_LABELS = {
@@ -22,6 +22,26 @@ const MOIS = [
   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
 const JOURS_SEMAINE = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+
+// Métaphores bien-être pour les congés restants
+const CONGE_VIBES = [
+  { min: 25, emoji: "🌍", message: "Un tour du monde t'attend" },
+  { min: 20, emoji: "⛩️", message: "Cap sur le Japon — 3 semaines d'évasion" },
+  { min: 15, emoji: "🚗", message: "Road trip sur la côte californienne" },
+  { min: 10, emoji: "🌴", message: "Deux semaines sous les cocotiers" },
+  { min: 7, emoji: "🏝️", message: "Une semaine à Bali, ça te dit ?" },
+  { min: 4, emoji: "✈️", message: "Un city-trip à Lisbonne" },
+  { min: 2, emoji: "⛰️", message: "Un week-end prolongé à la montagne" },
+  { min: 1, emoji: "🧘", message: "Une journée pour toi, juste pour toi" },
+  { min: 0, emoji: "⚡", message: "Recharge terminée — full power !" },
+];
+
+function getCongeVibe(jours) {
+  for (const v of CONGE_VIBES) {
+    if (jours >= v.min) return v;
+  }
+  return CONGE_VIBES[CONGE_VIBES.length - 1];
+}
 
 function toYMD(date) {
   return date.toISOString().slice(0, 10);
@@ -45,7 +65,7 @@ export default function MonPlanning() {
   const [profile, setProfile] = useState(null);
   const [calDate, setCalDate] = useState(new Date());
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ type: "conge", dateDebut: "", dateFin: "", demiJournee: "", commentaire: "" });
+  const [form, setForm] = useState({ type: "", dateDebut: "", dateFin: "", demiJournee: "", commentaire: "" });
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState(null);
 
@@ -67,7 +87,6 @@ export default function MonPlanning() {
     return () => { cancelled = true; };
   }, []);
 
-  // Solde congés
   const soldeConges = useMemo(() => {
     const credit = profile?.congesAnnuels || 25;
     const year = new Date().getFullYear();
@@ -77,7 +96,8 @@ export default function MonPlanning() {
     return { credit, pris, reste: credit - pris };
   }, [absences, profile]);
 
-  // Map absences par date pour le calendrier
+  const vibe = useMemo(() => getCongeVibe(soldeConges.reste), [soldeConges.reste]);
+
   const absencesByDate = useMemo(() => {
     const map = {};
     for (const a of absences) {
@@ -93,12 +113,10 @@ export default function MonPlanning() {
     return map;
   }, [absences]);
 
-  // Calendrier
   const calendarDays = useMemo(() => {
     const year = calDate.getFullYear();
     const month = calDate.getMonth();
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
     let startDay = (firstDay.getDay() + 6) % 7;
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - startDay);
@@ -112,9 +130,28 @@ export default function MonPlanning() {
     return days;
   }, [calDate]);
 
+  // Clic sur un jour du calendrier
+  function handleDayClick(date, dayAbsences) {
+    const dateStr = toYMD(date);
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    if (isWeekend) return;
+
+    // S'il y a une absence en attente, on l'ouvre en édition
+    const pendingAbsence = dayAbsences.find((a) => a.statut === "en_attente");
+    if (pendingAbsence) {
+      openEdit(pendingAbsence);
+      return;
+    }
+
+    // Sinon on ouvre le formulaire pré-rempli
+    setEditId(null);
+    setForm({ type: "", dateDebut: dateStr, dateFin: dateStr, demiJournee: "", commentaire: "" });
+    setModalOpen(true);
+  }
+
   function openNew() {
     setEditId(null);
-    setForm({ type: "conge", dateDebut: "", dateFin: "", demiJournee: "", commentaire: "" });
+    setForm({ type: "", dateDebut: "", dateFin: "", demiJournee: "", commentaire: "" });
     setModalOpen(true);
   }
 
@@ -132,6 +169,7 @@ export default function MonPlanning() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!form.type) { alert("Choisis un type d'absence"); return; }
     setSaving(true);
     const body = {
       type: form.type,
@@ -183,13 +221,21 @@ export default function MonPlanning() {
           <h1 className={styles.pageTitle}>Mon Planning</h1>
           <p className={styles.subtitle}>Gérez vos absences et congés</p>
         </div>
-        <div className={styles.headerActions}>
-          <div className={styles.soldeBadge}>
-            <span className={styles.soldeLabel}>Congés restants</span>
-            <span className={styles.soldeValue}>{soldeConges.reste}j</span>
-            <span className={styles.soldeDetail}>{soldeConges.pris}j pris / {soldeConges.credit}j</span>
-          </div>
-          <button className={styles.primaryButton} onClick={openNew}>+ Poser une absence</button>
+        <button className={styles.primaryButton} onClick={openNew}>+ Poser une absence</button>
+      </div>
+
+      {/* Vibe congés */}
+      <div className={styles.vibeCard}>
+        <div className={styles.vibeEmoji}>{vibe.emoji}</div>
+        <div className={styles.vibeContent}>
+          <span className={styles.vibeMessage}>{vibe.message}</span>
+          <span className={styles.vibeDetail}>{soldeConges.reste}j disponibles sur {soldeConges.credit}</span>
+        </div>
+        <div className={styles.vibeBar}>
+          <div
+            className={styles.vibeBarFill}
+            style={{ width: `${Math.max(2, (soldeConges.reste / soldeConges.credit) * 100)}%` }}
+          />
         </div>
       </div>
 
@@ -224,11 +270,15 @@ export default function MonPlanning() {
             const isToday = key === today;
             const dayAbsences = absencesByDate[key] || [];
             const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            const hasAbsence = dayAbsences.length > 0;
 
             return (
               <div
                 key={i}
-                className={`${styles.calDay} ${isToday ? styles.calDayToday : ""} ${!isMonth ? styles.calDayOther : ""} ${isWeekend ? styles.calDayWeekend : ""}`}
+                className={`${styles.calDay} ${isToday ? styles.calDayToday : ""} ${!isMonth ? styles.calDayOther : ""} ${isWeekend ? styles.calDayWeekend : ""} ${!isWeekend && isMonth ? styles.calDayClickable : ""}`}
+                onClick={() => isMonth && !isWeekend && handleDayClick(d, dayAbsences)}
+                role={isMonth && !isWeekend ? "button" : undefined}
+                tabIndex={isMonth && !isWeekend ? 0 : undefined}
               >
                 <span className={styles.calDayNum}>{d.getDate()}</span>
                 {dayAbsences.map((a, j) => {
@@ -241,10 +291,13 @@ export default function MonPlanning() {
                       style={{ background: `${typeOpt?.color || "#888"}22`, color: typeOpt?.color || "#888" }}
                       title={`${typeOpt?.label || a.type} — ${STATUT_LABELS[a.statut]?.label || a.statut}`}
                     >
-                      {typeOpt?.label?.[0] || "?"}
+                      {typeOpt?.icon || "?"} {typeOpt?.label || a.type}
                     </div>
                   );
                 })}
+                {!hasAbsence && !isWeekend && isMonth && (
+                  <span className={styles.calDayHint}>+</span>
+                )}
               </div>
             );
           })}
@@ -254,29 +307,30 @@ export default function MonPlanning() {
       {/* Liste des demandes */}
       <div className={styles.listCard}>
         <h2 className={styles.listTitle}>Mes demandes</h2>
-        {absences.length === 0 && <p className={styles.empty}>Aucune absence enregistrée</p>}
+        {absences.length === 0 && <p className={styles.empty}>Aucune absence enregistrée — clique sur un jour du calendrier pour commencer</p>}
         {absences.map((a) => {
           const typeOpt = TYPE_OPTIONS.find((t) => t.value === a.type);
           const statut = STATUT_LABELS[a.statut] || { label: a.statut, className: "" };
           const canEdit = a.statut === "en_attente";
           return (
             <div key={String(a._id)} className={styles.absenceRow}>
-              <div className={styles.absenceType} style={{ background: `${typeOpt?.color || "#888"}18`, color: typeOpt?.color || "#888" }}>
-                {typeOpt?.label || a.type}
+              <span className={styles.absenceIcon}>{typeOpt?.icon || "📋"}</span>
+              <div className={styles.absenceInfo}>
+                <div className={styles.absenceTop}>
+                  <span className={styles.absenceType} style={{ background: `${typeOpt?.color || "#888"}14`, color: typeOpt?.color || "#888" }}>
+                    {typeOpt?.label || a.type}
+                  </span>
+                  <span className={styles.absenceDates}>
+                    {a.dateDebut === a.dateFin ? a.dateDebut : `${a.dateDebut} → ${a.dateFin}`}
+                    {a.demiJournee && <span className={styles.demiTag}>{a.demiJournee}</span>}
+                  </span>
+                  <span className={`${styles.absenceStatut} ${styles[statut.className] || ""}`}>
+                    {statut.label}
+                  </span>
+                </div>
+                {a.motifRefus && <div className={styles.motifRefus}>Motif : {a.motifRefus}</div>}
+                {a.commentaire && <div className={styles.commentaire}>{a.commentaire}</div>}
               </div>
-              <div className={styles.absenceDates}>
-                {a.dateDebut === a.dateFin ? a.dateDebut : `${a.dateDebut} → ${a.dateFin}`}
-                {a.demiJournee && <span className={styles.demiTag}>{a.demiJournee}</span>}
-              </div>
-              <div className={`${styles.absenceStatut} ${styles[statut.className] || ""}`}>
-                {statut.label}
-              </div>
-              {a.motifRefus && (
-                <div className={styles.motifRefus}>Motif : {a.motifRefus}</div>
-              )}
-              {a.commentaire && (
-                <div className={styles.commentaire}>{a.commentaire}</div>
-              )}
               {canEdit && (
                 <div className={styles.absenceActions}>
                   <button className={styles.editBtn} onClick={() => openEdit(a)}>Modifier</button>
@@ -288,17 +342,31 @@ export default function MonPlanning() {
         })}
       </div>
 
-      {/* Modale */}
+      {/* Modale — sélection type par cartes */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editId ? "Modifier l'absence" : "Poser une absence"} size="sm">
         <form onSubmit={handleSubmit} className={styles.form}>
-          <label className={styles.fieldLabel}>
-            Type
-            <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
-              {TYPE_OPTIONS.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
-          </label>
+
+          {/* Type selector — cartes visuelles */}
+          <div className={styles.typeLabel}>Quel type ?</div>
+          <div className={styles.typeGrid}>
+            {TYPE_OPTIONS.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                className={`${styles.typeCard} ${form.type === t.value ? styles.typeCardActive : ""}`}
+                style={{
+                  "--type-color": t.color,
+                  borderColor: form.type === t.value ? t.color : undefined,
+                  background: form.type === t.value ? `${t.color}10` : undefined,
+                }}
+                onClick={() => setForm((f) => ({ ...f, type: t.value }))}
+              >
+                <span className={styles.typeCardIcon}>{t.icon}</span>
+                <span className={styles.typeCardLabel}>{t.label}</span>
+                <span className={styles.typeCardDesc}>{t.desc}</span>
+              </button>
+            ))}
+          </div>
 
           <div className={styles.fieldRow}>
             <label className={styles.fieldLabel}>
@@ -315,19 +383,19 @@ export default function MonPlanning() {
             Demi-journée (optionnel)
             <select value={form.demiJournee} onChange={(e) => setForm((f) => ({ ...f, demiJournee: e.target.value }))}>
               <option value="">Journée complète</option>
-              <option value="matin">Matin</option>
-              <option value="apres-midi">Après-midi</option>
+              <option value="matin">Matin uniquement</option>
+              <option value="apres-midi">Après-midi uniquement</option>
             </select>
           </label>
 
           <label className={styles.fieldLabel}>
-            Commentaire (optionnel)
-            <textarea value={form.commentaire} onChange={(e) => setForm((f) => ({ ...f, commentaire: e.target.value }))} rows={3} placeholder="Précisions..." />
+            Un petit mot ? (optionnel)
+            <textarea value={form.commentaire} onChange={(e) => setForm((f) => ({ ...f, commentaire: e.target.value }))} rows={2} placeholder="Ex: Voyage en famille, RDV médical..." />
           </label>
 
           <div className={styles.formActions}>
             <button type="button" className={styles.secondaryBtn} onClick={() => setModalOpen(false)}>Annuler</button>
-            <button type="submit" className={styles.submitBtn} disabled={saving}>
+            <button type="submit" className={styles.submitBtn} disabled={saving || !form.type}>
               {saving ? "Envoi..." : editId ? "Modifier" : "Envoyer la demande"}
             </button>
           </div>
