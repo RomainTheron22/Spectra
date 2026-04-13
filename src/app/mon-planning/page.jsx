@@ -231,16 +231,25 @@ export default function MonPlanning() {
     return Array.from({ length: 7 }, (_, i) => { const dd = new Date(mon); dd.setDate(dd.getDate() + i); return dd; });
   }, [calDate]);
 
-  // Events for selected date (panel)
+  // Events for selected date (panel) — grouped by branch
   const selectedEvents = useMemo(() => {
-    if (!selectedDate) return { projs: [], missions: [], abs: [], gcals: [] };
+    if (!selectedDate) return { projs: [], missions: [], abs: [], gcalByBranch: {} };
     const key = toYMD(selectedDate);
     const all = calEvents[key] || [];
+
+    // Group gcal events by calendar name (= branch)
+    const gcalByBranch = {};
+    for (const e of all.filter((e) => e.type === "gcal")) {
+      const branch = e.calendarName || "Agenda";
+      if (!gcalByBranch[branch]) gcalByBranch[branch] = { color: e.color, events: [] };
+      gcalByBranch[branch].events.push(e);
+    }
+
     return {
       projs: all.filter((e) => e.type === "projet" && !e.isMine),
       missions: all.filter((e) => (e.type === "projet" && e.isMine) || e.type === "mission"),
       abs: all.filter((e) => e.type === "absence"),
-      gcals: all.filter((e) => e.type === "gcal"),
+      gcalByBranch,
     };
   }, [selectedDate, calEvents]);
 
@@ -394,25 +403,30 @@ export default function MonPlanning() {
     const projs = events.filter((e) => e.type === "projet" || e.type === "mission");
     const abs = events.find((e) => e.type === "absence");
     const gcals = events.filter((e) => e.type === "gcal");
-    const limit = compact ? 2 : 5;
+    const projLimit = compact ? 2 : 5;
+    const gcalLimit = compact ? 2 : 4;
+    const totalExtra = Math.max(0, projs.length - projLimit) + Math.max(0, gcals.length - gcalLimit);
     return (
       <div className={styles.calEvents}>
-        {projs.slice(0, limit).map((p, j) => (
-          <div key={`p${j}`} className={`${styles.calEvt} ${p.isMine ? styles.calEvtMine : ""}`} style={{ "--ec": p.color }}>
-            {p.isMine ? "👤" : "🎬"} {compact ? (p.title.length > 10 ? p.title.slice(0, 10) + "…" : p.title) : p.title}
+        {/* PROJETS — gros, prioritaires */}
+        {projs.slice(0, projLimit).map((p, j) => (
+          <div key={`p${j}`} className={`${styles.calEvtProj} ${p.isMine ? styles.calEvtMine : ""}`} style={{ "--ec": p.color }}>
+            {p.isMine ? "👤" : "🎬"} {compact ? (p.title.length > 12 ? p.title.slice(0, 12) + "…" : p.title) : p.title}
           </div>
         ))}
-        {projs.length > limit && <div className={styles.calEvtMore}>+{projs.length - limit}</div>}
-        {gcals.slice(0, compact ? 1 : 3).map((g, j) => (
-          <div key={`g${j}`} className={styles.calEvt} style={{ "--ec": g.color || "#4285f4" }}>
-            📅 {compact ? (g.title.length > 10 ? g.title.slice(0, 10) + "…" : g.title) : g.title}
-          </div>
-        ))}
+        {/* ABSENCES — moyennes */}
         {abs && (
-          <div className={`${styles.calEvt} ${styles.calEvtAbs} ${abs.statut === "en_attente" ? styles.calEvtPending : ""}`} style={{ "--ec": abs.absType?.color || "#888" }}>
+          <div className={`${styles.calEvtAbs} ${abs.statut === "en_attente" ? styles.calEvtPending : ""}`} style={{ "--ec": abs.absType?.color || "#888" }}>
             {abs.absType?.icon} {abs.absType?.label}
           </div>
         )}
+        {/* RDV GOOGLE — petits, discrets */}
+        {gcals.slice(0, gcalLimit).map((g, j) => (
+          <div key={`g${j}`} className={styles.calEvtRdv} style={{ "--ec": g.color || "#4285f4" }}>
+            <span className={styles.calEvtRdvDot} /> {compact ? (g.title.length > 12 ? g.title.slice(0, 12) + "…" : g.title) : g.title}
+          </div>
+        ))}
+        {totalExtra > 0 && <div className={styles.calEvtMore}>+{totalExtra}</div>}
       </div>
     );
   }
@@ -661,20 +675,28 @@ export default function MonPlanning() {
               </div>
             )}
 
-            {/* Google Agenda */}
-            {selectedEvents.gcals.length > 0 && (
+            {/* Google Agenda — groupé par branche/calendrier */}
+            {Object.keys(selectedEvents.gcalByBranch).length > 0 && (
               <div className={styles.panelSection}>
-                <h3 className={styles.panelSecTitle}>📅 Google Agenda</h3>
-                {selectedEvents.gcals.map((g, j) => (
-                  <div key={j} className={styles.panelEvt} style={{ "--pc": g.color || "#4285f4" }}>
-                    <div className={styles.panelEvtTitle}>{g.title}</div>
-                    {g.calendarName && <div className={styles.panelEvtMeta}>{g.calendarName}</div>}
+                <h3 className={styles.panelSecTitle}>📅 Agenda</h3>
+                {Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (
+                  <div key={branch} className={styles.panelBranch}>
+                    <div className={styles.panelBranchHeader}>
+                      <span className={styles.panelBranchDot} style={{ background: data.color }} />
+                      <span className={styles.panelBranchName}>{branch}</span>
+                      <span className={styles.panelBranchCount}>{data.events.length}</span>
+                    </div>
+                    {data.events.map((g, j) => (
+                      <div key={j} className={styles.panelRdv}>
+                        <span className={styles.panelRdvTitle}>{g.title}</span>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
             )}
 
-            {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && selectedEvents.gcals.length === 0 && (
+            {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && Object.keys(selectedEvents.gcalByBranch).length === 0 && (
               <div className={styles.panelEmpty}>Rien de prévu ce jour</div>
             )}
 
