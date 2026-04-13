@@ -16,12 +16,14 @@ const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août"
 const JOURS_HEAD = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 const JOURS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
 const DEFAULT_CONGES = 30;
-const HOUR_START = 7;
-const HOUR_END = 21;
+const HOUR_START_WEEK = 7;
+const HOUR_END_WEEK = 21;
+const HOUR_START_DAY = 0;
+const HOUR_END_DAY = 24;
 
 const BRANCH_COLORS = { "Agency": "#e11d48", "CreativeGen": "#7c3aed", "Entertainment": "#0891b2", "SFX": "#ca8a04", "default": "#6b7280" };
 function projectColor(b) { return BRANCH_COLORS[b] || BRANCH_COLORS.default; }
-function normalizeProject(c) { return { id: String(c._id), title: c.nom || c.nomContrat || "Sans nom", branche: c.branche || "—", color: projectColor(c.branche), statut: c.statut || "—", dateDebut: c.dateDebut || null, dateFin: c.dateFin || null, assignees: c.assignees || c.equipe || [] }; }
+function normalizeProject(c) { return { id: String(c._id), title: c.nomContrat || c.nom || "Sans nom", branche: c.branche || "—", color: projectColor(c.branche), statut: c.statut || "—", dateDebut: c.dateDebut || null, dateFin: c.dateFin || null, assignees: c.assignees || c.equipe || [], clientNom: c.clientNom || "", lieu: c.lieu || "" }; }
 
 const CONGE_VIBES = [
   { min: 30, emoji: "🌍", msg: "Le monde entier est à toi" }, { min: 25, emoji: "🌅", msg: "Un mois de soleil t'attend" },
@@ -85,7 +87,7 @@ export default function MonPlanning() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const [form, setForm] = useState({ type: "", dateDebut: "", dateFin: "", demiJournee: "", commentaire: "" });
-  const [projForm, setProjForm] = useState({ nom: "", branche: "", dateDebut: "", dateFin: "", description: "" });
+  const [projForm, setProjForm] = useState({ nomContrat: "", clientNom: "", branche: "", dateDebut: "", dateFin: "", lieu: "", brief: "" });
   const [noteForm, setNoteForm] = useState({ contenu: "", dateDebut: "" });
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -225,9 +227,9 @@ export default function MonPlanning() {
     } catch {}
   }
 
-  function openChoose(dateStr) { setEditId(null); setModalType("choose"); setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" }); setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" }); setNoteForm({ contenu: "", dateDebut: dateStr || "" }); setModalOpen(true); }
+  function openChoose(dateStr) { setEditId(null); setModalType("choose"); setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" }); setProjForm({ nomContrat: "", clientNom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", lieu: "", brief: "" }); setNoteForm({ contenu: "", dateDebut: dateStr || "" }); setModalOpen(true); }
   function openAbsenceForm(dateStr) { setEditId(null); setModalType("absence"); setForm({ type: "", dateDebut: dateStr || "", dateFin: dateStr || "", demiJournee: "", commentaire: "" }); setModalOpen(true); }
-  function openProjForm(dateStr) { setModalType("projet"); setProjForm({ nom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", description: "" }); setModalOpen(true); }
+  function openProjForm(dateStr) { setModalType("projet"); setProjForm({ nomContrat: "", clientNom: "", branche: "", dateDebut: dateStr || "", dateFin: dateStr || "", lieu: "", brief: "" }); setModalOpen(true); }
   function openNoteForm(dateStr) { setModalType("note"); setNoteForm({ contenu: "", dateDebut: dateStr || toYMD(new Date()), heureDebut: "09:00", heureFin: "10:00", lieu: "", participants: "", allDay: false }); setModalOpen(true); }
   function openNew() { openChoose(""); }
   function openEdit(absence) { setEditId(String(absence._id)); setModalType("absence"); setForm({ type: absence.type || "", dateDebut: absence.dateDebut, dateFin: absence.dateFin, demiJournee: absence.demiJournee || "", commentaire: absence.commentaire || "" }); setModalOpen(true); }
@@ -251,16 +253,19 @@ export default function MonPlanning() {
     setModalOpen(false);
   }
   async function handleSubmitProjet(e) {
-    e.preventDefault(); if (!projForm.nom) { alert("Nom obligatoire"); return; } setSaving(true);
-    const body = { nom: projForm.nom, branche: projForm.branche, dateDebut: projForm.dateDebut, dateFin: projForm.dateFin, brief: projForm.description, statut: "En cours" };
+    e.preventDefault();
+    if (!projForm.nomContrat) { alert("Le nom du projet est obligatoire"); return; }
+    if (!projForm.clientNom) { alert("Le nom du client est obligatoire"); return; }
+    if (!projForm.branche) { alert("La branche est obligatoire"); return; }
+    setSaving(true);
+    const body = { nomContrat: projForm.nomContrat, clientNom: projForm.clientNom, branche: projForm.branche, dateDebut: projForm.dateDebut, dateFin: projForm.dateFin, lieu: projForm.lieu, brief: projForm.brief, statut: "En cours" };
     const res = await fetch("/api/contrats", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json(); setSaving(false); if (!res.ok) { alert(data.error || "Erreur"); return; }
     const np = normalizeProject(data.item || data); if (np.dateDebut && np.dateFin) setProjects((prev) => [...prev, np]);
     setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500);
-    // Push projet vers l'agenda de la branche
     const branchCal = projForm.branche ? gcalCalendars.find((c) => c.summary.toLowerCase().includes(projForm.branche.toLowerCase())) : null;
     const projCalId = branchCal ? branchCal.id : undefined;
-    try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `🎬 ${projForm.nom}`, start: projForm.dateDebut, end: projForm.dateFin, allDay: true, description: projForm.description || "", calendarId: projCalId }) }); await refetchGcalEvents(); } catch {}
+    try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `🎬 ${projForm.nomContrat}`, start: projForm.dateDebut, end: projForm.dateFin, allDay: true, description: projForm.brief || "", calendarId: projCalId }) }); await refetchGcalEvents(); } catch {}
     setModalOpen(false);
   }
   async function handleSubmitNote(e) {
@@ -284,7 +289,8 @@ export default function MonPlanning() {
   const today = toYMD(new Date());
   const month = calDate.getMonth();
   const pct = Math.max(3, (solde.reste / solde.credit) * 100);
-  const hours = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
+  const hoursWeek = Array.from({ length: HOUR_END_WEEK - HOUR_START_WEEK }, (_, i) => HOUR_START_WEEK + i);
+  const hoursDay = Array.from({ length: HOUR_END_DAY - HOUR_START_DAY }, (_, i) => HOUR_START_DAY + i);
 
   function navPrev() { setSelectedDate(null); setCalDate((d) => { const n = new Date(d); if (view === "month") n.setMonth(n.getMonth() - 1); else if (view === "week") n.setDate(n.getDate() - 7); else n.setDate(n.getDate() - 1); return n; }); }
   function navNext() { setSelectedDate(null); setCalDate((d) => { const n = new Date(d); if (view === "month") n.setMonth(n.getMonth() + 1); else if (view === "week") n.setDate(n.getDate() + 7); else n.setDate(n.getDate() + 1); return n; }); }
@@ -429,7 +435,7 @@ export default function MonPlanning() {
                 })}
               </div>
               <div className={styles.tgBody}>
-                <div className={styles.tgTimes}>{hours.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
+                <div className={styles.tgTimes}>{hoursWeek.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
                 <div className={styles.tgCols}>
                   {weekDays.map((d, i) => {
                     const key = toYMD(d); const isToday2 = key === today;
@@ -456,10 +462,10 @@ export default function MonPlanning() {
                       }
                     }
                     return (<div key={i} className={`${styles.tgCol} ${isToday2 ? styles.tgColToday : ""}`} onClick={() => handleDayClick(d)}>
-                      {hours.map((h) => <div key={h} className={styles.tgSlot} />)}
+                      {hoursWeek.map((h) => <div key={h} className={styles.tgSlot} />)}
                       {laid.map((ev, j) => {
-                        const top = ((ev.startHour - HOUR_START) / (HOUR_END - HOUR_START)) * 100;
-                        const height = Math.max(2.5, ((ev.endHour - ev.startHour) / (HOUR_END - HOUR_START)) * 100);
+                        const top = ((ev.startHour - HOUR_START_WEEK) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100;
+                        const height = Math.max(2.5, ((ev.endHour - ev.startHour) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100);
                         const width = 100 / ev.totalCols;
                         const left = ev.col * width;
                         return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}>
@@ -491,9 +497,9 @@ export default function MonPlanning() {
                   </div>
                 )}
                 <div className={styles.dayGrid}>
-                  <div className={styles.tgTimes}>{hours.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
+                  <div className={styles.tgTimes}>{hoursDay.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
                   <div className={styles.dayCol}>
-                    {hours.map((h) => <div key={h} className={styles.tgSlot} />)}
+                    {hoursDay.map((h) => <div key={h} className={styles.tgSlot} />)}
                     {(() => {
                       // Layout algorithm — same as week view
                       const sorted = [...timed].sort((a, b) => a.startHour - b.startHour);
@@ -513,8 +519,8 @@ export default function MonPlanning() {
                         }
                       }
                       return laid.map((ev, j) => {
-                        const top = ((ev.startHour - HOUR_START) / (HOUR_END - HOUR_START)) * 100;
-                        const height = Math.max(3, ((ev.endHour - ev.startHour) / (HOUR_END - HOUR_START)) * 100);
+                        const top = ((ev.startHour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
+                        const height = Math.max(2, ((ev.endHour - ev.startHour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
                         const width = 100 / ev.totalCols;
                         const left = ev.col * width;
                         return (<div key={j} className={styles.tgEvtDay} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}>
@@ -578,11 +584,13 @@ export default function MonPlanning() {
           <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => editId ? setModalOpen(false) : setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !form.type}>{saving ? "..." : "C'est parti 🚀"}</button></div>
         </form>)}
         {modalType === "projet" && (<form onSubmit={handleSubmitProjet} className={styles.form}>
-          <label className={styles.field}>Nom<input value={projForm.nom} onChange={(e) => setProjForm((f) => ({ ...f, nom: e.target.value }))} required placeholder="Tournage Clip X" /></label>
-          <label className={styles.field}>Branche<select value={projForm.branche} onChange={(e) => setProjForm((f) => ({ ...f, branche: e.target.value }))}><option value="">—</option><option>Agency</option><option>CreativeGen</option><option>Entertainment</option><option>SFX</option></select></label>
-          <div className={styles.fieldRow}><label className={styles.field}>Du<input type="date" value={projForm.dateDebut} onChange={(e) => setProjForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label><label className={styles.field}>Au<input type="date" value={projForm.dateFin} onChange={(e) => setProjForm((f) => ({ ...f, dateFin: e.target.value }))} required /></label></div>
-          <label className={styles.field}>Description<textarea value={projForm.description} onChange={(e) => setProjForm((f) => ({ ...f, description: e.target.value }))} rows={2} /></label>
-          <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !projForm.nom}>{saving ? "..." : "Créer 🎬"}</button></div>
+          <label className={styles.field}>Nom du projet *<input value={projForm.nomContrat} onChange={(e) => setProjForm((f) => ({ ...f, nomContrat: e.target.value }))} required placeholder="Tournage Clip X, Scéno Festival..." /></label>
+          <label className={styles.field}>Client *<input value={projForm.clientNom} onChange={(e) => setProjForm((f) => ({ ...f, clientNom: e.target.value }))} required placeholder="Nom du client" /></label>
+          <label className={styles.field}>Branche *<select value={projForm.branche} onChange={(e) => setProjForm((f) => ({ ...f, branche: e.target.value }))} required><option value="">— Choisir —</option><option>Agency</option><option>CreativeGen</option><option>Entertainment</option><option>SFX</option></select></label>
+          <div className={styles.fieldRow}><label className={styles.field}>Du *<input type="date" value={projForm.dateDebut} onChange={(e) => setProjForm((f) => ({ ...f, dateDebut: e.target.value }))} required /></label><label className={styles.field}>Au *<input type="date" value={projForm.dateFin} onChange={(e) => setProjForm((f) => ({ ...f, dateFin: e.target.value }))} required /></label></div>
+          <label className={styles.field}>Lieu <span className={styles.fieldOpt}>(optionnel)</span><input value={projForm.lieu} onChange={(e) => setProjForm((f) => ({ ...f, lieu: e.target.value }))} placeholder="Studio, extérieur, adresse..." /></label>
+          <label className={styles.field}>Brief / Description<textarea value={projForm.brief} onChange={(e) => setProjForm((f) => ({ ...f, brief: e.target.value }))} rows={2} placeholder="Contexte, objectifs, équipe..." /></label>
+          <div className={styles.formActions}><button type="button" className={styles.backBtn} onClick={() => setModalType("choose")}>← Retour</button><button type="submit" className={styles.submitBtn} disabled={saving || !projForm.nomContrat || !projForm.clientNom || !projForm.branche}>{saving ? "..." : "Créer le projet 🎬"}</button></div>
         </form>)}
         {modalType === "note" && (<form onSubmit={handleSubmitNote} className={styles.form}>
           <label className={styles.field}>Titre<input value={noteForm.contenu} onChange={(e) => setNoteForm((f) => ({ ...f, contenu: e.target.value }))} required placeholder="Réunion, RDV, rappel..." /></label>
