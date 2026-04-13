@@ -17,24 +17,30 @@ const JOURS_HEAD = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 const JOURS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
 const DEFAULT_CONGES = 30;
 
-const FAKE_PROJECTS = [
-  { id: "p1", title: "Clip Artiste X", branche: "Production AV", color: "#e11d48", statut: "En production" },
-  { id: "p2", title: "Scéno Salon Y", branche: "Scénographie", color: "#7c3aed", statut: "Conception" },
-  { id: "p3", title: "Podcast S3", branche: "CreativGen", color: "#0891b2", statut: "Stand-by" },
-  { id: "p4", title: "Décor Festival Z", branche: "Atelier", color: "#ca8a04", statut: "En cours" },
-  { id: "p5", title: "Campagne Marque W", branche: "Communication", color: "#059669", statut: "Livré" },
-];
-const MY_MISSION_IDS = ["p1", "p3"];
+// Couleurs par branche de projet
+const BRANCH_COLORS = {
+  "Agency": "#e11d48",
+  "CreativeGen": "#7c3aed",
+  "Entertainment": "#0891b2",
+  "SFX": "#ca8a04",
+  "default": "#6b7280",
+};
 
-function getFakeProjectsWithDates() {
-  const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
-  return [
-    { ...FAKE_PROJECTS[0], dateDebut: toYMD(new Date(y, m, 8)), dateFin: toYMD(new Date(y, m, 18)) },
-    { ...FAKE_PROJECTS[1], dateDebut: toYMD(new Date(y, m, 3)), dateFin: toYMD(new Date(y, m, 14)) },
-    { ...FAKE_PROJECTS[2], dateDebut: toYMD(new Date(y, m, 20)), dateFin: toYMD(new Date(y, m, 28)) },
-    { ...FAKE_PROJECTS[3], dateDebut: toYMD(new Date(y, m, 12)), dateFin: toYMD(new Date(y, m, 25)) },
-    { ...FAKE_PROJECTS[4], dateDebut: toYMD(new Date(y, m, 1)), dateFin: toYMD(new Date(y, m, 6)) },
-  ];
+function projectColor(branche) {
+  return BRANCH_COLORS[branche] || BRANCH_COLORS.default;
+}
+
+function normalizeProject(contrat) {
+  return {
+    id: String(contrat._id),
+    title: contrat.nom || contrat.nomContrat || "Sans nom",
+    branche: contrat.branche || "—",
+    color: projectColor(contrat.branche),
+    statut: contrat.statut || "—",
+    dateDebut: contrat.dateDebut || null,
+    dateFin: contrat.dateFin || null,
+    assignees: contrat.assignees || contrat.equipe || [],
+  };
 }
 
 // Phrases du jour — inspirantes, contextuelles, rotatives
@@ -60,18 +66,22 @@ function getDailyQuote() {
   return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
 }
 
-// Vibes congés — utilisées dans la modale
+// Vibes congés — chaque palier a sa référence culturelle
 const CONGE_VIBES = [
-  { min: 30, emoji: "🌏", msg: "Le monde entier est à toi" },
-  { min: 25, emoji: "🌅", msg: "Un mois de soleil t'attend" },
-  { min: 20, emoji: "🗾", msg: "Trois semaines au Japon" },
-  { min: 15, emoji: "🛤️", msg: "Road trip sans fin" },
-  { min: 10, emoji: "🏖️", msg: "Deux semaines les pieds dans le sable" },
-  { min: 7, emoji: "🌺", msg: "Une semaine à Bali" },
-  { min: 4, emoji: "🛫", msg: "City-trip à Lisbonne" },
-  { min: 2, emoji: "🏔️", msg: "Week-end à la montagne" },
-  { min: 1, emoji: "🧘‍♀️", msg: "24h rien que pour toi" },
-  { min: 0, emoji: "💫", msg: "Full energy !" },
+  { min: 30, emoji: "🌍", msg: "30 jours. Phileas Fogg a fait le tour du monde en 80 — tu as de la marge", sub: "Six semaines d'aventure t'attendent" },
+  { min: 28, emoji: "🌙", msg: "28 jours. Un cycle lunaire complet. Assez pour se transformer", sub: "La lune fait le tour, toi aussi" },
+  { min: 25, emoji: "🎄", msg: "25 jours. Comme un calendrier de l'Avent — chaque jour est une surprise", sub: "Ouvre chaque case avec impatience" },
+  { min: 21, emoji: "🃏", msg: "21. Blackjack. Tu as la main parfaite", sub: "Trois semaines de pur kiff" },
+  { min: 18, emoji: "⛳", msg: "18 jours. Un parcours de golf complet. Trou par trou, profite", sub: "Prends ton temps, vise le green" },
+  { min: 15, emoji: "🏉", msg: "15 jours. Comme une équipe de rugby — en force", sub: "Deux semaines et demie d'évasion" },
+  { min: 12, emoji: "🕐", msg: "12 jours. 12 coups de minuit. Cendrillon avait moins de temps que toi", sub: "Et elle a quand même dansé" },
+  { min: 10, emoji: "🔟", msg: "10 jours. Les 10 Commandements ont changé le monde — imagine ce que tu peux faire", sub: "Deux semaines les pieds dans le sable" },
+  { min: 7, emoji: "🌅", msg: "7 jours. Le monde a été créé en 7 jours. On a de quoi encore faire pas mal de choses", sub: "Une semaine pour tout réinventer" },
+  { min: 5, emoji: "🖐️", msg: "5 jours. Les 5 sens. Prends le temps de tous les éveiller", sub: "Une semaine pour se reconnecter" },
+  { min: 3, emoji: "🧞", msg: "3 jours. Trois voeux. Choisis-les bien", sub: "Un long week-end magique" },
+  { min: 2, emoji: "🎭", msg: "2 jours. Pile et face. L'aventure ou le repos ? Pourquoi pas les deux", sub: "48h rien qu'à toi" },
+  { min: 1, emoji: "🎯", msg: "1 jour. 24h. 1440 minutes. Chacune compte — fais-en un chef-d'oeuvre", sub: "Une journée, une histoire" },
+  { min: 0, emoji: "⚡", msg: "0 jour. Batterie à 100%. Tu as tout donné — et la team le sait", sub: "Full power. Respect." },
 ];
 function getVibe(j) { for (const v of CONGE_VIBES) { if (j >= v.min) return v; } return CONGE_VIBES[CONGE_VIBES.length - 1]; }
 function toYMD(d) { return d.toISOString().slice(0, 10); }
@@ -102,19 +112,26 @@ export default function MonPlanning() {
   const [showMissions, setShowMissions] = useState(true);
   const [showAbsences, setShowAbsences] = useState(true);
 
-  const projects = useMemo(() => getFakeProjectsWithDates(), []);
-  const myMissions = useMemo(() => projects.filter((p) => MY_MISSION_IDS.includes(p.id)), [projects]);
+  const [projects, setProjects] = useState([]);
+
+  // Mes missions = projets où mon userId est dans les assignees
+  const myMissions = useMemo(() => {
+    if (!profile?.userId) return [];
+    return projects.filter((p) => Array.isArray(p.assignees) && p.assignees.some((a) => String(a) === String(profile.userId) || String(a._id || a.id || a) === String(profile.userId)));
+  }, [projects, profile]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [absRes, profRes] = await Promise.all([
+      const [absRes, profRes, projRes] = await Promise.all([
         fetch("/api/employee-absences", { cache: "no-store" }),
         fetch("/api/employee-profiles?mine=true", { cache: "no-store" }),
+        fetch("/api/contrats", { cache: "no-store" }),
       ]);
       if (cancelled) return;
       const absData = await absRes.json(); setAbsences(absData.items || []);
       try { const profData = await profRes.json(); if (profData.items?.length) setProfile(profData.items[0]); } catch {}
+      try { const projData = await projRes.json(); setProjects((projData.items || []).map(normalizeProject).filter((p) => p.dateDebut && p.dateFin)); } catch {}
       setTimeout(() => setLoaded(true), 100);
     })();
     return () => { cancelled = true; };
@@ -572,8 +589,13 @@ export default function MonPlanning() {
                   <span className={styles.recapLabel}>Maladie</span>
                 </div>
               </div>
-              <div className={styles.recapVibeMsg}>
-                <span>{vibe.emoji}</span> {vibe.msg} <span className={styles.recapReste}>{solde.reste}j restants</span>
+              <div className={styles.recapVibe}>
+                <span className={styles.recapVibeEmoji}>{vibe.emoji}</span>
+                <div className={styles.recapVibeText}>
+                  <span className={styles.recapVibeMsg}>{vibe.msg}</span>
+                  {vibe.sub && <span className={styles.recapVibeSub}>{vibe.sub}</span>}
+                </div>
+                <span className={styles.recapReste}>{solde.reste}j restants</span>
               </div>
             </div>
           )}
