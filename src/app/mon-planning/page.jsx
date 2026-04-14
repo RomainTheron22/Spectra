@@ -177,7 +177,19 @@ export default function MonPlanning() {
   const [dragStart, setDragStart] = useState(null);
   const [dragEnd, setDragEnd] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [slotHeight, setSlotHeight] = useState(48);
+  const [slotHeight, setSlotHeight] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("planning-zoom");
+      return saved ? parseInt(saved, 10) : 48;
+    }
+    return 48;
+  });
+  const zoomPct = Math.round((slotHeight / 48) * 100);
+
+  // Persist zoom
+  useEffect(() => {
+    localStorage.setItem("planning-zoom", String(slotHeight));
+  }, [slotHeight]);
 
   const myMissions = useMemo(() => {
     if (!profile?.userId) return [];
@@ -290,14 +302,20 @@ export default function MonPlanning() {
     return { projs: all.filter((e) => e.type === "projet" && !e.isMine), missions: all.filter((e) => (e.type === "projet" && e.isMine) || e.type === "mission"), abs: all.filter((e) => e.type === "absence"), gcalByBranch };
   }, [selectedDate, calEvents]);
 
-  // Scroll to 8h when switching views
+  // Smart scroll: first event of the day, or 8h by default
   useEffect(() => {
     const ref = view === "day" ? dayGridRef : weekGridRef;
-    if (ref.current) {
-      const scrollToHour = view === "day" ? DAY_SCROLL_TO : (DAY_SCROLL_TO - HOUR_START_WEEK);
-      ref.current.scrollTop = scrollToHour * slotHeight;
+    if (!ref.current) return;
+    // Find earliest event on the focused day
+    const focusKey = toYMD(calDate);
+    const dayEvts = calEvents[focusKey] || [];
+    let earliest = DAY_SCROLL_TO;
+    for (const ev of dayEvts) {
+      if (ev.startHour !== undefined && ev.startHour < earliest) earliest = Math.max(0, Math.floor(ev.startHour) - 1);
     }
-  }, [view, calDate, slotHeight]);
+    const scrollToHour = view === "day" ? earliest - HOUR_START_DAY : earliest - HOUR_START_WEEK;
+    ref.current.scrollTop = Math.max(0, scrollToHour) * slotHeight;
+  }, [view, calDate, slotHeight, calEvents]);
 
   // Drag to create event
   function handleGridMouseDown(date, hour) {
@@ -718,11 +736,12 @@ export default function MonPlanning() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {view !== "month" && (
-                <div className="flex gap-0.5">
-                  <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.max(32, h - 16))} title="Réduire" className="rounded-xl">
+                <div className="flex items-center gap-1 rounded-xl border bg-card px-1 py-0.5">
+                  <Button variant="ghost" size="icon-sm" onClick={() => setSlotHeight((h) => Math.max(32, h - 8))} title="Réduire" className="rounded-lg h-7 w-7">
                     <ZoomOut className="size-3.5" />
                   </Button>
-                  <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.min(96, h + 16))} title="Agrandir" className="rounded-xl">
+                  <span className="text-[11px] font-bold text-muted-foreground tabular-nums w-10 text-center">{zoomPct}%</span>
+                  <Button variant="ghost" size="icon-sm" onClick={() => setSlotHeight((h) => Math.min(120, h + 8))} title="Agrandir" className="rounded-lg h-7 w-7">
                     <ZoomIn className="size-3.5" />
                   </Button>
                 </div>
@@ -844,10 +863,10 @@ export default function MonPlanning() {
               </div>
               {/* Time body */}
               <div className="grid max-h-[560px] overflow-y-auto" style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin" }} ref={weekGridRef}>
-                <div className="flex flex-col border-r border-border bg-slate-50/50">
+                <div className="flex flex-col border-r border-zinc-200" style={{ backgroundColor: "#f8f8fa" }}>
                   {hoursWeek.map((h) => (
-                    <div key={h} className={`flex items-start justify-end pr-2 border-b border-border/60 ${h % 2 === 0 ? "" : ""}`} style={{ height: `${slotHeight}px` }}>
-                      <span className="text-[10px] font-semibold text-muted-foreground -translate-y-1.5 tabular-nums">{String(h).padStart(2, "0")}:00</span>
+                    <div key={h} className="flex items-start justify-end pr-2 border-b border-zinc-200" style={{ height: `${slotHeight}px` }}>
+                      <span className={`text-[10px] font-bold tabular-nums -translate-y-1.5 ${h >= 8 && h <= 19 ? "text-zinc-600" : "text-zinc-300"}`}>{String(h).padStart(2, "0")}:00</span>
                     </div>
                   ))}
                 </div>
@@ -883,8 +902,8 @@ export default function MonPlanning() {
                         onClick={() => handleDayClick(d)}
                       >
                         {hoursWeek.map((h) => (
-                          <div key={h} className={`border-b border-border/60 relative cursor-crosshair ${h % 2 === 0 ? "bg-slate-50/40" : ""}`} style={{ height: `${slotHeight}px` }}>
-                            <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/30" />
+                          <div key={h} className={`border-b border-zinc-200 relative cursor-crosshair ${h % 2 === 0 ? "bg-zinc-50/60" : "bg-white"}`} style={{ height: `${slotHeight}px` }}>
+                            <div className="absolute left-0 right-0 top-1/2 border-b border-dashed border-zinc-200/70" />
                           </div>
                         ))}
                         {/* Ligne heure actuelle */}
@@ -968,24 +987,24 @@ export default function MonPlanning() {
                   onMouseUp={handleGridMouseUp}
                   onMouseLeave={() => { if (isDragging) handleGridMouseUp(); }}
                 >
-                  <div className="flex flex-col border-r border-border bg-slate-50/50">
+                  <div className="flex flex-col border-r border-zinc-200" style={{ backgroundColor: "#f8f8fa" }}>
                     {hoursDay.map((h) => (
-                      <div key={h} className="flex items-start justify-end pr-2 border-b border-border/60" style={{ height: `${slotHeight}px` }}>
-                        <span className="text-[10px] font-semibold text-muted-foreground -translate-y-1.5 tabular-nums">{String(h).padStart(2, "0")}:00</span>
+                      <div key={h} className="flex items-start justify-end pr-2 border-b border-zinc-200" style={{ height: `${slotHeight}px` }}>
+                        <span className={`text-[10px] font-bold tabular-nums -translate-y-1.5 ${h >= 8 && h <= 19 ? "text-zinc-600" : "text-zinc-300"}`}>{String(h).padStart(2, "0")}:00</span>
                       </div>
                     ))}
                   </div>
-                  <div className="relative border-l border-border">
+                  <div className="relative border-l border-zinc-200">
                     {hoursDay.map((h) => (
                       <div
                         key={h}
-                        className={`border-b border-border/60 relative cursor-crosshair ${h % 2 === 0 ? "bg-slate-50/40" : ""}`}
+                        className={`border-b border-zinc-200 relative cursor-crosshair ${h % 2 === 0 ? "bg-zinc-50/60" : "bg-white"}`}
                         style={{ height: `${slotHeight}px` }}
                         onMouseDown={(e) => { e.preventDefault(); handleGridMouseDown(calDate, h); }}
                         onMouseMove={() => handleGridMouseMove(h + 0.5)}
                       >
                         {/* Demi-heure */}
-                        <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/30" />
+                        <div className="absolute left-0 right-0 top-1/2 border-b border-dashed border-zinc-200/70" />
                         <div
                           className="absolute bottom-0 left-0 right-0 h-1/2"
                           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleGridMouseDown(calDate, h + 0.5); }}
