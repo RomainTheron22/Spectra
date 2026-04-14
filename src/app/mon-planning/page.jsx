@@ -450,14 +450,17 @@ export default function MonPlanning() {
           <button className={`${styles.tg} ${showAbsences ? styles.tgOn : ""}`} style={{ "--tgc": "#10b981" }} onClick={() => setShowAbsences((v) => !v)}>
             <span className={styles.tgDot} /> Absences <span className={styles.tgN}>{absences.length}</span>
           </button>
-          {gcalConnected && (
-            <>
-              <button className={`${styles.tg} ${showGcal ? styles.tgOn : ""}`} style={{ "--tgc": "#4285f4" }} onClick={() => setShowGcal((v) => !v)}>
-                <span className={styles.tgDot} /> Agenda <span className={styles.tgN}>{gcalEvents.length}</span>
+          {gcalConnected && gcalCalendars.filter((c) => gcalSelectedIds.includes(c.id)).map((cal) => {
+            const calColor = cal.backgroundColor || "#4285f4";
+            const calEvCount = gcalEvents.filter((e) => e.calendarId === cal.id).length;
+            const isHidden = !showGcal;
+            return (
+              <button key={cal.id} className={`${styles.tg} ${!isHidden ? styles.tgOn : ""}`} style={{ "--tgc": calColor }} onClick={() => setShowGcal((v) => !v)}>
+                <span className={styles.tgDot} /> {cal.summary.length > 12 ? cal.summary.slice(0, 12) + "…" : cal.summary} <span className={styles.tgN}>{calEvCount}</span>
               </button>
-              <button className={styles.gearBtn} onClick={() => setShowCalPicker((v) => !v)}>⚙</button>
-            </>
-          )}
+            );
+          })}
+          {gcalConnected && <button className={styles.gearBtn} onClick={() => setShowCalPicker((v) => !v)}>⚙</button>}
         </div>
         <button className={styles.addBtn} onClick={openNew}>+ Ajouter</button>
       </div>
@@ -619,6 +622,7 @@ export default function MonPlanning() {
                           onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
                           <span className={styles.tgEvtTitle}>{ev.title}</span>
                           <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")}</span>
+                          {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName}</span>}
                         </div>);
                       })}
                     </div>);
