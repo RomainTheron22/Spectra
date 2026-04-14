@@ -188,6 +188,33 @@ export default function FicheEmployePage() {
                 <span className={styles.bpLabel}>Total</span>
               </div>
             </div>
+            {/* Barre visuelle de charge */}
+            <div className={styles.bpBarSection}>
+              <span className={styles.bpBarLabel}>Charge actuelle</span>
+              <div className={styles.bpBar}>
+                <div className={styles.bpBarFill} style={{ width: `${Math.min(100, activeProjects.length * 25)}%`, background: activeProjects.length >= 4 ? "#e11d48" : activeProjects.length >= 3 ? "#f59e0b" : "#10b981" }} />
+              </div>
+              <span className={styles.bpBarText}>{activeProjects.length >= 4 ? "Surcharge" : activeProjects.length >= 3 ? "Chargé" : activeProjects.length >= 1 ? "Normal" : "Disponible"}</span>
+            </div>
+            {/* Timeline projets */}
+            {myProjects.length > 0 && (
+              <div className={styles.bpTimeline}>
+                {myProjects.slice(0, 5).map((c) => {
+                  const isAct = c.dateDebut <= today && c.dateFin >= today;
+                  const total = Math.max(1, Math.ceil((new Date(c.dateFin) - new Date(c.dateDebut)) / 86400000));
+                  const passed = Math.max(0, Math.ceil((new Date() - new Date(c.dateDebut)) / 86400000));
+                  const pct = Math.min(100, Math.round((passed / total) * 100));
+                  const bc = BRANCH_COLORS[c.branche] || BRANCH_COLORS.default;
+                  return (
+                    <div key={String(c._id)} className={styles.bpTimelineItem}>
+                      <span className={styles.bpTimelineName} style={{ color: bc }}>{c.nomContrat || c.nom}</span>
+                      <div className={styles.bpTimelineBar}><div className={styles.bpTimelineBarFill} style={{ width: `${pct}%`, background: bc }} /></div>
+                      <span className={styles.bpTimelinePct}>{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Compétences */}

@@ -93,7 +93,9 @@
 .miniCalOther { color: var(--color-text-muted); opacity: 0.3; }
 .miniCalSelected { background: rgba(124,58,237,0.12); color: #7c3aed; font-weight: 800; }
 .miniCalHasEvents { position: relative; }
-.miniCalHasEvents::after { content: ""; position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #7c3aed; opacity: 0.5; }
+.miniCalHasEvents::after { content: ""; position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #4285f4; opacity: 0.5; }
+.miniCalHasProj::after { background: #e11d48; opacity: 0.7; }
+.miniCalHasAbs::after { background: #10b981; opacity: 0.7; }
 .miniCalToday.miniCalHasEvents::after { background: white; }
 
 .miniCalendars { margin-top: 16px; }

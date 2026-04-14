@@ -54,16 +54,20 @@ function getProjectQuote(projects) {
 
   if (!upcoming.length) return { msg: "Pas de projet en vue — profites-en pour préparer la suite", icon: "🧭" };
 
+  // Projets en cours
+  const active = upcoming.filter((p) => p.dateDebut <= todayStr);
+  if (active.length >= 3) return { msg: `${active.length} projets en parallèle — ${active.slice(0, 3).map((p) => p.title).join(", ")}`, icon: "🔥", color: active[0].color };
+
   const hot = upcoming[0];
   const daysUntil = Math.ceil((new Date(hot.dateDebut) - now) / 86400000);
   const daysLeft = Math.ceil((new Date(hot.dateFin) - now) / 86400000);
   const isActive = hot.dateDebut <= todayStr;
 
-  if (isActive && daysLeft <= 3) return { msg: `${hot.title} — dernière ligne droite ! On envoie du lourd`, icon: "🔥", color: hot.color };
-  if (isActive) return { msg: `${hot.title} en cours — on tient un truc incroyable`, icon: "🎬", color: hot.color };
-  if (daysUntil <= 2) return { msg: `${hot.title} dans ${daysUntil}j — préparez-vous, ça va être énorme !`, icon: "⚡", color: hot.color };
+  if (isActive && daysLeft <= 3) return { msg: `${hot.title} — dernière ligne droite !${active.length > 1 ? ` + ${active.length - 1} autre${active.length > 2 ? "s" : ""} en cours` : ""}`, icon: "🔥", color: hot.color };
+  if (isActive) return { msg: `${hot.title} en cours${active.length > 1 ? ` + ${active.length - 1} autre${active.length > 2 ? "s" : ""}` : ""} — on tient un truc`, icon: "🎬", color: hot.color };
+  if (daysUntil <= 2) return { msg: `${hot.title} dans ${daysUntil}j — préparez-vous !`, icon: "⚡", color: hot.color };
   if (daysUntil <= 7) return { msg: `${hot.title} arrive cette semaine — la team est prête`, icon: "🚀", color: hot.color };
-  return { msg: `Prochain projet : ${hot.title} — ${hot.branche}`, icon: "📌", color: hot.color };
+  return { msg: `Prochain : ${hot.title} — ${hot.branche}`, icon: "📌", color: hot.color };
 }
 
 // IA catégorisation — détecte le type d'event + tag
@@ -538,9 +542,13 @@ export default function MonPlanning() {
               for (let i = 0; i < 42; i++) { const d = new Date(sd); d.setDate(d.getDate() + i); days.push(d); }
               return days.map((d, i) => {
                 const key = toYMD(d); const isMonth = d.getMonth() === m; const isToday2 = key === today;
-                const hasEvents = (calEvents[key] || []).length > 0;
+                const dayEvts = calEvents[key] || [];
+                const hasEvents = dayEvts.length > 0;
+                const hasProj = dayEvts.some((e) => e.type === "projet" || e.type === "mission");
+                const hasAbs = dayEvts.some((e) => e.type === "absence");
+                const hasGcal = dayEvts.some((e) => e.type === "gcal");
                 const isSelected = selectedDate && toYMD(selectedDate) === key;
-                return <button key={i} className={[styles.miniCalDay, isToday2 && styles.miniCalToday, !isMonth && styles.miniCalOther, isSelected && styles.miniCalSelected, hasEvents && styles.miniCalHasEvents].filter(Boolean).join(" ")}
+                return <button key={i} className={[styles.miniCalDay, isToday2 && styles.miniCalToday, !isMonth && styles.miniCalOther, isSelected && styles.miniCalSelected, hasEvents && styles.miniCalHasEvents, hasProj && styles.miniCalHasProj, hasAbs && styles.miniCalHasAbs].filter(Boolean).join(" ")}
                   onClick={() => { setCalDate(d); if (view === "day") setCalDate(d); handleDayClick(d); }}>{d.getDate()}</button>;
               });
             })()}

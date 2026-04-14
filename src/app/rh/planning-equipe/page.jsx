@@ -20,7 +20,8 @@ export default function PlanningEquipePage() {
   const [viewWeeks, setViewWeeks] = useState(2);
   const [filterBranche, setFilterBranche] = useState("");
   const [filterPole, setFilterPole] = useState("");
-  const [selectedCell, setSelectedCell] = useState(null); // { empId, date }
+  const [selectedCell, setSelectedCell] = useState(null);
+  const [viewMode, setViewMode] = useState("person"); // person | project
 
   useEffect(() => {
     (async () => {
@@ -125,6 +126,10 @@ export default function PlanningEquipePage() {
             {poles.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
           <div className={styles.weekSwitch}>
+            <button className={`${styles.weekBtn} ${viewMode === "person" ? styles.weekBtnOn : ""}`} onClick={() => setViewMode("person")}>Par personne</button>
+            <button className={`${styles.weekBtn} ${viewMode === "project" ? styles.weekBtnOn : ""}`} onClick={() => setViewMode("project")}>Par projet</button>
+          </div>
+          <div className={styles.weekSwitch}>
             {[1, 2, 4].map((w) => (
               <button key={w} className={`${styles.weekBtn} ${viewWeeks === w ? styles.weekBtnOn : ""}`} onClick={() => setViewWeeks(w)}>
                 {w === 1 ? "1 sem" : w === 2 ? "2 sem" : "1 mois"}
@@ -139,6 +144,58 @@ export default function PlanningEquipePage() {
         </div>
       </div>
 
+      {/* ═══ MODE PAR PROJET ═══ */}
+      {viewMode === "project" && (() => {
+        const activeContrats = contrats.filter((c) => c.dateDebut && c.dateFin).filter((c) => !filterBranche || c.branche === filterBranche);
+        const firstDay = days[0]; const lastDay = days[days.length - 1];
+        const firstStr = toYMD(firstDay); const lastStr = toYMD(lastDay);
+        const visibleProjects = activeContrats.filter((c) => c.dateFin >= firstStr && c.dateDebut <= lastStr);
+        const totalDays = days.length;
+        return (
+          <div className={styles.projTimeline}>
+            {/* Header jours */}
+            <div className={styles.projTimelineHeader} style={{ "--cols": totalDays }}>
+              <div className={styles.projTimelineLabel}>Projet</div>
+              {days.map((d) => {
+                const key = toYMD(d); const isToday2 = key === today; const isWE = d.getDay() === 0 || d.getDay() === 6;
+                return <div key={key} className={`${styles.projTimelineDayH} ${isToday2 ? styles.projTimelineDayHToday : ""} ${isWE ? styles.projTimelineDayHWE : ""}`}>{d.getDate()}</div>;
+              })}
+            </div>
+            {/* Projets */}
+            {visibleProjects.map((c) => {
+              const bc = BRANCH_COLORS[c.branche] || BRANCH_COLORS.default;
+              const startIdx = Math.max(0, days.findIndex((d) => toYMD(d) >= c.dateDebut));
+              const endIdx = Math.min(totalDays - 1, days.findIndex((d) => toYMD(d) >= c.dateFin));
+              const barStart = startIdx; const barWidth = Math.max(1, endIdx - startIdx + 1);
+              const assignees = c.assignees || [];
+              const assigneeProfiles = assignees.map((a) => profiles.find((p) => String(p._id) === String(a) || p.email === String(a))).filter(Boolean);
+              return (
+                <div key={String(c._id)} className={styles.projTimelineRow} style={{ "--cols": totalDays }}>
+                  <Link href={`/projets/${String(c._id)}`} className={styles.projTimelineLabel} style={{ borderLeftColor: bc }}>
+                    <span className={styles.projTimelineName}>{c.nomContrat || c.nom}</span>
+                    <span className={styles.projTimelineBranch} style={{ color: bc }}>{c.branche}</span>
+                    {assigneeProfiles.length > 0 && (
+                      <div className={styles.projTimelineAvatars}>
+                        {assigneeProfiles.slice(0, 4).map((p, i) => <span key={i} className={styles.projTimelineAvatar} style={{ background: bc }}>{(p.prenom || "?")[0]}</span>)}
+                        {assigneeProfiles.length > 4 && <span className={styles.projTimelineAvatarMore}>+{assigneeProfiles.length - 4}</span>}
+                      </div>
+                    )}
+                  </Link>
+                  {days.map((d, di) => {
+                    const key = toYMD(d); const inRange = key >= c.dateDebut && key <= c.dateFin;
+                    const isFirst = key === c.dateDebut; const isLast = key === c.dateFin;
+                    return <div key={key} className={`${styles.projTimelineCell} ${inRange ? styles.projTimelineCellActive : ""}`} style={inRange ? { background: `${bc}22`, borderTop: `2px solid ${bc}`, borderBottom: `2px solid ${bc}`, borderLeft: isFirst ? `2px solid ${bc}` : "none", borderRight: isLast ? `2px solid ${bc}` : "none", borderRadius: isFirst ? "6px 0 0 6px" : isLast ? "0 6px 6px 0" : "0" } : undefined} />;
+                  })}
+                </div>
+              );
+            })}
+            {visibleProjects.length === 0 && <div className={styles.detailEmpty}>Aucun projet sur cette période</div>}
+          </div>
+        );
+      })()}
+
+      {/* ═══ MODE PAR PERSONNE ═══ */}
+      {viewMode === "person" && <>
       {/* Charge globale */}
       <div className={styles.chargeRow}>
         <div className={styles.chargeLabel}>Charge</div>
@@ -262,6 +319,8 @@ export default function PlanningEquipePage() {
           </div>
         );
       })()}
+
+      </>}
 
       {/* Légende */}
       <div className={styles.legend}>

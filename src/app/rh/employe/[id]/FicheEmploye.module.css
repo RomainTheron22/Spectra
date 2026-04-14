@@ -42,6 +42,20 @@
 .bpRed { color: #e11d48; }
 .bpLabel { display: block; font-size: 9px; font-weight: 800; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; }
 
+/* Bande passante visuelle */
+.bpBarSection { margin-top: 14px; display: flex; align-items: center; gap: 10px; }
+.bpBarLabel { font-size: 11px; font-weight: 700; color: var(--color-text-muted); min-width: 90px; }
+.bpBar { flex: 1; height: 10px; background: rgba(0,0,0,0.04); border-radius: 5px; overflow: hidden; }
+.bpBarFill { height: 100%; border-radius: 5px; transition: width 600ms ease; }
+.bpBarText { font-size: 11px; font-weight: 800; color: var(--color-text-muted); min-width: 70px; }
+
+.bpTimeline { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.bpTimelineItem { display: flex; align-items: center; gap: 8px; }
+.bpTimelineName { font-size: 11px; font-weight: 700; min-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bpTimelineBar { flex: 1; height: 6px; background: rgba(0,0,0,0.04); border-radius: 3px; overflow: hidden; }
+.bpTimelineBarFill { height: 100%; border-radius: 3px; transition: width 600ms ease; }
+.bpTimelinePct { font-size: 10px; font-weight: 800; color: var(--color-text-muted); min-width: 30px; text-align: right; }
+
 /* Compétences */
 .compList { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .compChip { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: rgba(124,58,237,0.06); color: #7c3aed; border: 1px solid rgba(124,58,237,0.12); }
