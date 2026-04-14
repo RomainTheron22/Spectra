@@ -614,7 +614,7 @@ export default function MonPlanning() {
                     {allDay.slice(0, 4).map((ev, j) => {
                       const c = ev.type === "absence" ? (ev.absType?.color || "#888") : ev.color || "#4285f4";
                       const label = ev.type === "projet" || ev.type === "mission" ? `${ev.isMine ? "👤 " : ""}${ev.title}` : ev.type === "absence" ? `${ev.absType?.icon} ${ev.absType?.label}` : ev.title;
-                      return <div key={j} className={styles.tgADEvt} style={{ "--adc": c }}>{label.length > 16 ? label.slice(0, 16) + "…" : label}</div>;
+                      return <div key={j} className={styles.tgADEvt} style={{ "--adc": c }} title={label} onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>{label.length > 16 ? label.slice(0, 16) + "…" : label}</div>;
                     })}
                     {allDay.length > 4 && <div className={styles.tgADMore}>+{allDay.length - 4}</div>}
                   </div>);

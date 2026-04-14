@@ -144,7 +144,8 @@
 .tgWrap { display: flex; flex-direction: column; }
 .tgAllDay { display: grid; grid-template-columns: 48px repeat(7, 1fr); gap: 2px; min-height: 28px; border-bottom: 1px solid var(--color-border); padding-bottom: 6px; margin-bottom: 4px; }
 .tgAllDayCell { display: flex; flex-direction: column; gap: 2px; padding: 2px 3px; }
-.tgADEvt { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; background: color-mix(in srgb, var(--adc) 80%, white); color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 3px solid var(--adc); }
+.tgADEvt { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; background: color-mix(in srgb, var(--adc) 80%, white); color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 3px solid var(--adc); cursor: pointer; transition: filter 100ms; }
+.tgADEvt:hover { filter: brightness(0.9); }
 .tgADMore { font-size: 9px; color: var(--color-text-muted); font-weight: 700; padding: 2px 4px; }
 .tgTimeLabel { width: 48px; flex-shrink: 0; }
 
