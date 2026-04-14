@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import styles from "./MonPlanning.module.css";
 import Modal from "../../components/ui/Modal";
 import EventForm from "./components/EventForm";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { ChevronLeft, ChevronRight, Plus, X, Settings2, ZoomIn, ZoomOut, Pencil, Trash2, Calendar, ExternalLink } from "lucide-react";
 
 /* ═══ CONSTANTS ═══ */
 const ABSENCE_TYPES = [
@@ -12,7 +17,7 @@ const ABSENCE_TYPES = [
   { value: "maladie", label: "Maladie", color: "#f43f5e", icon: "🤧", desc: "Arrêt maladie", gradient: "linear-gradient(135deg, #ffe4e6, #fecdd3)" },
   { value: "absence_autre", label: "Autre", color: "#f59e0b", icon: "✨", desc: "RDV, formation, perso...", gradient: "linear-gradient(135deg, #fef3c7, #fde68a)" },
 ];
-const STATUT_LABELS = { en_attente: { label: "En attente", cls: "statutAttente" }, valide: { label: "Validé", cls: "statutValide" }, refuse: { label: "Refusé", cls: "statutRefuse" } };
+const STATUT_LABELS = { en_attente: { label: "En attente", variant: "outline", color: "#b45309", bg: "rgba(245,158,11,0.08)" }, valide: { label: "Validé", variant: "default", color: "#065f46", bg: "rgba(16,185,129,0.08)" }, refuse: { label: "Refusé", variant: "destructive", color: "#9f1239", bg: "rgba(244,63,94,0.08)" } };
 const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 const JOURS_HEAD = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 const JOURS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
@@ -100,7 +105,42 @@ function classifyGcalEvent(title) {
 
 function Sparkles({ active }) {
   if (!active) return null;
-  return <div className={styles.sparklesWrap} aria-hidden="true">{Array.from({ length: 6 }).map((_, i) => <span key={i} className={styles.sparkle} style={{ "--i": i }} />)}</div>;
+  const positions = [
+    { top: "20%", left: "15%", sx: "10px", sy: "-18px", ex: "20px", ey: "-36px", delay: "0s" },
+    { top: "50%", left: "30%", sx: "-14px", sy: "-10px", ex: "-24px", ey: "-20px", delay: "0.2s" },
+    { top: "30%", left: "55%", sx: "8px", sy: "-20px", ex: "16px", ey: "-40px", delay: "0.4s" },
+    { top: "60%", left: "70%", sx: "-10px", sy: "-14px", ex: "-18px", ey: "-30px", delay: "0.6s" },
+    { top: "40%", left: "85%", sx: "14px", sy: "-8px", ex: "28px", ey: "-18px", delay: "0.8s" },
+    { top: "50%", left: "45%", sx: "-8px", sy: "-20px", ex: "-14px", ey: "-36px", delay: "1s" },
+  ];
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-[1]" aria-hidden="true">
+      {positions.map((p, i) => (
+        <span
+          key={i}
+          className="absolute w-1 h-1 rounded-full bg-white/80"
+          style={{
+            top: p.top, left: p.left,
+            boxShadow: "0 0 5px rgba(250,204,21,0.5)",
+            animation: "sparkle-float 1.2s ease-out infinite",
+            animationDelay: p.delay,
+            "--sx": p.sx, "--sy": p.sy, "--ex": p.ex, "--ey": p.ey,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* Shape component for event tags */
+function EventShape({ shape, color }) {
+  const base = "inline-block shrink-0 mr-1 align-middle";
+  if (shape === "square") return <span className={base} style={{ width: 8, height: 8, background: color || "currentColor", borderRadius: 2 }} />;
+  if (shape === "circle") return <span className={base} style={{ width: 8, height: 8, background: color || "currentColor", borderRadius: "50%" }} />;
+  if (shape === "diamond") return <span className={base} style={{ width: 8, height: 8, background: color || "currentColor", transform: "rotate(45deg)", borderRadius: 1 }} />;
+  if (shape === "triangle") return <span className={base} style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderBottom: `8px solid ${color || "currentColor"}` }} />;
+  if (shape === "dash") return <span className={base} style={{ width: 12, height: 3, background: color || "currentColor", borderRadius: 2 }} />;
+  return null;
 }
 
 /* ═══ COMPONENT ═══ */
@@ -454,86 +494,167 @@ export default function MonPlanning() {
     const gcals = events.filter((e) => e.type === "gcal");
     return (
       <>
-        {projs.slice(0, 3).map((p, j) => <div key={`p${j}`} className={`${styles.mEvtProj} ${styles.mEvtClick}`} style={{ "--ec": p.color }} onClick={(e) => handleEventClick(e, p)}>{p.isMine ? "👤 " : ""}{p.title.length > 14 ? p.title.slice(0, 14) + "…" : p.title}</div>)}
-        {abs.slice(0, 1).map((a, j) => <div key={`a${j}`} className={`${styles.mEvtAbs} ${styles.mEvtClick}`} style={{ "--ec": a.absType?.color }} onClick={(e) => handleEventClick(e, a)}>{a.absType?.icon} {a.absType?.label}</div>)}
-        {gcals.slice(0, 3).map((g, j) => <div key={`g${j}`} className={`${styles.mEvtRdv} ${styles.mEvtClick}`} style={{ "--ec": g.color }} onClick={(e) => handleEventClick(e, g)}><span className={styles.mDot} />{g.title.length > 14 ? g.title.slice(0, 14) + "…" : g.title}</div>)}
-        {(projs.length + abs.length + gcals.length) > 7 && <div className={styles.mEvtMore}>+{projs.length + abs.length + gcals.length - 7}</div>}
+        {projs.slice(0, 3).map((p, j) => (
+          <div
+            key={`p${j}`}
+            className="text-[10px] font-bold py-0.5 px-1.5 rounded border-l-[3px] whitespace-nowrap overflow-hidden text-ellipsis leading-snug text-white cursor-pointer transition-all duration-100 hover:brightness-90 hover:scale-[1.04]"
+            style={{ backgroundColor: `color-mix(in srgb, ${p.color} 80%, white)`, borderLeftColor: p.color }}
+            onClick={(e) => handleEventClick(e, p)}
+          >
+            {p.isMine ? "👤 " : ""}{p.title.length > 14 ? p.title.slice(0, 14) + "…" : p.title}
+          </div>
+        ))}
+        {abs.slice(0, 1).map((a, j) => (
+          <div
+            key={`a${j}`}
+            className="text-[9px] font-bold py-0.5 px-1.5 rounded border-l-2 whitespace-nowrap overflow-hidden text-ellipsis leading-snug text-white cursor-pointer transition-all duration-100 hover:brightness-90 hover:scale-[1.04]"
+            style={{ backgroundColor: `color-mix(in srgb, ${a.absType?.color || "#888"} 70%, white)`, borderLeftColor: a.absType?.color || "#888" }}
+            onClick={(e) => handleEventClick(e, a)}
+          >
+            {a.absType?.icon} {a.absType?.label}
+          </div>
+        ))}
+        {gcals.slice(0, 3).map((g, j) => (
+          <div
+            key={`g${j}`}
+            className="text-[9px] font-semibold py-0.5 px-1.5 rounded whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1 leading-tight cursor-pointer transition-all duration-100 hover:brightness-90 hover:scale-[1.04]"
+            style={{ backgroundColor: `color-mix(in srgb, ${g.color} 12%, white)`, color: g.color }}
+            onClick={(e) => handleEventClick(e, g)}
+          >
+            <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: g.color }} />
+            {g.title.length > 14 ? g.title.slice(0, 14) + "…" : g.title}
+          </div>
+        ))}
+        {(projs.length + abs.length + gcals.length) > 7 && (
+          <div className="text-[9px] text-muted-foreground font-extrabold py-0.5 px-1">+{projs.length + abs.length + gcals.length - 7}</div>
+        )}
       </>
     );
   }
 
   return (
-    <div className={styles.page}>
+    <div className="px-5 py-4 max-w-[1440px] mx-auto relative font-sans">
       {/* ═══ PHRASE PROJET CHAUD ═══ */}
-      <div className={`${styles.hotBar} ${loaded ? styles.hotBarLoaded : ""}`} onMouseEnter={() => setVibeHover(true)} onMouseLeave={() => setVibeHover(false)}>
+      <div
+        className={`flex items-center gap-3.5 py-3.5 px-6 rounded-2xl mb-3.5 bg-gradient-to-r from-violet-600/5 to-rose-500/4 border border-violet-500/8 relative overflow-hidden transition-all duration-300 ease-out ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
+        onMouseEnter={() => setVibeHover(true)}
+        onMouseLeave={() => setVibeHover(false)}
+      >
         <Sparkles active={vibeHover} />
-        <span className={styles.hotIcon}>{projectQuote.icon}</span>
-        <span className={styles.hotMsg}>{projectQuote.msg}</span>
-        {projectQuote.color && <span className={styles.hotDot} style={{ background: projectQuote.color }} />}
+        <span className="text-xl shrink-0 animate-[float-gentle_3s_ease-in-out_infinite]">{projectQuote.icon}</span>
+        <span className="text-sm font-bold text-foreground flex-1 leading-snug">{projectQuote.msg}</span>
+        {projectQuote.color && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: projectQuote.color }} />}
       </div>
 
       {/* ═══ TOOLBAR ═══ */}
-      <div className={styles.toolbar}>
-        <div className={styles.toggles}>
-          <button className={`${styles.tg} ${showProjets ? styles.tgOn : ""}`} style={{ "--tgc": "#e11d48" }} onClick={() => setShowProjets((v) => !v)}>
-            <span className={styles.tgDot} /> Projets <span className={styles.tgN}>{projects.length}</span>
+      <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+        <div className="flex gap-1 flex-wrap items-center">
+          {/* Toggle: Projets */}
+          <button
+            className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-all duration-100 select-none ${showProjets ? "border-rose-500 text-foreground" : "border-border bg-card text-muted-foreground hover:border-rose-500 hover:text-foreground"}`}
+            style={showProjets ? { background: "color-mix(in srgb, #e11d48 8%, white)" } : {}}
+            onClick={() => setShowProjets((v) => !v)}
+          >
+            <span className="w-1.5 h-1.5 rounded-full transition-colors" style={{ background: showProjets ? "#e11d48" : undefined }} />
+            Projets <span className="text-[9px] font-extrabold opacity-50">{projects.length}</span>
           </button>
-          <button className={`${styles.tg} ${showMissions ? styles.tgOn : ""}`} style={{ "--tgc": "#7c3aed" }} onClick={() => setShowMissions((v) => !v)}>
-            <span className={styles.tgDot} /> Missions <span className={styles.tgN}>{myMissions.length}</span>
+          {/* Toggle: Missions */}
+          <button
+            className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-all duration-100 select-none ${showMissions ? "border-violet-600 text-foreground" : "border-border bg-card text-muted-foreground hover:border-violet-600 hover:text-foreground"}`}
+            style={showMissions ? { background: "color-mix(in srgb, #7c3aed 8%, white)" } : {}}
+            onClick={() => setShowMissions((v) => !v)}
+          >
+            <span className="w-1.5 h-1.5 rounded-full transition-colors" style={{ background: showMissions ? "#7c3aed" : undefined }} />
+            Missions <span className="text-[9px] font-extrabold opacity-50">{myMissions.length}</span>
           </button>
-          <button className={`${styles.tg} ${showAbsences ? styles.tgOn : ""}`} style={{ "--tgc": "#10b981" }} onClick={() => setShowAbsences((v) => !v)}>
-            <span className={styles.tgDot} /> Absences <span className={styles.tgN}>{absences.length}</span>
+          {/* Toggle: Absences */}
+          <button
+            className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-all duration-100 select-none ${showAbsences ? "border-emerald-500 text-foreground" : "border-border bg-card text-muted-foreground hover:border-emerald-500 hover:text-foreground"}`}
+            style={showAbsences ? { background: "color-mix(in srgb, #10b981 8%, white)" } : {}}
+            onClick={() => setShowAbsences((v) => !v)}
+          >
+            <span className="w-1.5 h-1.5 rounded-full transition-colors" style={{ background: showAbsences ? "#10b981" : undefined }} />
+            Absences <span className="text-[9px] font-extrabold opacity-50">{absences.length}</span>
           </button>
+          {/* Toggle: Agenda */}
           {gcalConnected && (
-            <button className={`${styles.tg} ${showGcal ? styles.tgOn : ""}`} style={{ "--tgc": "#4285f4" }} onClick={() => setShowGcal((v) => !v)}>
-              <span className={styles.tgDot} /> Agenda
+            <button
+              className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-all duration-100 select-none ${showGcal ? "border-blue-500 text-foreground" : "border-border bg-card text-muted-foreground hover:border-blue-500 hover:text-foreground"}`}
+              style={showGcal ? { background: "color-mix(in srgb, #4285f4 8%, white)" } : {}}
+              onClick={() => setShowGcal((v) => !v)}
+            >
+              <span className="w-1.5 h-1.5 rounded-full transition-colors" style={{ background: showGcal ? "#4285f4" : undefined }} />
+              Agenda
             </button>
           )}
         </div>
-        <select className={styles.brancheFilter} value={filterBranche} onChange={(e) => setFilterBranche(e.target.value)}>
+        <select
+          className="text-[11px] font-bold py-1.5 px-2.5 border border-border rounded-md bg-card text-foreground cursor-pointer transition-colors hover:border-violet-600 focus:outline-none focus:border-violet-600"
+          value={filterBranche}
+          onChange={(e) => setFilterBranche(e.target.value)}
+        >
           <option value="">Toutes les branches</option>
           {branchesDb.map((b) => <option key={b.key} value={b.key}>{b.label}</option>)}
           {branchesDb.length === 0 && ["Agency","CreativeGen","Entertainment","SFX","Atelier","Communication"].map((b) => <option key={b} value={b}>{b}</option>)}
         </select>
-        <button className={styles.addBtn} onClick={openNew}>+ Ajouter</button>
+        <Button
+          className="bg-gradient-to-r from-violet-600 to-purple-500 text-white font-extrabold text-[11px] border-0 rounded-lg px-3.5 py-1.5 cursor-pointer shadow-[0_3px_10px_rgba(124,58,237,0.15)] hover:-translate-y-0.5 hover:shadow-[0_6px_18px_rgba(124,58,237,0.22)] transition-all duration-100"
+          onClick={openNew}
+        >
+          <Plus className="size-3.5" /> Ajouter
+        </Button>
       </div>
 
       {/* ═══ CALENDAR NAV ═══ */}
-      <div className={styles.calNav2}>
-        <div className={styles.navGroup}>
-          <button className={styles.navBtn} onClick={navPrev}>‹</button>
-          <button className={styles.todayBtn} onClick={goToday}>Aujourd'hui</button>
-          <button className={styles.navBtn} onClick={navNext}>›</button>
+      <div className="flex items-center justify-between gap-2.5 mb-2.5 flex-wrap">
+        <div className="flex gap-1 items-center">
+          <Button variant="outline" size="icon-sm" onClick={navPrev}>
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={goToday} className="text-[11px] font-bold text-muted-foreground hover:border-violet-600 hover:text-violet-600">
+            Aujourd&apos;hui
+          </Button>
+          <Button variant="outline" size="icon-sm" onClick={navNext}>
+            <ChevronRight className="size-4" />
+          </Button>
         </div>
-        <h2 className={styles.calLabel}>{calLabel()}</h2>
-        <div className={styles.viewControls}>
+        <h2 className="text-base font-black text-foreground m-0 tracking-tight">{calLabel()}</h2>
+        <div className="flex items-center gap-2">
           {view !== "month" && (
-            <div className={styles.zoomBtns}>
-              <button className={styles.zoomBtn} onClick={() => setSlotHeight((h) => Math.max(32, h - 16))} title="Réduire">−</button>
-              <button className={styles.zoomBtn} onClick={() => setSlotHeight((h) => Math.min(96, h + 16))} title="Agrandir">+</button>
+            <div className="flex gap-0.5">
+              <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.max(32, h - 16))} title="Réduire">
+                <ZoomOut className="size-3.5" />
+              </Button>
+              <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.min(96, h + 16))} title="Agrandir">
+                <ZoomIn className="size-3.5" />
+              </Button>
             </div>
           )}
-          <div className={styles.viewSw}>
-            {["day", "week", "month"].map((v) => (
-              <button key={v} className={`${styles.vBtn} ${view === v ? styles.vBtnOn : ""}`} onClick={() => setView(v)}>
-                {v === "day" ? "Jour" : v === "week" ? "Semaine" : "Mois"}
-              </button>
-            ))}
-          </div>
+          <Tabs value={view} onValueChange={setView}>
+            <TabsList className="h-7">
+              <TabsTrigger value="day" className="text-[11px] font-bold px-3 py-0.5">Jour</TabsTrigger>
+              <TabsTrigger value="week" className="text-[11px] font-bold px-3 py-0.5">Semaine</TabsTrigger>
+              <TabsTrigger value="month" className="text-[11px] font-bold px-3 py-0.5">Mois</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
 
       {/* ═══ MAIN: MiniCal + Calendar + Panel ═══ */}
-      <div className={styles.main}>
+      <div className="flex gap-3.5 items-start mb-4 max-md:flex-col">
         {/* Mini calendar */}
-        <div className={styles.miniCal}>
-          <div className={styles.miniCalNav}>
-            <button className={styles.miniCalBtn} onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}>‹</button>
-            <span className={styles.miniCalTitle}>{MOIS[calDate.getMonth()].slice(0, 3)} {calDate.getFullYear()}</span>
-            <button className={styles.miniCalBtn} onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}>›</button>
+        <Card className="w-52 shrink-0 sticky top-4 rounded-2xl border-border shadow-sm p-3.5 max-[900px]:hidden">
+          <div className="flex items-center justify-between mb-2">
+            <button className="bg-transparent border-none text-base font-black text-muted-foreground cursor-pointer p-0.5 px-1.5 rounded transition-all hover:text-foreground hover:bg-violet-500/5" onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}>
+              <ChevronLeft className="size-3.5" />
+            </button>
+            <span className="text-xs font-extrabold text-foreground">{MOIS[calDate.getMonth()].slice(0, 3)} {calDate.getFullYear()}</span>
+            <button className="bg-transparent border-none text-base font-black text-muted-foreground cursor-pointer p-0.5 px-1.5 rounded transition-all hover:text-foreground hover:bg-violet-500/5" onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}>
+              <ChevronRight className="size-3.5" />
+            </button>
           </div>
-          <div className={styles.miniCalGrid}>
-            {["L","M","M","J","V","S","D"].map((d, i) => <div key={i} className={styles.miniCalHead}>{d}</div>)}
+          <div className="grid grid-cols-7 gap-px">
+            {["L","M","M","J","V","S","D"].map((d, i) => <div key={i} className="text-center text-[9px] font-extrabold text-muted-foreground py-1">{d}</div>)}
             {(() => {
               const y = calDate.getFullYear(), m = calDate.getMonth();
               const first = new Date(y, m, 1); let start = (first.getDay() + 6) % 7;
@@ -548,54 +669,94 @@ export default function MonPlanning() {
                 const hasAbs = dayEvts.some((e) => e.type === "absence");
                 const hasGcal = dayEvts.some((e) => e.type === "gcal");
                 const isSelected = selectedDate && toYMD(selectedDate) === key;
-                return <button key={i} className={[styles.miniCalDay, isToday2 && styles.miniCalToday, !isMonth && styles.miniCalOther, isSelected && styles.miniCalSelected, hasEvents && styles.miniCalHasEvents, hasProj && styles.miniCalHasProj, hasAbs && styles.miniCalHasAbs].filter(Boolean).join(" ")}
-                  onClick={() => { setCalDate(d); if (view === "day") setCalDate(d); handleDayClick(d); }}>{d.getDate()}</button>;
+                return (
+                  <button
+                    key={i}
+                    className={[
+                      "bg-transparent border-none text-[11px] font-semibold text-foreground w-[26px] h-[26px] rounded-full flex items-center justify-center cursor-pointer transition-all mx-auto relative",
+                      isToday2 && "!bg-violet-600 !text-white !font-extrabold",
+                      !isMonth && "text-muted-foreground opacity-30",
+                      isSelected && !isToday2 && "bg-violet-500/12 text-violet-600 font-extrabold",
+                      !isToday2 && "hover:bg-violet-500/6",
+                    ].filter(Boolean).join(" ")}
+                    onClick={() => { setCalDate(d); if (view === "day") setCalDate(d); handleDayClick(d); }}
+                  >
+                    {d.getDate()}
+                    {hasEvents && (
+                      <span
+                        className="absolute bottom-px left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                        style={{
+                          background: isToday2 ? "white" : hasProj ? "#e11d48" : hasAbs ? "#10b981" : "#4285f4",
+                          opacity: isToday2 ? 1 : hasProj || hasAbs ? 0.7 : 0.5,
+                        }}
+                      />
+                    )}
+                  </button>
+                );
               });
             })()}
           </div>
           {/* Calendriers Google — toggles par branche */}
           {gcalConnected && gcalCalendars.length > 0 && (
-            <div className={styles.miniCalendars}>
-              <div className={styles.miniCalLabelRow}>
-                <span className={styles.miniCalLabel}>Agendas</span>
-                <button className={styles.miniCalGear} onClick={() => setShowCalPicker((v) => !v)}>⚙</button>
+            <div className="mt-4">
+              <Separator className="mb-3" />
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wide">Agendas</span>
+                <button className="bg-transparent border-none text-xs cursor-pointer text-muted-foreground p-0.5 transition-colors hover:text-violet-600" onClick={() => setShowCalPicker((v) => !v)}>
+                  <Settings2 className="size-3.5" />
+                </button>
               </div>
               {gcalCalendars.filter((c) => gcalSelectedIds.includes(c.id)).map((cal) => (
-                <button key={cal.id} className={styles.miniCalToggle} onClick={() => toggleGcalCalendar(cal.id)} style={{ "--mcb": cal.backgroundColor || "#4285f4" }}>
-                  <span className={styles.miniCalDot} style={{ background: cal.backgroundColor || "#4285f4" }} />
-                  <span className={styles.miniCalName}>{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "…" : cal.summary}</span>
+                <button key={cal.id} className="flex items-center gap-1.5 py-1 px-1.5 w-full border-none bg-transparent cursor-pointer rounded-md transition-colors text-left hover:bg-black/[0.03]" onClick={() => toggleGcalCalendar(cal.id)}>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cal.backgroundColor || "#4285f4" }} />
+                  <span className="text-[11px] font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap">{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "…" : cal.summary}</span>
                 </button>
               ))}
               {showCalPicker && gcalCalendars.filter((c) => !gcalSelectedIds.includes(c.id)).length > 0 && (
-                <div className={styles.miniCalAdd}>
+                <div className="mt-1.5 pt-1.5 border-t border-border">
                   {gcalCalendars.filter((c) => !gcalSelectedIds.includes(c.id)).map((cal) => (
-                    <button key={cal.id} className={styles.miniCalAddBtn} onClick={() => toggleGcalCalendar(cal.id)} style={{ "--mcb": cal.backgroundColor || "#4285f4" }}>
-                      <span className={styles.miniCalDot} style={{ background: cal.backgroundColor || "#4285f4", opacity: 0.4 }} />
-                      <span className={styles.miniCalNameOff}>{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "…" : cal.summary}</span>
-                      <span className={styles.miniCalPlus}>+</span>
+                    <button key={cal.id} className="flex items-center gap-1.5 py-1 px-1.5 w-full border-none bg-transparent cursor-pointer rounded-md transition-colors text-left hover:bg-black/[0.03]" onClick={() => toggleGcalCalendar(cal.id)}>
+                      <span className="w-2 h-2 rounded-full shrink-0 opacity-40" style={{ background: cal.backgroundColor || "#4285f4" }} />
+                      <span className="text-[11px] font-semibold text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap">{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "…" : cal.summary}</span>
+                      <span className="text-sm font-black text-violet-600 ml-auto">
+                        <Plus className="size-3.5" />
+                      </span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
           )}
-        </div>
+        </Card>
 
-        <div className={`${styles.calWrap} ${loaded ? styles.calLoaded : ""}`}>
+        <Card className={`flex-1 min-w-0 rounded-2xl border-border p-4.5 shadow-[0_4px_16px_rgba(124,58,237,0.04)] overflow-hidden ${loaded ? "animate-[fade-up_300ms_ease_0.08s_both]" : "opacity-0"}`}>
 
           {/* VUE MOIS */}
           {view === "month" && (
-            <div className={styles.mGrid}>
-              {JOURS_HEAD.map((j) => <div key={j} className={styles.mHead}>{j}</div>)}
+            <div className="grid grid-cols-7 gap-0.5">
+              {JOURS_HEAD.map((j) => <div key={j} className="text-center text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground py-2">{j}</div>)}
               {calDays.map((d, i) => {
                 const key = toYMD(d); const isMonth = d.getMonth() === month; const isToday2 = key === today;
                 const events = calEvents[key] || []; const isSelected = selectedDate && toYMD(selectedDate) === key;
                 return (
-                  <div key={i} className={[styles.mDay, isToday2 && styles.mDayToday, !isMonth && styles.mDayOther, isSelected && styles.mDaySelected].filter(Boolean).join(" ")}
-                    onClick={() => isMonth && handleDayClick(d)} role={isMonth ? "button" : undefined} tabIndex={isMonth ? 0 : undefined}
-                    onKeyDown={(e) => { if (isMonth && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleDayClick(d); } }}>
-                    <span className={styles.mNum}>{d.getDate()}</span>
-                    <div className={styles.mEvents}>{renderMonthCell(events)}</div>
+                  <div
+                    key={i}
+                    className={[
+                      "bg-card min-h-[92px] p-1.5 cursor-pointer transition-all duration-100 flex flex-col gap-0.5 rounded-[10px] border-[1.5px] border-transparent",
+                      "hover:border-violet-500/20 hover:bg-violet-500/[0.02] hover:shadow-[0_2px_8px_rgba(124,58,237,0.06)] hover:-translate-y-px",
+                      isToday2 && "!bg-violet-500/[0.04] !border-violet-500/20 animate-[pulse-ring_2.5s_ease-in-out_infinite]",
+                      !isMonth && "opacity-[0.12] pointer-events-none",
+                      isSelected && "!bg-violet-500/5 !border-violet-600 !shadow-[0_0_0_2px_rgba(124,58,237,0.1)]",
+                    ].filter(Boolean).join(" ")}
+                    onClick={() => isMonth && handleDayClick(d)}
+                    role={isMonth ? "button" : undefined}
+                    tabIndex={isMonth ? 0 : undefined}
+                    onKeyDown={(e) => { if (isMonth && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleDayClick(d); } }}
+                  >
+                    <span className={`text-xs font-extrabold text-foreground leading-none mb-0.5 ${isToday2 ? "bg-gradient-to-br from-violet-600 to-purple-500 text-white rounded-full w-6 h-6 inline-flex items-center justify-center text-[11px]" : ""}`}>
+                      {d.getDate()}
+                    </span>
+                    <div className="flex flex-col gap-0.5 flex-1 overflow-hidden">{renderMonthCell(events)}</div>
                   </div>
                 );
               })}
@@ -604,35 +765,66 @@ export default function MonPlanning() {
 
           {/* VUE SEMAINE — TIME GRID */}
           {view === "week" && (
-            <div className={styles.tgWrap}>
-              <div className={styles.tgAllDay}>
-                <div className={styles.tgTimeLabel} />
+            <div className="flex flex-col">
+              {/* All-day row */}
+              <div className="grid gap-0.5 border-b border-border pb-1.5 mb-1" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+                <div className="w-12 shrink-0" />
                 {weekDays.map((d, i) => {
                   const key = toYMD(d); const events = calEvents[key] || [];
                   const allDay = events.filter((e) => (e.type === "gcal" && e.isAllDay) || e.type === "projet" || e.type === "mission" || e.type === "absence");
-                  return (<div key={i} className={styles.tgAllDayCell}>
-                    {allDay.slice(0, 4).map((ev, j) => {
-                      const c = ev.type === "absence" ? (ev.absType?.color || "#888") : ev.color || "#4285f4";
-                      const label = ev.type === "projet" || ev.type === "mission" ? `${ev.isMine ? "👤 " : ""}${ev.title}` : ev.type === "absence" ? `${ev.absType?.icon} ${ev.absType?.label}` : ev.title;
-                      return <div key={j} className={styles.tgADEvt} style={{ "--adc": c }} title={label} onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>{label.length > 16 ? label.slice(0, 16) + "…" : label}</div>;
-                    })}
-                    {allDay.length > 4 && <div className={styles.tgADMore}>+{allDay.length - 4}</div>}
-                  </div>);
+                  return (
+                    <div key={i} className="flex flex-col gap-0.5 px-0.5 py-0.5">
+                      {allDay.slice(0, 4).map((ev, j) => {
+                        const c = ev.type === "absence" ? (ev.absType?.color || "#888") : ev.color || "#4285f4";
+                        const label = ev.type === "projet" || ev.type === "mission" ? `${ev.isMine ? "👤 " : ""}${ev.title}` : ev.type === "absence" ? `${ev.absType?.icon} ${ev.absType?.label}` : ev.title;
+                        return (
+                          <div
+                            key={j}
+                            className="text-[10px] font-bold py-0.5 px-2 rounded-[5px] text-white whitespace-nowrap overflow-hidden text-ellipsis shadow-sm border-l-[3px] cursor-pointer transition-all hover:brightness-90"
+                            style={{ backgroundColor: `color-mix(in srgb, ${c} 80%, white)`, borderLeftColor: c }}
+                            title={label}
+                            onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}
+                          >
+                            {label.length > 16 ? label.slice(0, 16) + "…" : label}
+                          </div>
+                        );
+                      })}
+                      {allDay.length > 4 && <div className="text-[9px] text-muted-foreground font-bold py-0.5 px-1">+{allDay.length - 4}</div>}
+                    </div>
+                  );
                 })}
               </div>
-              <div className={styles.tgHead}>
-                <div className={styles.tgTimeLabel} />
+              {/* Header */}
+              <div className="grid gap-px border-b border-border" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+                <div className="w-12 shrink-0" />
                 {weekDays.map((d, i) => {
                   const key = toYMD(d); const isToday2 = key === today; const isSel = selectedDate && toYMD(selectedDate) === key;
-                  return (<div key={i} className={`${styles.tgHCell} ${isToday2 ? styles.tgHToday : ""} ${isSel ? styles.tgHSel : ""}`} onClick={() => handleDayClick(d)} role="button" tabIndex={0}>
-                    <span className={styles.tgHDay}>{JOURS_HEAD[i]}</span>
-                    <span className={`${styles.tgHNum} ${isToday2 ? styles.tgHNumToday : ""}`}>{d.getDate()}</span>
-                  </div>);
+                  return (
+                    <div
+                      key={i}
+                      className={`text-center py-1.5 px-0.5 cursor-pointer transition-colors ${isToday2 ? "bg-violet-500/[0.03]" : ""} ${isSel ? "bg-violet-500/5" : ""} hover:bg-violet-500/[0.02]`}
+                      onClick={() => handleDayClick(d)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <span className="block text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground">{JOURS_HEAD[i]}</span>
+                      <span className={`inline-flex items-center justify-center text-base font-black text-foreground w-7 h-7 ${isToday2 ? "bg-violet-600 text-white rounded-full text-[13px]" : ""}`}>
+                        {d.getDate()}
+                      </span>
+                    </div>
+                  );
                 })}
               </div>
-              <div className={styles.tgBody} ref={weekGridRef} style={{ "--slot-h": `${slotHeight}px` }}>
-                <div className={styles.tgTimes}>{hoursWeek.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
-                <div className={styles.tgCols}>
+              {/* Time body */}
+              <div className="grid max-h-[560px] overflow-y-auto" style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin" }} ref={weekGridRef}>
+                <div className="flex flex-col">
+                  {hoursWeek.map((h) => (
+                    <div key={h} className="flex items-start justify-end pr-1.5" style={{ height: `${slotHeight}px` }}>
+                      <span className="text-[9px] font-bold text-muted-foreground -translate-y-1 tabular-nums">{String(h).padStart(2, "0")}:00</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid gap-px" style={{ gridTemplateColumns: "repeat(7, 1fr)" }}>
                   {weekDays.map((d, i) => {
                     const key = toYMD(d); const isToday2 = key === today;
                     const timed = (calEvents[key] || []).filter((e) => e.type === "gcal" && !e.isAllDay && e.startHour != null)
@@ -657,23 +849,44 @@ export default function MonPlanning() {
                         }
                       }
                     }
-                    return (<div key={i} className={`${styles.tgCol} ${isToday2 ? styles.tgColToday : ""}`} onClick={() => handleDayClick(d)}>
-                      {hoursWeek.map((h) => <div key={h} className={styles.tgSlot} />)}
-                      {laid.map((ev, j) => {
-                        const top = ((ev.startHour - HOUR_START_WEEK) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100;
-                        const height = Math.max(2.5, ((ev.endHour - ev.startHour) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100);
-                        const width = 100 / ev.totalCols;
-                        const left = ev.col * width;
-                        const ttStart = `${String(Math.floor(ev.startHour)).padStart(2,"0")}:${String(Math.round((ev.startHour%1)*60)).padStart(2,"0")}`;
-                        const ttEnd = `${String(Math.floor(ev.endHour)).padStart(2,"0")}:${String(Math.round((ev.endHour%1)*60)).padStart(2,"0")}`;
-                        const tooltip = `${ev.title}\n${ttStart} — ${ttEnd}${ev.calendarName ? `\n${ev.calendarName}` : ""}${ev.tag?.label ? ` · ${ev.tag.label}` : ""}`;
-                        return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
-                          title={tooltip} onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
-                          <span className={styles.tgEvtTitle}>{ev.tag?.shape && <span className={`${styles.shape} ${styles[`shape_${ev.tag.shape}`]}`} />} {ev.title}</span>
-                          <span className={styles.tgEvtTime}>{ttStart} {ev.calendarName ? `· ${ev.calendarName}` : ""}</span>
-                        </div>);
-                      })}
-                    </div>);
+                    return (
+                      <div
+                        key={i}
+                        className={`relative border-l border-black/[0.04] cursor-pointer ${isToday2 ? "bg-violet-500/[0.02]" : ""} hover:bg-violet-500/[0.01]`}
+                        onClick={() => handleDayClick(d)}
+                      >
+                        {hoursWeek.map((h) => (
+                          <div key={h} className="border-b border-black/[0.03] relative cursor-crosshair" style={{ height: `${slotHeight}px` }} />
+                        ))}
+                        {laid.map((ev, j) => {
+                          const top = ((ev.startHour - HOUR_START_WEEK) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100;
+                          const height = Math.max(2.5, ((ev.endHour - ev.startHour) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100);
+                          const width = 100 / ev.totalCols;
+                          const left = ev.col * width;
+                          const ttStart = `${String(Math.floor(ev.startHour)).padStart(2,"0")}:${String(Math.round((ev.startHour%1)*60)).padStart(2,"0")}`;
+                          const ttEnd = `${String(Math.floor(ev.endHour)).padStart(2,"0")}:${String(Math.round((ev.endHour%1)*60)).padStart(2,"0")}`;
+                          const tooltip = `${ev.title}\n${ttStart} — ${ttEnd}${ev.calendarName ? `\n${ev.calendarName}` : ""}${ev.tag?.label ? ` · ${ev.tag.label}` : ""}`;
+                          return (
+                            <div
+                              key={j}
+                              className="absolute rounded-md px-2 py-1.5 overflow-hidden z-[1] cursor-pointer flex flex-col gap-px text-white border-l-[3px] backdrop-blur-[4px] shadow-sm transition-all duration-150 hover:shadow-lg hover:z-10 hover:scale-[1.02] min-w-0"
+                              style={{
+                                top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`,
+                                backgroundColor: `color-mix(in srgb, ${ev.color} 85%, white)`,
+                                borderLeftColor: ev.color,
+                              }}
+                              title={tooltip}
+                              onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}
+                            >
+                              <span className="text-[11px] font-bold leading-snug whitespace-nowrap overflow-hidden text-ellipsis flex items-center">
+                                {ev.tag?.shape && <EventShape shape={ev.tag.shape} />} {ev.title}
+                              </span>
+                              <span className="text-[9px] font-semibold opacity-80">{ttStart} {ev.calendarName ? `· ${ev.calendarName}` : ""}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
                   })}
                 </div>
               </div>
@@ -686,26 +899,52 @@ export default function MonPlanning() {
             const allDay = events.filter((e) => e.type !== "gcal" || e.isAllDay);
             const timed = events.filter((e) => e.type === "gcal" && !e.isAllDay && e.startHour != null);
             return (
-              <div className={styles.tgWrap}>
+              <div className="flex flex-col">
                 {allDay.length > 0 && (
-                  <div className={styles.dayAllDay}>
+                  <div className="py-1.5 border-b border-border mb-1 flex flex-wrap gap-1">
                     {allDay.map((ev, j) => {
                       const c = ev.type === "absence" ? (ev.absType?.color || "#888") : ev.color || "#4285f4";
                       const label = ev.type === "projet" || ev.type === "mission" ? `${ev.isMine ? "👤 " : "🎬 "}${ev.title} · ${ev.branche}` : ev.type === "absence" ? `${ev.absType?.icon} ${ev.absType?.label}` : ev.title;
-                      return <div key={j} className={styles.dayADEvt} style={{ "--adc": c }}>{label}</div>;
+                      return (
+                        <div
+                          key={j}
+                          className="text-[11px] font-bold py-1.5 px-2.5 rounded-md text-white border-l-[3px] shadow-sm"
+                          style={{ backgroundColor: `color-mix(in srgb, ${c} 80%, white)`, borderLeftColor: c }}
+                        >
+                          {label}
+                        </div>
+                      );
                     })}
                   </div>
                 )}
-                <div className={styles.dayGrid} ref={dayGridRef} style={{ "--slot-h": `${slotHeight}px` }} onMouseUp={handleGridMouseUp} onMouseLeave={() => { if (isDragging) handleGridMouseUp(); }}>
-                  <div className={styles.tgTimes}>{hoursDay.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
-                  <div className={styles.dayCol}>
+                <div
+                  className="grid max-h-[560px] overflow-y-auto"
+                  style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin", "--slot-h": `${slotHeight}px` }}
+                  ref={dayGridRef}
+                  onMouseUp={handleGridMouseUp}
+                  onMouseLeave={() => { if (isDragging) handleGridMouseUp(); }}
+                >
+                  <div className="flex flex-col">
                     {hoursDay.map((h) => (
-                      <div key={h} className={styles.tgSlot}
+                      <div key={h} className="flex items-start justify-end pr-1.5" style={{ height: `${slotHeight}px` }}>
+                        <span className="text-[9px] font-bold text-muted-foreground -translate-y-1 tabular-nums">{String(h).padStart(2, "0")}:00</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="relative border-l border-black/[0.04]">
+                    {hoursDay.map((h) => (
+                      <div
+                        key={h}
+                        className="border-b border-black/[0.03] relative cursor-crosshair"
+                        style={{ height: `${slotHeight}px` }}
                         onMouseDown={(e) => { e.preventDefault(); handleGridMouseDown(calDate, h); }}
-                        onMouseMove={() => handleGridMouseMove(h + 0.5)}>
-                        <div className={styles.tgSlotHalf}
+                        onMouseMove={() => handleGridMouseMove(h + 0.5)}
+                      >
+                        <div
+                          className="absolute bottom-0 left-0 right-0 h-1/2"
                           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleGridMouseDown(calDate, h + 0.5); }}
-                          onMouseMove={(e) => { e.stopPropagation(); handleGridMouseMove(h + 1); }} />
+                          onMouseMove={(e) => { e.stopPropagation(); handleGridMouseMove(h + 1); }}
+                        />
                       </div>
                     ))}
                     {(() => {
@@ -728,63 +967,233 @@ export default function MonPlanning() {
                       }
                       // Drag preview
                       const dragPreview = isDragging && dragStart && dragEnd && dragStart.date === toYMD(calDate);
-                      return (<>{dragPreview && (() => {
-                        const dTop = ((dragStart.hour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
-                        const dH = Math.max(1, ((dragEnd.hour - dragStart.hour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
-                        return <div className={styles.dragPreview} style={{ top: `${dTop}%`, height: `${dH}%` }} />;
-                      })()}{laid.map((ev, j) => {
-                        const top = ((ev.startHour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
-                        const height = Math.max(2, ((ev.endHour - ev.startHour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
-                        const width = 100 / ev.totalCols;
-                        const left = ev.col * width;
-                        const ttS = `${String(Math.floor(ev.startHour)).padStart(2,"0")}:${String(Math.round((ev.startHour%1)*60)).padStart(2,"0")}`;
-                        const ttE = `${String(Math.floor(ev.endHour)).padStart(2,"0")}:${String(Math.round((ev.endHour%1)*60)).padStart(2,"0")}`;
-                        return (<div key={j} className={styles.tgEvtDay} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
-                          title={`${ev.title}\n${ttS} — ${ttE}${ev.calendarName ? `\n${ev.calendarName}` : ""}${ev.tag?.label ? ` · ${ev.tag.label}` : ""}`}
-                          onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
-                          <span className={styles.tgEvtTitle}>{ev.tag?.shape && <span className={`${styles.shape} ${styles[`shape_${ev.tag.shape}`]}`} />} {ev.title}</span>
-                          <span className={styles.tgEvtTime}>{ttS} — {ttE}</span>
-                          {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName} {ev.tag ? `· ${ev.tag.label}` : ""}</span>}
-                        </div>);
-                      })}</>);
+                      return (
+                        <>
+                          {dragPreview && (() => {
+                            const dTop = ((dragStart.hour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
+                            const dH = Math.max(1, ((dragEnd.hour - dragStart.hour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
+                            return <div className="absolute left-1 right-1 bg-violet-500/12 border-2 border-dashed border-violet-500/40 rounded-md z-[5] pointer-events-none" style={{ top: `${dTop}%`, height: `${dH}%` }} />;
+                          })()}
+                          {laid.map((ev, j) => {
+                            const top = ((ev.startHour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
+                            const height = Math.max(2, ((ev.endHour - ev.startHour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
+                            const width = 100 / ev.totalCols;
+                            const left = ev.col * width;
+                            const ttS = `${String(Math.floor(ev.startHour)).padStart(2,"0")}:${String(Math.round((ev.startHour%1)*60)).padStart(2,"0")}`;
+                            const ttE = `${String(Math.floor(ev.endHour)).padStart(2,"0")}:${String(Math.round((ev.endHour%1)*60)).padStart(2,"0")}`;
+                            return (
+                              <div
+                                key={j}
+                                className="absolute rounded-lg px-3 py-2 overflow-hidden z-[1] cursor-pointer flex flex-col gap-0.5 text-white border-l-4 backdrop-blur-[4px] shadow-md transition-all duration-150 hover:shadow-xl hover:z-10 hover:scale-[1.01]"
+                                style={{
+                                  top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`,
+                                  backgroundColor: `color-mix(in srgb, ${ev.color} 85%, white)`,
+                                  borderLeftColor: ev.color,
+                                }}
+                                title={`${ev.title}\n${ttS} — ${ttE}${ev.calendarName ? `\n${ev.calendarName}` : ""}${ev.tag?.label ? ` · ${ev.tag.label}` : ""}`}
+                                onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}
+                              >
+                                <span className="text-[13px] font-extrabold leading-snug whitespace-nowrap overflow-hidden text-ellipsis flex items-center">
+                                  {ev.tag?.shape && <EventShape shape={ev.tag.shape} />} {ev.title}
+                                </span>
+                                <span className="text-[11px] font-bold opacity-85">{ttS} — {ttE}</span>
+                                {ev.calendarName && <span className="text-[10px] font-semibold opacity-60">{ev.calendarName} {ev.tag ? `· ${ev.tag.label}` : ""}</span>}
+                              </div>
+                            );
+                          })}
+                        </>
+                      );
                     })()}
                   </div>
                 </div>
               </div>
             );
           })()}
-        </div>
+        </Card>
 
         {/* ═══ PANEL ═══ */}
         {selectedDate && (() => {
           const dateStr = toYMD(selectedDate); const isFuture = dateStr >= today;
           return (
-            <aside className={styles.panel}>
-              <div className={styles.pHead}><div><div className={styles.pDay}>{dayOfWeekFr(selectedDate)}</div><div className={styles.pDate}>{selectedDate.getDate()} {MOIS[selectedDate.getMonth()]}</div></div><button className={styles.pClose} onClick={() => setSelectedDate(null)}>✕</button></div>
-              {selectedEvents.projs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🎬 Projets</h3>{selectedEvents.projs.map((p, j) => <div key={j} className={`${styles.pEvt} ${styles.pEvtClickable}`} style={{ "--pc": p.color }} onClick={() => handleEventClick(null, p)}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div>{p.id && <a href={`/projets/${p.id}`} className={styles.pLink} onClick={(e) => e.stopPropagation()}>Voir le projet →</a>}</div>)}</div>)}
-              {selectedEvents.missions.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>👤 Mes missions</h3>{selectedEvents.missions.map((p, j) => <div key={j} className={`${styles.pEvt} ${styles.pEvtClickable}`} style={{ "--pc": p.color }} onClick={() => handleEventClick(null, p)}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div></div>)}</div>)}
-              {selectedEvents.abs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🌴 Absences</h3>{selectedEvents.abs.map((a, j) => { const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" }; return (<div key={j} className={`${styles.pEvt} ${styles.pEvtClickable}`} style={{ "--pc": a.absType?.color || "#888" }} onClick={() => handleEventClick(null, a)}><div className={styles.pEvtTitle}>{a.absType?.icon} {a.absType?.label}{a.employeeNom ? ` — ${a.employeeNom}` : ""}</div><span className={`${styles.pStatut} ${styles[s.cls]}`}>{s.label}</span>{a.employeeProfileId && <a href={`/rh/employe/${a.employeeProfileId}`} className={styles.pLink} onClick={(e) => e.stopPropagation()}>Voir la fiche →</a>}</div>); })}</div>)}
-              {Object.keys(selectedEvents.gcalByBranch).length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>📅 Agenda</h3>{Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (<div key={branch} className={styles.pBranch}><div className={styles.pBranchHead}><span className={styles.pBranchDot} style={{ background: data.color }} /><span className={styles.pBranchName}>{branch}</span><span className={styles.pBranchN}>{data.events.length}</span></div>{data.events.map((g, j) => <div key={j} className={`${styles.pRdv} ${styles.pRdvClickable}`} onClick={() => handleEventClick(null, g)}><span className={styles.pRdvTitle}>{g.title}</span></div>)}</div>))}</div>)}
-              {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && Object.keys(selectedEvents.gcalByBranch).length === 0 && <div className={styles.pEmpty}>Rien de prévu</div>}
-              {isFuture && (<div className={styles.pAddSec}><h3 className={styles.pSecTitle}>Ajouter</h3><button className={styles.pAddBtn} style={{ "--pab": "#10b981" }} onClick={() => openAbsenceForm(dateStr)}>🌴 Absence</button><button className={styles.pAddBtn} style={{ "--pab": "#7c3aed" }} onClick={() => openProjForm(dateStr)}>🎬 Projet</button><button className={styles.pAddBtn} style={{ "--pab": "#f59e0b" }} onClick={() => openNoteForm(dateStr)}>📅 Événement</button></div>)}
-            </aside>
+            <Card className="w-72 shrink-0 rounded-2xl border-border p-5 shadow-[0_4px_16px_rgba(124,58,237,0.05)] animate-[slide-in-right_200ms_ease] sticky top-4 max-[900px]:w-full max-[900px]:static">
+              {/* Header */}
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wide text-violet-600">{dayOfWeekFr(selectedDate)}</div>
+                  <div className="text-xl font-black text-foreground leading-none">{selectedDate.getDate()} {MOIS[selectedDate.getMonth()]}</div>
+                </div>
+                <button className="bg-transparent border-none text-base text-muted-foreground cursor-pointer p-0.5 hover:text-foreground" onClick={() => setSelectedDate(null)}>
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              {/* Projets */}
+              {selectedEvents.projs.length > 0 && (
+                <div className="mb-3">
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">🎬 Projets</h3>
+                  {selectedEvents.projs.map((p, j) => (
+                    <div
+                      key={j}
+                      className="py-2 px-2.5 rounded-lg border-l-[3px] mb-1 cursor-pointer transition-all hover:translate-x-0.5"
+                      style={{ background: `color-mix(in srgb, ${p.color} 5%, white)`, borderLeftColor: p.color }}
+                      onClick={() => handleEventClick(null, p)}
+                    >
+                      <div className="text-xs font-extrabold text-foreground">{p.title}</div>
+                      <div className="text-[10px] text-muted-foreground">{p.branche} · {p.statut}</div>
+                      {p.id && <a href={`/projets/${p.id}`} className="block text-[10px] font-bold text-violet-600 no-underline mt-1 transition-opacity hover:opacity-70 flex items-center gap-1" onClick={(e) => e.stopPropagation()}><ExternalLink className="size-3" /> Voir le projet</a>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Missions */}
+              {selectedEvents.missions.length > 0 && (
+                <div className="mb-3">
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">👤 Mes missions</h3>
+                  {selectedEvents.missions.map((p, j) => (
+                    <div
+                      key={j}
+                      className="py-2 px-2.5 rounded-lg border-l-[3px] mb-1 cursor-pointer transition-all hover:translate-x-0.5"
+                      style={{ background: `color-mix(in srgb, ${p.color} 5%, white)`, borderLeftColor: p.color }}
+                      onClick={() => handleEventClick(null, p)}
+                    >
+                      <div className="text-xs font-extrabold text-foreground">{p.title}</div>
+                      <div className="text-[10px] text-muted-foreground">{p.branche} · {p.statut}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Absences */}
+              {selectedEvents.abs.length > 0 && (
+                <div className="mb-3">
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">🌴 Absences</h3>
+                  {selectedEvents.abs.map((a, j) => {
+                    const s = STATUT_LABELS[a.statut] || { label: a.statut, color: "#6b7280", bg: "transparent" };
+                    return (
+                      <div
+                        key={j}
+                        className="py-2 px-2.5 rounded-lg border-l-[3px] mb-1 cursor-pointer transition-all hover:translate-x-0.5"
+                        style={{ background: `color-mix(in srgb, ${a.absType?.color || "#888"} 5%, white)`, borderLeftColor: a.absType?.color || "#888" }}
+                        onClick={() => handleEventClick(null, a)}
+                      >
+                        <div className="text-xs font-extrabold text-foreground">{a.absType?.icon} {a.absType?.label}{a.employeeNom ? ` — ${a.employeeNom}` : ""}</div>
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] font-extrabold mt-0.5 h-auto py-0.5 px-1.5"
+                          style={{ background: s.bg, color: s.color, borderColor: "transparent" }}
+                        >
+                          {s.label}
+                        </Badge>
+                        {a.employeeProfileId && <a href={`/rh/employe/${a.employeeProfileId}`} className="block text-[10px] font-bold text-violet-600 no-underline mt-1 transition-opacity hover:opacity-70 flex items-center gap-1" onClick={(e) => e.stopPropagation()}><ExternalLink className="size-3" /> Voir la fiche</a>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Agenda */}
+              {Object.keys(selectedEvents.gcalByBranch).length > 0 && (
+                <div className="mb-3">
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">📅 Agenda</h3>
+                  {Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (
+                    <div key={branch} className="mb-2">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: data.color }} />
+                        <span className="text-[10px] font-extrabold text-foreground uppercase tracking-tight">{branch}</span>
+                        <span className="text-[8px] font-extrabold opacity-40">{data.events.length}</span>
+                      </div>
+                      {data.events.map((g, j) => (
+                        <div
+                          key={j}
+                          className="text-[11px] text-muted-foreground py-1 pl-3.5 border-l border-border ml-0.5 font-semibold flex items-center gap-1 cursor-pointer rounded transition-all hover:bg-violet-500/[0.04] hover:text-foreground hover:pl-4"
+                          onClick={() => handleEventClick(null, g)}
+                        >
+                          <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{g.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Empty state */}
+              {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && Object.keys(selectedEvents.gcalByBranch).length === 0 && (
+                <div className="text-xs text-muted-foreground text-center py-4 italic">Rien de prévu</div>
+              )}
+
+              {/* Add section */}
+              {isFuture && (
+                <div className="border-t border-border pt-2.5 mt-2">
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">Ajouter</h3>
+                  <button
+                    className="w-full py-2 px-2.5 border border-border rounded-lg bg-card text-foreground font-bold text-[11px] cursor-pointer text-left mb-1 transition-all hover:border-emerald-500 hover:text-emerald-500 hover:bg-emerald-500/[0.03]"
+                    onClick={() => openAbsenceForm(dateStr)}
+                  >
+                    🌴 Absence
+                  </button>
+                  <button
+                    className="w-full py-2 px-2.5 border border-border rounded-lg bg-card text-foreground font-bold text-[11px] cursor-pointer text-left mb-1 transition-all hover:border-violet-600 hover:text-violet-600 hover:bg-violet-600/[0.03]"
+                    onClick={() => openProjForm(dateStr)}
+                  >
+                    🎬 Projet
+                  </button>
+                  <button
+                    className="w-full py-2 px-2.5 border border-border rounded-lg bg-card text-foreground font-bold text-[11px] cursor-pointer text-left mb-1 transition-all hover:border-amber-500 hover:text-amber-500 hover:bg-amber-500/[0.03]"
+                    onClick={() => openNoteForm(dateStr)}
+                  >
+                    📅 Événement
+                  </button>
+                </div>
+              )}
+            </Card>
           );
         })()}
       </div>
 
       {/* ═══ MES ABSENCES ═══ */}
       {absences.length > 0 && (
-        <section className={styles.absSec}>
-          <h2 className={styles.secTitle}>Mes absences</h2>
-          <div className={styles.absList}>
+        <section className="mb-4 animate-[fade-up_300ms_ease_0.25s_both]">
+          <h2 className="text-sm font-black text-foreground mb-2">Mes absences</h2>
+          <div className="flex flex-col gap-1">
             {absences.map((a) => {
-              const t = ABSENCE_TYPES.find((t) => t.value === a.type); const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" };
+              const t = ABSENCE_TYPES.find((t) => t.value === a.type); const s = STATUT_LABELS[a.statut] || { label: a.statut, color: "#6b7280", bg: "transparent" };
               const canEdit = a.statut === "en_attente" && a.dateDebut >= today; const jours = countWorkDays(a.dateDebut, a.dateFin, a.demiJournee);
-              return (<div key={String(a._id)} className={styles.absCard} style={{ "--ac": t?.color || "#888" }}>
-                <span className={styles.absIcon}>{t?.icon || "📋"}</span>
-                <div className={styles.absBody}><div className={styles.absTop}><span className={styles.absType}>{t?.label}</span><span className={`${styles.absStatut} ${styles[s.cls]}`}>{s.label}</span><span className={styles.absDates}>{a.dateDebut === a.dateFin ? a.dateDebut : `${a.dateDebut} → ${a.dateFin}`}</span><span className={styles.absJours}>{jours}j</span></div>{a.commentaire && <p className={styles.absComment}>{a.commentaire}</p>}{a.motifRefus && <p className={styles.absRefus}>Motif : {a.motifRefus}</p>}</div>
-                {canEdit && <div className={styles.absActions}><button className={styles.editBtn} onClick={() => openEdit(a)}>Modifier</button><button className={styles.deleteBtn} onClick={() => handleDelete(String(a._id))}>Supprimer</button></div>}
-              </div>);
+              return (
+                <Card
+                  key={String(a._id)}
+                  className="flex-row items-center gap-2.5 py-2.5 px-3.5 rounded-xl border-l-[3px] transition-all hover:shadow-sm"
+                  style={{ borderLeftColor: t?.color || "#888" }}
+                >
+                  <span className="text-xl">{t?.icon || "📋"}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[11px] font-extrabold" style={{ color: t?.color }}>{t?.label}</span>
+                      <Badge
+                        variant="outline"
+                        className="text-[8px] font-extrabold h-auto py-0.5 px-1.5"
+                        style={{ background: s.bg, color: s.color, borderColor: "transparent" }}
+                      >
+                        {s.label}
+                      </Badge>
+                      <span className="text-[10px] font-semibold text-muted-foreground">{a.dateDebut === a.dateFin ? a.dateDebut : `${a.dateDebut} → ${a.dateFin}`}</span>
+                      <span className="text-[8px] font-extrabold opacity-40">{jours}j</span>
+                    </div>
+                    {a.commentaire && <p className="text-[9px] text-muted-foreground italic mt-0.5 mb-0">{a.commentaire}</p>}
+                    {a.motifRefus && <p className="text-[9px] text-rose-700 mt-0.5 mb-0">Motif : {a.motifRefus}</p>}
+                  </div>
+                  {canEdit && (
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="xs" onClick={() => openEdit(a)} className="text-[9px] font-bold hover:border-violet-600 hover:text-violet-600">
+                        <Pencil className="size-3" /> Modifier
+                      </Button>
+                      <Button variant="destructive" size="xs" onClick={() => handleDelete(String(a._id))} className="text-[9px] font-bold">
+                        <Trash2 className="size-3" /> Supprimer
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              );
             })}
           </div>
         </section>
