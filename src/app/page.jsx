@@ -232,14 +232,15 @@ export default function DashboardPage() {
     };
   }, [planningTasks]);
 
-  // Notifications
-  const [notifs, setNotifs] = useState({ pending: 0, expiring: 0 });
+  // Dashboard data
+  const [dash, setDash] = useState(null);
+  const notifs = { pending: dash?.absences?.pending || 0, expiring: dash?.alerts?.expiringContracts?.length || 0 };
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch("/api/planning-dashboard", { cache: "no-store" });
         const d = await res.json();
-        setNotifs({ pending: d.absences?.pending || 0, expiring: d.alerts?.expiringContracts?.length || 0 });
+        setDash(d);
       } catch {}
     })();
   }, []);
@@ -256,6 +257,28 @@ export default function DashboardPage() {
       <div className={styles.headerRow}>
         <h1 className={styles.pageTitle}>Tableau de bord</h1>
       </div>
+
+      {/* Widgets CEO */}
+      {dash && (
+        <div className={styles.ceoWidgets}>
+          <a href="/rh/planning-equipe" className={styles.ceoWidget}>
+            <span className={styles.ceoWidgetVal}>{dash.team?.present || 0}<span className={styles.ceoWidgetTotal}>/{dash.team?.total || 0}</span></span>
+            <span className={styles.ceoWidgetLabel}>Présents</span>
+          </a>
+          <a href="/rh/entreprise" className={styles.ceoWidget}>
+            <span className={styles.ceoWidgetVal}>{dash.projects?.active || 0}</span>
+            <span className={styles.ceoWidgetLabel}>Projets actifs</span>
+          </a>
+          <a href="/rh/pilotage" className={styles.ceoWidget} style={{ "--cwc": notifs.pending > 0 ? "#f59e0b" : undefined }}>
+            <span className={styles.ceoWidgetVal}>{notifs.pending}</span>
+            <span className={styles.ceoWidgetLabel}>À valider</span>
+          </a>
+          <a href="/rh/entreprise" className={styles.ceoWidget} style={{ "--cwc": notifs.expiring > 0 ? "#e11d48" : undefined }}>
+            <span className={styles.ceoWidgetVal}>{dash.projects?.upcoming || 0}</span>
+            <span className={styles.ceoWidgetLabel}>Projets à venir</span>
+          </a>
+        </div>
+      )}
 
       <div className={styles.layout}>
         <div className={styles.main}>

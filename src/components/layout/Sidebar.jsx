@@ -23,6 +23,7 @@ const MAIN_LINKS = [
   { label: "Météo de la semaine", to: "/meteo-de-la-semaine", resource: "meteoDuJour" },
   { label: "Planning Perso", to: "/planning-perso", resource: "planningPerso" },
   { label: "Mon Planning", to: "/mon-planning", resource: "employeeAbsences" },
+  { label: "Projets", to: "/projets", resource: "contrats" },
   { label: "Drive", to: "/drive", resource: "drive" },
   { label: "Admin", to: "/admin", resource: "admin" },
 ];

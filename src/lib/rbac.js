@@ -112,6 +112,7 @@ const PATH_RESOURCE_RULES = [
   { test: (p) => p.startsWith("/rh/planning-equipe"),               resource: "pilotageRh" },
   { test: (p) => p.startsWith("/rh/entreprise"),                    resource: "pilotageRh" },
   { test: (p) => p.startsWith("/rh/employe"),                       resource: "employeeProfiles" },
+  { test: (p) => p === "/projets",                                   resource: "contrats" },
   { test: (p) => p.startsWith("/projets/"),                         resource: "contrats" },
 ];
 

@@ -338,3 +338,11 @@
 .notifBar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
 .notifItem { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; background: color-mix(in srgb, var(--nc) 8%, white); border: 1px solid color-mix(in srgb, var(--nc) 15%, transparent); border-left: 4px solid var(--nc); color: var(--nc); font-size: 13px; font-weight: 700; text-decoration: none; transition: all 120ms; }
 .notifItem:hover { background: color-mix(in srgb, var(--nc) 12%, white); transform: translateY(-1px); }
+
+.ceoWidgets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.ceoWidget { display: flex; flex-direction: column; align-items: center; padding: 18px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; text-decoration: none; color: inherit; transition: all 150ms; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+.ceoWidget:hover { box-shadow: 0 6px 20px rgba(124,58,237,0.06); transform: translateY(-2px); border-color: rgba(124,58,237,0.15); }
+.ceoWidgetVal { font-size: 36px; font-weight: 900; color: var(--cwc, var(--color-text)); line-height: 1; }
+.ceoWidgetTotal { font-size: 20px; font-weight: 700; color: var(--color-text-muted); }
+.ceoWidgetLabel { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted); margin-top: 6px; }
+@media (max-width: 768px) { .ceoWidgets { grid-template-columns: repeat(2, 1fr); } }
