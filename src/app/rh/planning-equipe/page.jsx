@@ -701,24 +701,103 @@ export default function PlanningEquipePage() {
             const fd = toYMD(calDate), fDay = calDate, absentT = [], onProjT = [], availT = [], projT = {};
             for (const p of filteredProfiles) { const pid = String(p._id), abs = absMap[pid]?.[fd], projs = projAssignMap[pid]?.[fd] || []; if (abs && abs.statut === "valide") absentT.push({ ...p, absence: abs }); else if (projs.length > 0) { onProjT.push({ ...p, projects: projs }); for (const proj of projs) { const k = String(proj._id); if (!projT[k]) projT[k] = { ...proj, members: [] }; projT[k].members.push(p); } } else availT.push(p); }
             const pList = Object.values(projT);
+            const totalMembers = filteredProfiles.length;
             return (
-              <div className="space-y-5">
-                <div><div className="text-lg font-semibold text-foreground">{JOURS[fDay.getDay()]} {fDay.getDate()} {MOIS[fDay.getMonth()]} {fDay.getFullYear()}</div><p className="text-[13px] text-muted-foreground">{filteredProfiles.length} membres</p></div>
-                <div className="flex gap-6">
-                  <div className="flex items-center gap-2"><UserX className="w-4 h-4 text-rose-500" /><span className="text-lg font-bold text-rose-500 tabular-nums">{absentT.length}</span><span className="text-[13px] text-muted-foreground">absents</span></div>
-                  <div className="flex items-center gap-2"><Briefcase className="w-4 h-4 text-violet-600" /><span className="text-lg font-bold text-violet-600 tabular-nums">{onProjT.length}</span><span className="text-[13px] text-muted-foreground">en projet</span></div>
-                  <div className="flex items-center gap-2"><UserPlus className="w-4 h-4 text-emerald-600" /><span className="text-lg font-bold text-emerald-600 tabular-nums">{availT.length}</span><span className="text-[13px] text-muted-foreground">disponibles</span></div>
+              <div className="space-y-4">
+                {/* Date header band */}
+                <div className="rounded-lg px-5 py-4" style={{ backgroundColor: "#f4f4f5" }}>
+                  <div className="text-xl font-bold text-zinc-800">{JOURS[fDay.getDay()]} {fDay.getDate()} {MOIS[fDay.getMonth()]} {fDay.getFullYear()}</div>
+                  <p className="text-[13px] text-zinc-500 mt-0.5">{totalMembers} membres dans l&apos;équipe</p>
+                  {/* Stats strip */}
+                  <div className="flex gap-3 mt-3">
+                    {[
+                      { count: totalMembers - absentT.length, label: "Présents", bg: "#dcfce7", color: "#15803d", border: "#bbf7d0" },
+                      { count: absentT.length, label: "Absents", bg: "#ffe4e6", color: "#be123c", border: "#fecdd3" },
+                      { count: onProjT.length, label: "En projet", bg: "#ede9fe", color: "#6d28d9", border: "#ddd6fe" },
+                      { count: availT.length, label: "Disponibles", bg: "#e0f2fe", color: "#0369a1", border: "#bae6fd" },
+                    ].map(({ count, label, bg, color, border }) => (
+                      <div key={label} className="flex items-center gap-2 px-3 py-1.5 rounded-md" style={{ backgroundColor: bg, border: `1px solid ${border}` }}>
+                        <span className="text-lg font-bold tabular-nums" style={{ color }}>{count}</span>
+                        <span className="text-[11px] font-medium" style={{ color }}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                {pList.length > 0 && <div className="space-y-2"><div className="text-[13px] font-medium text-muted-foreground">Projets du jour</div>
-                  {pList.map((proj) => { const bc = getBranchColor(proj.branche, branches), absMem = proj.members.filter((m) => { const a = absMap[String(m._id)]?.[fd]; return a && a.statut === "valide"; });
-                    return <div key={String(proj._id)} className="rounded-lg border bg-card p-3"><div className="flex items-center gap-2 mb-2"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: bc }} /><Link href={`/projets/${String(proj._id)}`} className="text-[13px] font-medium text-foreground hover:text-violet-600 transition-colors">{proj.nomContrat || proj.nom}</Link><span className="text-[11px] font-medium" style={{ color: bc }}>{proj.branche}</span></div>
-                      <div className="flex flex-wrap gap-1">{proj.members.map((m) => { const isAbs = absMem.some((a) => String(a._id) === String(m._id)); return <button key={String(m._id)} onClick={() => openSheet(m, fd)} className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium cursor-pointer hover:ring-1 hover:ring-violet-300 transition-all", isAbs ? "bg-rose-50 text-rose-500 line-through" : "bg-muted text-foreground")}><span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[7px] font-semibold" style={{ backgroundColor: isAbs ? "#f43f5e" : bc }}>{(m.prenom || "?")[0]}</span>{m.prenom} {m.nom?.[0]}.</button>; })}</div>
-                      {absMem.length > 0 && <div className="mt-1.5 text-[10px] font-medium text-rose-500 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />{absMem.length} absent{absMem.length > 1 ? "s" : ""}</div>}
-                    </div>;
-                  })}
-                </div>}
-                {absentT.length > 0 && <div className="space-y-2"><div className="text-[13px] font-medium text-muted-foreground">Absents</div><div className="flex flex-wrap gap-1.5">{absentT.map((emp) => { const meta = ABSENCE_META[emp.absence?.type] || ABSENCE_META.absence_autre; return <button key={String(emp._id)} onClick={() => openSheet(emp, fd)} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer hover:shadow-sm transition-colors", meta.bg, meta.border)}><span className="text-sm leading-none">{meta.icon}</span><span className="text-[12px] font-medium text-foreground">{emp.prenom} {emp.nom?.[0]}.</span></button>; })}</div></div>}
-                {availT.length > 0 && <div className="space-y-2"><div className="text-[13px] font-medium text-muted-foreground">Disponibles</div><div className="flex flex-wrap gap-1.5">{availT.map((emp) => <button key={String(emp._id)} onClick={() => openSheet(emp, fd)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50/50 border border-emerald-100/60 hover:border-emerald-200 transition-all cursor-pointer"><span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-semibold bg-emerald-500">{(emp.prenom || "?")[0]}</span><span className="text-[12px] font-medium text-foreground">{emp.prenom} {emp.nom?.[0]}.</span></button>)}</div></div>}
+
+                {/* Projets du jour */}
+                {pList.length > 0 && (
+                  <div className="rounded-lg" style={{ backgroundColor: "#faf5ff", border: "1px solid #e9d5ff" }}>
+                    <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-violet-600" />
+                      <span className="text-[13px] font-bold text-violet-800">Projets du jour</span>
+                      <span className="text-[11px] font-medium text-violet-500 ml-auto">{pList.length} projet{pList.length > 1 ? "s" : ""} · {onProjT.length} membre{onProjT.length > 1 ? "s" : ""}</span>
+                    </div>
+                    <div className="px-4 pb-3 space-y-2">
+                      {pList.map((proj) => { const bc = getBranchColor(proj.branche, branches), absMem = proj.members.filter((m) => { const a = absMap[String(m._id)]?.[fd]; return a && a.statut === "valide"; });
+                        return (
+                          <div key={String(proj._id)} className="rounded-lg bg-white p-3 shadow-sm" style={{ borderLeft: `3px solid ${bc}` }}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Link href={`/projets/${String(proj._id)}`} className="text-[13px] font-semibold text-zinc-800 hover:text-violet-600 transition-colors">{proj.nomContrat || proj.nom}</Link>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${bc}15`, color: bc }}>{proj.branche}</span>
+                              {absMem.length > 0 && <span className="flex items-center gap-1 text-[10px] font-bold text-rose-500 ml-auto"><AlertTriangle className="w-3 h-3" />{absMem.length} absent{absMem.length > 1 ? "s" : ""}</span>}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {proj.members.map((m) => { const isAbs = absMem.some((a) => String(a._id) === String(m._id));
+                                return <button key={String(m._id)} onClick={() => openSheet(m, fd)} className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium cursor-pointer transition-all", isAbs ? "bg-rose-100 text-rose-600 line-through ring-1 ring-rose-200" : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200")}>
+                                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold" style={{ backgroundColor: isAbs ? "#f43f5e" : bc }}>{(m.prenom || "?")[0]}</span>
+                                  {m.prenom} {m.nom?.[0]}.
+                                </button>;
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Absents */}
+                {absentT.length > 0 && (
+                  <div className="rounded-lg" style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3" }}>
+                    <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+                      <UserX className="w-4 h-4 text-rose-600" />
+                      <span className="text-[13px] font-bold text-rose-800">Absents</span>
+                      <span className="text-[11px] font-medium text-rose-400 ml-auto">{absentT.length} personne{absentT.length > 1 ? "s" : ""}</span>
+                    </div>
+                    <div className="px-4 pb-3 flex flex-wrap gap-2">
+                      {absentT.map((emp) => { const meta = ABSENCE_META[emp.absence?.type] || ABSENCE_META.absence_autre;
+                        return <button key={String(emp._id)} onClick={() => openSheet(emp, fd)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white shadow-sm cursor-pointer hover:shadow-md transition-all">
+                          <span className="text-base leading-none">{meta.icon}</span>
+                          <div className="text-left">
+                            <div className="text-[12px] font-semibold text-zinc-800">{emp.prenom} {emp.nom?.[0]}.</div>
+                            <div className={cn("text-[10px] font-medium", meta.text)}>{meta.label}</div>
+                          </div>
+                        </button>;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Disponibles */}
+                {availT.length > 0 && (
+                  <div className="rounded-lg" style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                    <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+                      <UserPlus className="w-4 h-4 text-emerald-600" />
+                      <span className="text-[13px] font-bold text-emerald-800">Disponibles</span>
+                      <span className="text-[11px] font-medium text-emerald-400 ml-auto">{availT.length} personne{availT.length > 1 ? "s" : ""}</span>
+                    </div>
+                    <div className="px-4 pb-3 flex flex-wrap gap-2">
+                      {availT.map((emp) => (
+                        <button key={String(emp._id)} onClick={() => openSheet(emp, fd)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white shadow-sm cursor-pointer hover:shadow-md transition-all">
+                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold bg-emerald-500">{(emp.prenom || "?")[0]}</span>
+                          <span className="text-[12px] font-semibold text-zinc-800">{emp.prenom} {emp.nom?.[0]}.</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {filteredProfiles.length === 0 && <div className="p-8 text-center text-sm text-zinc-400 rounded-lg" style={{ backgroundColor: "#f4f4f5" }}>Aucun membre</div>}
               </div>
             );
           })()}
