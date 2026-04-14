@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { authClient } from "../../lib/auth-client";
-import { useSidebar } from "../../lib/sidebar-context";
+import { useSidebar } from "@/components/ui/sidebar";
 import styles from "./MeteoSemaine.module.css";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -298,7 +298,7 @@ function PoleCol({ pole, projets, briefs, adminMode, onUpdateProjets, onUpdateBr
 export default function MeteoDeSemainePage() {
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
-  const { sidebarOpen, setSidebarOpen } = useSidebar();
+  const { open: sidebarOpen, toggleSidebar } = useSidebar();
 
   const today = new Date();
   const monday = getMonday(today);
@@ -361,11 +361,11 @@ export default function MeteoDeSemainePage() {
   const totalBriefs = POLES.reduce((sum, pole) => sum + (columns[pole.key]?.briefs?.length ?? 0), 0);
 
   return (
-    <div className={styles.page} style={sidebarOpen ? { left: "224px" } : undefined}>
+    <div className={styles.page} style={sidebarOpen ? { left: "var(--sidebar-width, 16rem)" } : undefined}>
 
       {/* ── Top bar ── */}
       <div className={styles.topBar}>
-        <button className={styles.burgerBtn} onClick={() => setSidebarOpen((v) => !v)} title={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}>
+        <button className={styles.burgerBtn} onClick={toggleSidebar} title={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}>
           {sidebarOpen ? "✕" : "☰"}
         </button>
         <span className={styles.weekLabel}>Météo de la Semaine</span>

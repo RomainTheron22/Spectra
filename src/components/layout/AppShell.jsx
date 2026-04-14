@@ -4,11 +4,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./AppShell.module.css";
-import Sidebar from "./Sidebar";
+import AppSidebar from "./AppSidebar";
 import ForbiddenView from "../auth/ForbiddenView";
 import CommentLayer from "../comments/CommentLayer";
 import { authClient } from "../../lib/auth-client";
-import { SidebarContext } from "../../lib/sidebar-context";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   ROLE_NAMES,
   getResourceFromPath,
@@ -107,19 +108,18 @@ export default function AppShell({ children }) {
   }
 
   const isAdmin = authz?.role?.name === ROLE_NAMES.ADMIN;
-  const showSidebar = !isAnyMeteoPage || sidebarOpen;
 
   return (
-    <SidebarContext.Provider value={{ sidebarOpen, setSidebarOpen }}>
-      <div className={`${styles.shell} ${!showSidebar ? styles.shellFull : ""}`}>
-        {showSidebar && <Sidebar session={session} authz={authz} loading={isPending || authzLoading} />}
-        <div className={`${styles.main} ${isAnyMeteoPage ? styles.mainMeteo : ""}`}>
+    <TooltipProvider>
+      <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <AppSidebar session={session} authz={authz} loading={isPending || authzLoading} />
+        <SidebarInset>
           <main className={`${styles.content} ${isAnyMeteoPage ? styles.contentMeteo : ""}`}>
             {renderedContent}
           </main>
-        </div>
+        </SidebarInset>
         {isAdmin && !isPublic && <CommentLayer />}
-      </div>
-    </SidebarContext.Provider>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }

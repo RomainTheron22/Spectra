@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { authClient } from "../../lib/auth-client";
-import { useSidebar } from "../../lib/sidebar-context";
+import { useSidebar } from "@/components/ui/sidebar";
 import styles from "./MeteoDuJour.module.css";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -233,7 +233,7 @@ function RdvModal({ members, onConfirm, onClose }) {
 export default function MeteoDuJourPage() {
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
-  const { sidebarOpen, setSidebarOpen } = useSidebar();
+  const { open: sidebarOpen, toggleSidebar } = useSidebar();
 
   const today     = new Date();
   const dateKey   = toDateStr(today);
@@ -348,14 +348,14 @@ export default function MeteoDuJourPage() {
   // ── Render ──
 
   return (
-    <div className={styles.page} style={{ left: sidebarOpen ? "224px" : "0" }}>
+    <div className={styles.page} style={{ left: sidebarOpen ? "var(--sidebar-width, 16rem)" : "0" }}>
 
       {/* ── Page header ── */}
       <div className={styles.pageHeader}>
         <div className={styles.headerLeft}>
           <button
             className={styles.burgerBtn}
-            onClick={() => setSidebarOpen((v) => !v)}
+            onClick={toggleSidebar}
             title={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
           >
             {sidebarOpen ? "✕" : "☰"}
