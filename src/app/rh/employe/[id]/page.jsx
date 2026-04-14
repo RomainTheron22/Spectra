@@ -403,6 +403,16 @@ export default function FicheEmployePage() {
     }));
   }
 
+  // ─── Jours de TT toggle ────────────────────────────────────
+  function toggleJourTT(jour) {
+    setEditForm((f) => ({
+      ...f,
+      joursTT: (f.joursTT || []).includes(jour)
+        ? f.joursTT.filter((j) => j !== jour)
+        : [...(f.joursTT || []), jour],
+    }));
+  }
+
   // ─── Loading / Not found ─────────────────────────────────────
   if (loading) return <div className="p-8 text-muted-foreground">Chargement...</div>;
   if (!profile) return <div className="p-8 text-muted-foreground">Profil non trouvé</div>;
@@ -591,21 +601,38 @@ export default function FicheEmployePage() {
               title="Jours de présence & Congés"
               editing={editSection === "jours"}
               saving={saving}
-              onEdit={() => startEdit("jours", { joursPresence: [...(profile.joursPresence || [])], congesAnnuels: profile.congesAnnuels ?? 30 })}
+              onEdit={() => startEdit("jours", { joursPresence: [...(profile.joursPresence || [])], joursTT: [...(profile.joursTT || [])], congesAnnuels: profile.congesAnnuels ?? 30 })}
               onCancel={() => setEditSection(null)}
               onSave={() => saveSection("jours")}
             >
               {editSection === "jours" ? (
-                <div className="space-y-3">
-                  <div className="flex gap-1.5">
-                    {JOURS.map((j) => (
-                      <button key={j.key} type="button" onClick={() => toggleJour(j.key)} className={cn(
-                        "w-9 h-9 rounded-lg text-xs font-bold transition-all",
-                        (editForm.joursPresence || []).includes(j.key) ? "bg-sky-500 text-white shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      )}>
-                        {j.label}
-                      </button>
-                    ))}
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Jours de présence</label>
+                    <div className="flex gap-1.5">
+                      {JOURS.map((j) => (
+                        <button key={j.key} type="button" onClick={() => toggleJour(j.key)} className={cn(
+                          "w-9 h-9 rounded-lg text-xs font-bold transition-all",
+                          (editForm.joursPresence || []).includes(j.key) ? "bg-sky-500 text-white shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        )}>
+                          {j.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Jours de télétravail récurrents</label>
+                    <div className="flex gap-1.5">
+                      {JOURS.map((j) => (
+                        <button key={j.key} type="button" onClick={() => toggleJourTT(j.key)} className={cn(
+                          "w-9 h-9 rounded-lg text-xs font-bold transition-all",
+                          (editForm.joursTT || []).includes(j.key) ? "bg-violet-500 text-white shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        )}>
+                          {j.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">🏡 Ces jours s&apos;affichent automatiquement sur le planning</p>
                   </div>
                   <div>
                     <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Congés annuels (jours)</label>
@@ -613,17 +640,35 @@ export default function FicheEmployePage() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="flex gap-1.5">
-                    {JOURS.map((j) => (
-                      <span key={j.key} className={cn(
-                        "w-9 h-9 rounded-lg text-xs font-bold flex items-center justify-center",
-                        (profile.joursPresence || []).includes(j.key) ? "bg-sky-100 text-sky-700 border border-sky-200" : "bg-muted text-muted-foreground/40"
-                      )}>
-                        {j.label}
-                      </span>
-                    ))}
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Présence</label>
+                    <div className="flex gap-1.5">
+                      {JOURS.map((j) => (
+                        <span key={j.key} className={cn(
+                          "w-9 h-9 rounded-lg text-xs font-bold flex items-center justify-center",
+                          (profile.joursPresence || []).includes(j.key) ? "bg-sky-100 text-sky-700 border border-sky-200" : "bg-muted text-muted-foreground/40"
+                        )}>
+                          {j.label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
+                  {(profile.joursTT || []).length > 0 && (
+                    <div>
+                      <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">🏡 Télétravail</label>
+                      <div className="flex gap-1.5">
+                        {JOURS.map((j) => (
+                          <span key={j.key} className={cn(
+                            "w-9 h-9 rounded-lg text-xs font-bold flex items-center justify-center",
+                            (profile.joursTT || []).includes(j.key) ? "bg-violet-100 text-violet-700 border border-violet-200" : "bg-muted text-muted-foreground/40"
+                          )}>
+                            {j.label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm">{profile.congesAnnuels ?? 30} jours de congés / an</span>

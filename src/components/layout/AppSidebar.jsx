@@ -266,7 +266,7 @@ export default function AppSidebar({ session, authz, loading }) {
                         render={<Link href={item.to} />}
                         isActive={isActivePath(item.to)}
                         tooltip={item.label}
-                        className="data-[active]:bg-white/15 data-[active]:text-white data-[active]:font-bold data-[active]:shadow-[inset_3px_0_0_#38bdf8] data-[active]:backdrop-blur-sm"
+                        className="data-[active]:bg-gradient-to-r data-[active]:from-sky-600/90 data-[active]:to-sky-500/80 data-[active]:text-white data-[active]:font-bold data-[active]:shadow-md data-[active]:shadow-sky-600/20"
                       >
                         <Icon className="size-4" />
                         <span>{item.label}</span>
@@ -312,7 +312,7 @@ export default function AppSidebar({ session, authz, loading }) {
                             <SidebarMenuButton
                               render={<Link href={item.to} />}
                               isActive={isActivePath(item.to)}
-                              className="pl-7 data-[active]:bg-white/15 data-[active]:text-white data-[active]:font-bold data-[active]:shadow-[inset_3px_0_0_#38bdf8] data-[active]:backdrop-blur-sm"
+                              className="pl-7 data-[active]:bg-gradient-to-r data-[active]:from-sky-600/90 data-[active]:to-sky-500/80 data-[active]:text-white data-[active]:font-bold data-[active]:shadow-md data-[active]:shadow-sky-600/20"
                             >
                               <ItemIcon className="size-4" />
                               <span>{item.label}</span>

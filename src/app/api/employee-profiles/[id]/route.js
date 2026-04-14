@@ -25,7 +25,14 @@ export async function GET(request, { params }) {
   const profile = await db.collection(COLLECTION).findOne({ _id: oid });
   if (!profile) return NextResponse.json({ error: "Profil non trouvé" }, { status: 404 });
 
-  return NextResponse.json({ item: profile });
+  const [currentContrat, contratsCount] = await Promise.all([
+    profile.currentContratId
+      ? db.collection("employee_contrats").findOne({ _id: toObjectId(profile.currentContratId) })
+      : Promise.resolve(null),
+    db.collection("employee_contrats").countDocuments({ employeeProfileId: id }),
+  ]);
+
+  return NextResponse.json({ item: profile, currentContrat, contratsCount });
 }
 
 export async function PATCH(request, { params }) {
@@ -41,7 +48,7 @@ export async function PATCH(request, { params }) {
 
   const payload = await request.json();
 
-  const VALID_CONTRATS = ["cdi", "cdd", "alternance", "stage"];
+  const VALID_CONTRATS = ["cdi", "cdd", "alternance", "stage", "intermittent", "facture"];
   const VALID_JOURS = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"];
 
   if (payload.contrat && !VALID_CONTRATS.includes(payload.contrat)) {
@@ -55,9 +62,17 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: `Jours invalides. Valeurs : ${VALID_JOURS.join(", ")}` }, { status: 400 });
     }
   }
+  if (payload.joursTT) {
+    if (!Array.isArray(payload.joursTT)) {
+      return NextResponse.json({ error: "joursTT doit être un tableau." }, { status: 400 });
+    }
+    if (payload.joursTT.some((j) => !VALID_JOURS.includes(j))) {
+      return NextResponse.json({ error: `Jours TT invalides. Valeurs : ${VALID_JOURS.join(", ")}` }, { status: 400 });
+    }
+  }
 
   const updates = {};
-  const allowed = ["userId", "nom", "prenom", "email", "contrat", "joursPresence", "dateDebut", "dateFin", "pole", "entite", "congesAnnuels", "isActive", "competences", "tags", "branche"];
+  const allowed = ["userId", "nom", "prenom", "email", "contrat", "joursPresence", "joursTT", "dateDebut", "dateFin", "pole", "entite", "congesAnnuels", "isActive", "competences", "tags", "branche", "telephone", "poste", "dateNaissance", "adresse", "contactUrgence", "notesRH", "siret", "societe", "tarifJournalier", "typeIntermittent", "numeroGuso", "currentContratId"];
 
   for (const key of allowed) {
     if (key in payload) updates[key] = payload[key];
