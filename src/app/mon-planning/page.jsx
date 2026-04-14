@@ -118,10 +118,10 @@ function Sparkles({ active }) {
       {positions.map((p, i) => (
         <span
           key={i}
-          className="absolute w-1 h-1 rounded-full bg-white/80"
+          className="absolute w-1.5 h-1.5 rounded-full bg-yellow-300/80"
           style={{
             top: p.top, left: p.left,
-            boxShadow: "0 0 5px rgba(250,204,21,0.5)",
+            boxShadow: "0 0 6px 1px rgba(250,204,21,0.6)",
             animation: "sparkle-float 1.2s ease-out infinite",
             animationDelay: p.delay,
             "--sx": p.sx, "--sy": p.sy, "--ex": p.ex, "--ey": p.ey,
@@ -497,18 +497,18 @@ export default function MonPlanning() {
         {projs.slice(0, 3).map((p, j) => (
           <div
             key={`p${j}`}
-            className="text-[10px] font-bold py-0.5 px-1.5 rounded border-l-[3px] whitespace-nowrap overflow-hidden text-ellipsis leading-snug text-white cursor-pointer transition-all duration-100 hover:brightness-90 hover:scale-[1.04]"
-            style={{ backgroundColor: `color-mix(in srgb, ${p.color} 80%, white)`, borderLeftColor: p.color }}
+            className="text-[10px] font-bold py-0.5 px-1.5 rounded-lg border-l-[3px] whitespace-nowrap overflow-hidden text-ellipsis leading-snug cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.03] hover:-translate-y-px"
+            style={{ backgroundColor: `color-mix(in srgb, ${p.color} 12%, white)`, borderLeftColor: p.color, color: p.color }}
             onClick={(e) => handleEventClick(e, p)}
           >
-            {p.isMine ? "👤 " : ""}{p.title.length > 14 ? p.title.slice(0, 14) + "…" : p.title}
+            {p.isMine ? "👤 " : ""}{p.title.length > 14 ? p.title.slice(0, 14) + "..." : p.title}
           </div>
         ))}
         {abs.slice(0, 1).map((a, j) => (
           <div
             key={`a${j}`}
-            className="text-[9px] font-bold py-0.5 px-1.5 rounded border-l-2 whitespace-nowrap overflow-hidden text-ellipsis leading-snug text-white cursor-pointer transition-all duration-100 hover:brightness-90 hover:scale-[1.04]"
-            style={{ backgroundColor: `color-mix(in srgb, ${a.absType?.color || "#888"} 70%, white)`, borderLeftColor: a.absType?.color || "#888" }}
+            className="text-[9px] font-bold py-0.5 px-1.5 rounded-lg border-l-2 whitespace-nowrap overflow-hidden text-ellipsis leading-snug cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.03] hover:-translate-y-px"
+            style={{ backgroundColor: `color-mix(in srgb, ${a.absType?.color || "#888"} 10%, white)`, borderLeftColor: a.absType?.color || "#888", color: a.absType?.color || "#888" }}
             onClick={(e) => handleEventClick(e, a)}
           >
             {a.absType?.icon} {a.absType?.label}
@@ -517,12 +517,12 @@ export default function MonPlanning() {
         {gcals.slice(0, 3).map((g, j) => (
           <div
             key={`g${j}`}
-            className="text-[9px] font-semibold py-0.5 px-1.5 rounded whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1 leading-tight cursor-pointer transition-all duration-100 hover:brightness-90 hover:scale-[1.04]"
-            style={{ backgroundColor: `color-mix(in srgb, ${g.color} 12%, white)`, color: g.color }}
+            className="text-[9px] font-semibold py-0.5 px-1.5 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1 leading-tight cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.03] hover:-translate-y-px"
+            style={{ backgroundColor: `color-mix(in srgb, ${g.color} 10%, white)`, color: g.color }}
             onClick={(e) => handleEventClick(e, g)}
           >
             <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: g.color }} />
-            {g.title.length > 14 ? g.title.slice(0, 14) + "…" : g.title}
+            {g.title.length > 14 ? g.title.slice(0, 14) + "..." : g.title}
           </div>
         ))}
         {(projs.length + abs.length + gcals.length) > 7 && (
@@ -533,128 +533,160 @@ export default function MonPlanning() {
   }
 
   return (
-    <div className="px-5 py-4 max-w-[1440px] mx-auto relative font-sans">
-      {/* ═══ PHRASE PROJET CHAUD ═══ */}
+    <div className="px-6 py-5 max-w-[1440px] mx-auto relative font-sans">
+
+      {/* ═══ VIBE BAR — Project Hot Quote ═══ */}
       <div
-        className={`flex items-center gap-3.5 py-3.5 px-6 rounded-2xl mb-3.5 bg-gradient-to-r from-violet-600/5 to-rose-500/4 border border-violet-500/8 relative overflow-hidden transition-all duration-300 ease-out ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
+        className={`relative flex items-center gap-4 py-4 px-7 rounded-2xl mb-4 border border-white/40 overflow-hidden transition-all duration-300 ease-out ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
+        style={{
+          background: "linear-gradient(135deg, rgba(237,233,254,0.7), rgba(243,232,255,0.4), rgba(253,244,255,0.25))",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          boxShadow: "0 8px 30px rgba(124,58,237,0.06), inset 0 1px 0 rgba(255,255,255,0.7)",
+        }}
         onMouseEnter={() => setVibeHover(true)}
         onMouseLeave={() => setVibeHover(false)}
       >
+        {/* Shimmer effect */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-40"
+          style={{
+            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)",
+            backgroundSize: "200% 100%",
+            animation: vibeHover ? "shimmer 2s ease-in-out infinite" : "none",
+          }}
+        />
         <Sparkles active={vibeHover} />
-        <span className="text-xl shrink-0 animate-[float-gentle_3s_ease-in-out_infinite]">{projectQuote.icon}</span>
-        <span className="text-sm font-bold text-foreground flex-1 leading-snug">{projectQuote.msg}</span>
-        {projectQuote.color && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: projectQuote.color }} />}
+        <span className="text-2xl shrink-0 animate-[float-gentle_3s_ease-in-out_infinite] relative z-[2]">{projectQuote.icon}</span>
+        <span className="text-sm font-bold text-foreground flex-1 leading-snug relative z-[2]">{projectQuote.msg}</span>
+        {projectQuote.color && <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm relative z-[2]" style={{ background: projectQuote.color, boxShadow: `0 0 8px ${projectQuote.color}40` }} />}
       </div>
 
       {/* ═══ TOOLBAR ═══ */}
-      <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
-        <div className="flex gap-1 flex-wrap items-center">
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex gap-1.5 flex-wrap items-center">
           {/* Toggle: Projets */}
           <button
-            className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-all duration-100 select-none ${showProjets ? "border-rose-500 text-foreground" : "border-border bg-card text-muted-foreground hover:border-rose-500 hover:text-foreground"}`}
-            style={showProjets ? { background: "color-mix(in srgb, #e11d48 8%, white)" } : {}}
+            className={`flex items-center gap-2 py-2 px-3.5 rounded-full text-[11px] font-bold cursor-pointer transition-all duration-200 select-none ${showProjets ? "bg-rose-50 border border-rose-200 text-rose-700 shadow-sm" : "bg-muted/50 border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"}`}
             onClick={() => setShowProjets((v) => !v)}
           >
-            <span className="w-1.5 h-1.5 rounded-full transition-colors" style={{ background: showProjets ? "#e11d48" : undefined }} />
-            Projets <span className="text-[9px] font-extrabold opacity-50">{projects.length}</span>
+            <span className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${showProjets ? "scale-125" : "scale-100"}`} style={{ background: showProjets ? "#e11d48" : "#9ca3af" }} />
+            Projets
+            <Badge variant="outline" className="text-[9px] font-extrabold h-4 px-1.5 rounded-full bg-transparent border-current/20">{projects.length}</Badge>
           </button>
           {/* Toggle: Missions */}
           <button
-            className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-all duration-100 select-none ${showMissions ? "border-violet-600 text-foreground" : "border-border bg-card text-muted-foreground hover:border-violet-600 hover:text-foreground"}`}
-            style={showMissions ? { background: "color-mix(in srgb, #7c3aed 8%, white)" } : {}}
+            className={`flex items-center gap-2 py-2 px-3.5 rounded-full text-[11px] font-bold cursor-pointer transition-all duration-200 select-none ${showMissions ? "bg-violet-50 border border-violet-200 text-violet-700 shadow-sm" : "bg-muted/50 border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"}`}
             onClick={() => setShowMissions((v) => !v)}
           >
-            <span className="w-1.5 h-1.5 rounded-full transition-colors" style={{ background: showMissions ? "#7c3aed" : undefined }} />
-            Missions <span className="text-[9px] font-extrabold opacity-50">{myMissions.length}</span>
+            <span className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${showMissions ? "scale-125" : "scale-100"}`} style={{ background: showMissions ? "#7c3aed" : "#9ca3af" }} />
+            Missions
+            <Badge variant="outline" className="text-[9px] font-extrabold h-4 px-1.5 rounded-full bg-transparent border-current/20">{myMissions.length}</Badge>
           </button>
           {/* Toggle: Absences */}
           <button
-            className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-all duration-100 select-none ${showAbsences ? "border-emerald-500 text-foreground" : "border-border bg-card text-muted-foreground hover:border-emerald-500 hover:text-foreground"}`}
-            style={showAbsences ? { background: "color-mix(in srgb, #10b981 8%, white)" } : {}}
+            className={`flex items-center gap-2 py-2 px-3.5 rounded-full text-[11px] font-bold cursor-pointer transition-all duration-200 select-none ${showAbsences ? "bg-emerald-50 border border-emerald-200 text-emerald-700 shadow-sm" : "bg-muted/50 border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"}`}
             onClick={() => setShowAbsences((v) => !v)}
           >
-            <span className="w-1.5 h-1.5 rounded-full transition-colors" style={{ background: showAbsences ? "#10b981" : undefined }} />
-            Absences <span className="text-[9px] font-extrabold opacity-50">{absences.length}</span>
+            <span className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${showAbsences ? "scale-125" : "scale-100"}`} style={{ background: showAbsences ? "#10b981" : "#9ca3af" }} />
+            Absences
+            <Badge variant="outline" className="text-[9px] font-extrabold h-4 px-1.5 rounded-full bg-transparent border-current/20">{absences.length}</Badge>
           </button>
           {/* Toggle: Agenda */}
           {gcalConnected && (
             <button
-              className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-all duration-100 select-none ${showGcal ? "border-blue-500 text-foreground" : "border-border bg-card text-muted-foreground hover:border-blue-500 hover:text-foreground"}`}
-              style={showGcal ? { background: "color-mix(in srgb, #4285f4 8%, white)" } : {}}
+              className={`flex items-center gap-2 py-2 px-3.5 rounded-full text-[11px] font-bold cursor-pointer transition-all duration-200 select-none ${showGcal ? "bg-blue-50 border border-blue-200 text-blue-700 shadow-sm" : "bg-muted/50 border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"}`}
               onClick={() => setShowGcal((v) => !v)}
             >
-              <span className="w-1.5 h-1.5 rounded-full transition-colors" style={{ background: showGcal ? "#4285f4" : undefined }} />
+              <span className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${showGcal ? "scale-125" : "scale-100"}`} style={{ background: showGcal ? "#4285f4" : "#9ca3af" }} />
               Agenda
             </button>
           )}
         </div>
-        <select
-          className="text-[11px] font-bold py-1.5 px-2.5 border border-border rounded-md bg-card text-foreground cursor-pointer transition-colors hover:border-violet-600 focus:outline-none focus:border-violet-600"
-          value={filterBranche}
-          onChange={(e) => setFilterBranche(e.target.value)}
-        >
-          <option value="">Toutes les branches</option>
-          {branchesDb.map((b) => <option key={b.key} value={b.key}>{b.label}</option>)}
-          {branchesDb.length === 0 && ["Agency","CreativeGen","Entertainment","SFX","Atelier","Communication"].map((b) => <option key={b} value={b}>{b}</option>)}
-        </select>
-        <Button
-          className="bg-gradient-to-r from-violet-600 to-purple-500 text-white font-extrabold text-[11px] border-0 rounded-lg px-3.5 py-1.5 cursor-pointer shadow-[0_3px_10px_rgba(124,58,237,0.15)] hover:-translate-y-0.5 hover:shadow-[0_6px_18px_rgba(124,58,237,0.22)] transition-all duration-100"
-          onClick={openNew}
-        >
-          <Plus className="size-3.5" /> Ajouter
-        </Button>
+        <div className="flex items-center gap-2">
+          <select
+            className="text-[11px] font-bold py-2 px-3 border border-border rounded-xl bg-background text-foreground cursor-pointer transition-all duration-200 hover:border-violet-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 appearance-none pr-7"
+            style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.5rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.2em 1.2em" }}
+            value={filterBranche}
+            onChange={(e) => setFilterBranche(e.target.value)}
+          >
+            <option value="">Toutes les branches</option>
+            {branchesDb.map((b) => <option key={b.key} value={b.key}>{b.label}</option>)}
+            {branchesDb.length === 0 && ["Agency","CreativeGen","Entertainment","SFX","Atelier","Communication"].map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+          <Button
+            className="bg-gradient-to-r from-violet-600 to-purple-500 text-white font-extrabold text-[11px] border-0 rounded-xl px-4 py-2 cursor-pointer shadow-lg shadow-violet-500/25 hover:-translate-y-0.5 hover:shadow-violet-500/40 active:translate-y-0 transition-all duration-200"
+            onClick={openNew}
+          >
+            <Plus className="size-3.5" /> Ajouter
+          </Button>
+        </div>
       </div>
 
       {/* ═══ CALENDAR NAV ═══ */}
-      <div className="flex items-center justify-between gap-2.5 mb-2.5 flex-wrap">
-        <div className="flex gap-1 items-center">
-          <Button variant="outline" size="icon-sm" onClick={navPrev}>
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex gap-1.5 items-center">
+          <Button variant="outline" size="icon-sm" onClick={navPrev} className="rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200">
             <ChevronLeft className="size-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={goToday} className="text-[11px] font-bold text-muted-foreground hover:border-violet-600 hover:text-violet-600">
+          <Button variant="outline" size="sm" onClick={goToday} className="text-[11px] font-bold text-muted-foreground rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200">
             Aujourd&apos;hui
           </Button>
-          <Button variant="outline" size="icon-sm" onClick={navNext}>
+          <Button variant="outline" size="icon-sm" onClick={navNext} className="rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200">
             <ChevronRight className="size-4" />
           </Button>
         </div>
-        <h2 className="text-base font-black text-foreground m-0 tracking-tight">{calLabel()}</h2>
-        <div className="flex items-center gap-2">
+        <h2 className="text-xl font-black tracking-tight m-0 bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-500 bg-clip-text text-transparent">{calLabel()}</h2>
+        <div className="flex items-center gap-2.5">
           {view !== "month" && (
             <div className="flex gap-0.5">
-              <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.max(32, h - 16))} title="Réduire">
+              <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.max(32, h - 16))} title="Reduire" className="rounded-xl">
                 <ZoomOut className="size-3.5" />
               </Button>
-              <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.min(96, h + 16))} title="Agrandir">
+              <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.min(96, h + 16))} title="Agrandir" className="rounded-xl">
                 <ZoomIn className="size-3.5" />
               </Button>
             </div>
           )}
-          <Tabs value={view} onValueChange={setView}>
-            <TabsList className="h-7">
-              <TabsTrigger value="day" className="text-[11px] font-bold px-3 py-0.5">Jour</TabsTrigger>
-              <TabsTrigger value="week" className="text-[11px] font-bold px-3 py-0.5">Semaine</TabsTrigger>
-              <TabsTrigger value="month" className="text-[11px] font-bold px-3 py-0.5">Mois</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex bg-muted/60 rounded-xl p-1 gap-0.5">
+            <button
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-none ${view === "day" ? "bg-white shadow-sm text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setView("day")}
+            >
+              Jour
+            </button>
+            <button
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-none ${view === "week" ? "bg-white shadow-sm text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setView("week")}
+            >
+              Semaine
+            </button>
+            <button
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-none ${view === "month" ? "bg-white shadow-sm text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setView("month")}
+            >
+              Mois
+            </button>
+          </div>
         </div>
       </div>
 
       {/* ═══ MAIN: MiniCal + Calendar + Panel ═══ */}
-      <div className="flex gap-3.5 items-start mb-4 max-md:flex-col">
-        {/* Mini calendar */}
-        <Card className="w-52 shrink-0 sticky top-4 rounded-2xl border-border shadow-sm p-3.5 max-[900px]:hidden">
-          <div className="flex items-center justify-between mb-2">
-            <button className="bg-transparent border-none text-base font-black text-muted-foreground cursor-pointer p-0.5 px-1.5 rounded transition-all hover:text-foreground hover:bg-violet-500/5" onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}>
+      <div className="flex gap-4 items-start mb-5 max-md:flex-col">
+
+        {/* ─── Mini calendar ─── */}
+        <Card className="w-56 shrink-0 sticky top-4 rounded-2xl border-border/60 p-4 max-[900px]:hidden" style={{ boxShadow: "0 4px 20px rgba(124,58,237,0.04)" }}>
+          <div className="flex items-center justify-between mb-3">
+            <button className="bg-transparent border-none text-base font-black text-muted-foreground cursor-pointer p-1 px-2 rounded-lg transition-all duration-200 hover:text-foreground hover:bg-violet-50" onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}>
               <ChevronLeft className="size-3.5" />
             </button>
-            <span className="text-xs font-extrabold text-foreground">{MOIS[calDate.getMonth()].slice(0, 3)} {calDate.getFullYear()}</span>
-            <button className="bg-transparent border-none text-base font-black text-muted-foreground cursor-pointer p-0.5 px-1.5 rounded transition-all hover:text-foreground hover:bg-violet-500/5" onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}>
+            <span className="text-xs font-extrabold text-foreground tracking-tight">{MOIS[calDate.getMonth()].slice(0, 3)} {calDate.getFullYear()}</span>
+            <button className="bg-transparent border-none text-base font-black text-muted-foreground cursor-pointer p-1 px-2 rounded-lg transition-all duration-200 hover:text-foreground hover:bg-violet-50" onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}>
               <ChevronRight className="size-3.5" />
             </button>
           </div>
           <div className="grid grid-cols-7 gap-px">
-            {["L","M","M","J","V","S","D"].map((d, i) => <div key={i} className="text-center text-[9px] font-extrabold text-muted-foreground py-1">{d}</div>)}
+            {["L","M","M","J","V","S","D"].map((d, i) => <div key={i} className="text-center text-[9px] font-extrabold text-muted-foreground py-1.5 uppercase tracking-wider">{d}</div>)}
             {(() => {
               const y = calDate.getFullYear(), m = calDate.getMonth();
               const first = new Date(y, m, 1); let start = (first.getDay() + 6) % 7;
@@ -673,18 +705,19 @@ export default function MonPlanning() {
                   <button
                     key={i}
                     className={[
-                      "bg-transparent border-none text-[11px] font-semibold text-foreground w-[26px] h-[26px] rounded-full flex items-center justify-center cursor-pointer transition-all mx-auto relative",
-                      isToday2 && "!bg-violet-600 !text-white !font-extrabold",
+                      "bg-transparent border-none text-[11px] font-semibold text-foreground w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 mx-auto relative",
+                      isToday2 && "!font-bold !text-white shadow-md",
                       !isMonth && "text-muted-foreground opacity-30",
-                      isSelected && !isToday2 && "bg-violet-500/12 text-violet-600 font-extrabold",
-                      !isToday2 && "hover:bg-violet-500/6",
+                      isSelected && !isToday2 && "bg-violet-100 text-violet-700 font-bold ring-2 ring-violet-400/30",
+                      !isToday2 && !isSelected && "hover:bg-violet-50",
                     ].filter(Boolean).join(" ")}
+                    style={isToday2 ? { background: "linear-gradient(135deg, #7c3aed, #a855f7)", boxShadow: "0 3px 10px rgba(124,58,237,0.3)" } : {}}
                     onClick={() => { setCalDate(d); if (view === "day") setCalDate(d); handleDayClick(d); }}
                   >
                     {d.getDate()}
                     {hasEvents && (
                       <span
-                        className="absolute bottom-px left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                        className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
                         style={{
                           background: isToday2 ? "white" : hasProj ? "#e11d48" : hasAbs ? "#10b981" : "#4285f4",
                           opacity: isToday2 ? 1 : hasProj || hasAbs ? 0.7 : 0.5,
@@ -700,24 +733,24 @@ export default function MonPlanning() {
           {gcalConnected && gcalCalendars.length > 0 && (
             <div className="mt-4">
               <Separator className="mb-3" />
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wide">Agendas</span>
-                <button className="bg-transparent border-none text-xs cursor-pointer text-muted-foreground p-0.5 transition-colors hover:text-violet-600" onClick={() => setShowCalPicker((v) => !v)}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">Agendas</span>
+                <button className="bg-transparent border-none text-xs cursor-pointer text-muted-foreground p-1 rounded-lg transition-all duration-200 hover:text-violet-600 hover:bg-violet-50" onClick={() => setShowCalPicker((v) => !v)}>
                   <Settings2 className="size-3.5" />
                 </button>
               </div>
               {gcalCalendars.filter((c) => gcalSelectedIds.includes(c.id)).map((cal) => (
-                <button key={cal.id} className="flex items-center gap-1.5 py-1 px-1.5 w-full border-none bg-transparent cursor-pointer rounded-md transition-colors text-left hover:bg-black/[0.03]" onClick={() => toggleGcalCalendar(cal.id)}>
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cal.backgroundColor || "#4285f4" }} />
-                  <span className="text-[11px] font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap">{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "…" : cal.summary}</span>
+                <button key={cal.id} className="flex items-center gap-2 py-1.5 px-2 w-full border-none bg-transparent cursor-pointer rounded-lg transition-all duration-200 text-left hover:bg-violet-50/50" onClick={() => toggleGcalCalendar(cal.id)}>
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ background: cal.backgroundColor || "#4285f4" }} />
+                  <span className="text-[11px] font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap">{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "..." : cal.summary}</span>
                 </button>
               ))}
               {showCalPicker && gcalCalendars.filter((c) => !gcalSelectedIds.includes(c.id)).length > 0 && (
-                <div className="mt-1.5 pt-1.5 border-t border-border">
+                <div className="mt-2 pt-2 border-t border-border">
                   {gcalCalendars.filter((c) => !gcalSelectedIds.includes(c.id)).map((cal) => (
-                    <button key={cal.id} className="flex items-center gap-1.5 py-1 px-1.5 w-full border-none bg-transparent cursor-pointer rounded-md transition-colors text-left hover:bg-black/[0.03]" onClick={() => toggleGcalCalendar(cal.id)}>
-                      <span className="w-2 h-2 rounded-full shrink-0 opacity-40" style={{ background: cal.backgroundColor || "#4285f4" }} />
-                      <span className="text-[11px] font-semibold text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap">{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "…" : cal.summary}</span>
+                    <button key={cal.id} className="flex items-center gap-2 py-1.5 px-2 w-full border-none bg-transparent cursor-pointer rounded-lg transition-all duration-200 text-left hover:bg-violet-50/50" onClick={() => toggleGcalCalendar(cal.id)}>
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0 opacity-40" style={{ background: cal.backgroundColor || "#4285f4" }} />
+                      <span className="text-[11px] font-semibold text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap">{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "..." : cal.summary}</span>
                       <span className="text-sm font-black text-violet-600 ml-auto">
                         <Plus className="size-3.5" />
                       </span>
@@ -729,12 +762,13 @@ export default function MonPlanning() {
           )}
         </Card>
 
-        <Card className={`flex-1 min-w-0 rounded-2xl border-border p-4.5 shadow-[0_4px_16px_rgba(124,58,237,0.04)] overflow-hidden ${loaded ? "animate-[fade-up_300ms_ease_0.08s_both]" : "opacity-0"}`}>
+        {/* ─── Main Calendar ─── */}
+        <Card className={`flex-1 min-w-0 rounded-2xl border-border/60 p-5 overflow-hidden ${loaded ? "animate-[fade-up_300ms_ease_0.08s_both]" : "opacity-0"}`} style={{ boxShadow: "0 8px 30px rgba(124,58,237,0.06)" }}>
 
           {/* VUE MOIS */}
           {view === "month" && (
-            <div className="grid grid-cols-7 gap-0.5">
-              {JOURS_HEAD.map((j) => <div key={j} className="text-center text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground py-2">{j}</div>)}
+            <div className="grid grid-cols-7 gap-1">
+              {JOURS_HEAD.map((j) => <div key={j} className="text-center text-[10px] font-extrabold uppercase tracking-[0.15em] text-muted-foreground py-3">{j}</div>)}
               {calDays.map((d, i) => {
                 const key = toYMD(d); const isMonth = d.getMonth() === month; const isToday2 = key === today;
                 const events = calEvents[key] || []; const isSelected = selectedDate && toYMD(selectedDate) === key;
@@ -742,18 +776,18 @@ export default function MonPlanning() {
                   <div
                     key={i}
                     className={[
-                      "bg-card min-h-[92px] p-1.5 cursor-pointer transition-all duration-100 flex flex-col gap-0.5 rounded-[10px] border-[1.5px] border-transparent",
-                      "hover:border-violet-500/20 hover:bg-violet-500/[0.02] hover:shadow-[0_2px_8px_rgba(124,58,237,0.06)] hover:-translate-y-px",
-                      isToday2 && "!bg-violet-500/[0.04] !border-violet-500/20 animate-[pulse-ring_2.5s_ease-in-out_infinite]",
-                      !isMonth && "opacity-[0.12] pointer-events-none",
-                      isSelected && "!bg-violet-500/5 !border-violet-600 !shadow-[0_0_0_2px_rgba(124,58,237,0.1)]",
+                      "bg-card min-h-[100px] p-2 cursor-pointer transition-all duration-200 flex flex-col gap-0.5 rounded-xl border border-transparent",
+                      "hover:bg-violet-50/50 hover:border-violet-200/40 hover:shadow-sm hover:-translate-y-0.5",
+                      isToday2 && "!bg-violet-50/80 !border-violet-200/50 animate-[pulse-ring_2.5s_ease-in-out_infinite]",
+                      !isMonth && "opacity-[0.10] pointer-events-none",
+                      isSelected && "!bg-violet-50 !border-violet-400 !ring-2 !ring-violet-400/20 !shadow-md",
                     ].filter(Boolean).join(" ")}
                     onClick={() => isMonth && handleDayClick(d)}
                     role={isMonth ? "button" : undefined}
                     tabIndex={isMonth ? 0 : undefined}
                     onKeyDown={(e) => { if (isMonth && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleDayClick(d); } }}
                   >
-                    <span className={`text-xs font-extrabold text-foreground leading-none mb-0.5 ${isToday2 ? "bg-gradient-to-br from-violet-600 to-purple-500 text-white rounded-full w-6 h-6 inline-flex items-center justify-center text-[11px]" : ""}`}>
+                    <span className={`text-xs font-extrabold leading-none mb-1 ${isToday2 ? "text-white rounded-full w-7 h-7 inline-flex items-center justify-center text-[11px] font-bold shadow-md" : "text-foreground"}`} style={isToday2 ? { background: "linear-gradient(135deg, #7c3aed, #a855f7)", boxShadow: "0 3px 10px rgba(124,58,237,0.3)" } : {}}>
                       {d.getDate()}
                     </span>
                     <div className="flex flex-col gap-0.5 flex-1 overflow-hidden">{renderMonthCell(events)}</div>
@@ -767,7 +801,7 @@ export default function MonPlanning() {
           {view === "week" && (
             <div className="flex flex-col">
               {/* All-day row */}
-              <div className="grid gap-0.5 border-b border-border pb-1.5 mb-1" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+              <div className="grid gap-0.5 border-b border-border/50 pb-2 mb-1.5" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
                 <div className="w-12 shrink-0" />
                 {weekDays.map((d, i) => {
                   const key = toYMD(d); const events = calEvents[key] || [];
@@ -780,12 +814,12 @@ export default function MonPlanning() {
                         return (
                           <div
                             key={j}
-                            className="text-[10px] font-bold py-0.5 px-2 rounded-[5px] text-white whitespace-nowrap overflow-hidden text-ellipsis shadow-sm border-l-[3px] cursor-pointer transition-all hover:brightness-90"
-                            style={{ backgroundColor: `color-mix(in srgb, ${c} 80%, white)`, borderLeftColor: c }}
+                            className="text-[10px] font-bold py-0.5 px-2 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis border-l-[3px] cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.02]"
+                            style={{ backgroundColor: `color-mix(in srgb, ${c} 12%, white)`, borderLeftColor: c, color: c }}
                             title={label}
                             onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}
                           >
-                            {label.length > 16 ? label.slice(0, 16) + "…" : label}
+                            {label.length > 16 ? label.slice(0, 16) + "..." : label}
                           </div>
                         );
                       })}
@@ -795,20 +829,20 @@ export default function MonPlanning() {
                 })}
               </div>
               {/* Header */}
-              <div className="grid gap-px border-b border-border" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+              <div className="grid gap-px border-b border-border/50" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
                 <div className="w-12 shrink-0" />
                 {weekDays.map((d, i) => {
                   const key = toYMD(d); const isToday2 = key === today; const isSel = selectedDate && toYMD(selectedDate) === key;
                   return (
                     <div
                       key={i}
-                      className={`text-center py-1.5 px-0.5 cursor-pointer transition-colors ${isToday2 ? "bg-violet-500/[0.03]" : ""} ${isSel ? "bg-violet-500/5" : ""} hover:bg-violet-500/[0.02]`}
+                      className={`text-center py-2 px-0.5 cursor-pointer rounded-lg transition-all duration-200 ${isToday2 ? "bg-violet-50/80" : ""} ${isSel ? "bg-violet-50" : ""} hover:bg-violet-50/50`}
                       onClick={() => handleDayClick(d)}
                       role="button"
                       tabIndex={0}
                     >
-                      <span className="block text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground">{JOURS_HEAD[i]}</span>
-                      <span className={`inline-flex items-center justify-center text-base font-black text-foreground w-7 h-7 ${isToday2 ? "bg-violet-600 text-white rounded-full text-[13px]" : ""}`}>
+                      <span className="block text-[9px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground mb-0.5">{JOURS_HEAD[i]}</span>
+                      <span className={`inline-flex items-center justify-center text-base font-black w-8 h-8 rounded-full transition-all duration-200 ${isToday2 ? "text-white text-[13px] shadow-md" : "text-foreground"}`} style={isToday2 ? { background: "linear-gradient(135deg, #7c3aed, #a855f7)", boxShadow: "0 3px 10px rgba(124,58,237,0.3)" } : {}}>
                         {d.getDate()}
                       </span>
                     </div>
@@ -819,8 +853,8 @@ export default function MonPlanning() {
               <div className="grid max-h-[560px] overflow-y-auto" style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin" }} ref={weekGridRef}>
                 <div className="flex flex-col">
                   {hoursWeek.map((h) => (
-                    <div key={h} className="flex items-start justify-end pr-1.5" style={{ height: `${slotHeight}px` }}>
-                      <span className="text-[9px] font-bold text-muted-foreground -translate-y-1 tabular-nums">{String(h).padStart(2, "0")}:00</span>
+                    <div key={h} className="flex items-start justify-end pr-2" style={{ height: `${slotHeight}px` }}>
+                      <span className="text-[10px] font-semibold text-muted-foreground -translate-y-1.5 tabular-nums">{String(h).padStart(2, "0")}:00</span>
                     </div>
                   ))}
                 </div>
@@ -852,11 +886,11 @@ export default function MonPlanning() {
                     return (
                       <div
                         key={i}
-                        className={`relative border-l border-black/[0.04] cursor-pointer ${isToday2 ? "bg-violet-500/[0.02]" : ""} hover:bg-violet-500/[0.01]`}
+                        className={`relative border-l border-border/20 cursor-pointer transition-colors duration-200 ${isToday2 ? "bg-violet-50/30" : ""} hover:bg-violet-50/20`}
                         onClick={() => handleDayClick(d)}
                       >
                         {hoursWeek.map((h) => (
-                          <div key={h} className="border-b border-black/[0.03] relative cursor-crosshair" style={{ height: `${slotHeight}px` }} />
+                          <div key={h} className="border-b border-dashed border-border/50 relative cursor-crosshair" style={{ height: `${slotHeight}px` }} />
                         ))}
                         {laid.map((ev, j) => {
                           const top = ((ev.startHour - HOUR_START_WEEK) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100;
@@ -869,11 +903,14 @@ export default function MonPlanning() {
                           return (
                             <div
                               key={j}
-                              className="absolute rounded-md px-2 py-1.5 overflow-hidden z-[1] cursor-pointer flex flex-col gap-px text-white border-l-[3px] backdrop-blur-[4px] shadow-sm transition-all duration-150 hover:shadow-lg hover:z-10 hover:scale-[1.02] min-w-0"
+                              className="absolute rounded-xl px-2 py-1.5 overflow-hidden z-[1] cursor-pointer flex flex-col gap-px border-l-4 shadow-sm transition-all duration-200 hover:shadow-lg hover:z-10 hover:scale-[1.02] min-w-0"
                               style={{
                                 top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`,
-                                backgroundColor: `color-mix(in srgb, ${ev.color} 85%, white)`,
+                                backgroundColor: `color-mix(in srgb, ${ev.color} 15%, white)`,
                                 borderLeftColor: ev.color,
+                                backdropFilter: "blur(8px)",
+                                WebkitBackdropFilter: "blur(8px)",
+                                color: ev.color,
                               }}
                               title={tooltip}
                               onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}
@@ -881,7 +918,7 @@ export default function MonPlanning() {
                               <span className="text-[11px] font-bold leading-snug whitespace-nowrap overflow-hidden text-ellipsis flex items-center">
                                 {ev.tag?.shape && <EventShape shape={ev.tag.shape} />} {ev.title}
                               </span>
-                              <span className="text-[9px] font-semibold opacity-80">{ttStart} {ev.calendarName ? `· ${ev.calendarName}` : ""}</span>
+                              <span className="text-[9px] font-semibold opacity-70">{ttStart} {ev.calendarName ? `· ${ev.calendarName}` : ""}</span>
                             </div>
                           );
                         })}
@@ -901,15 +938,15 @@ export default function MonPlanning() {
             return (
               <div className="flex flex-col">
                 {allDay.length > 0 && (
-                  <div className="py-1.5 border-b border-border mb-1 flex flex-wrap gap-1">
+                  <div className="py-2 border-b border-border/50 mb-1.5 flex flex-wrap gap-1.5">
                     {allDay.map((ev, j) => {
                       const c = ev.type === "absence" ? (ev.absType?.color || "#888") : ev.color || "#4285f4";
                       const label = ev.type === "projet" || ev.type === "mission" ? `${ev.isMine ? "👤 " : "🎬 "}${ev.title} · ${ev.branche}` : ev.type === "absence" ? `${ev.absType?.icon} ${ev.absType?.label}` : ev.title;
                       return (
                         <div
                           key={j}
-                          className="text-[11px] font-bold py-1.5 px-2.5 rounded-md text-white border-l-[3px] shadow-sm"
-                          style={{ backgroundColor: `color-mix(in srgb, ${c} 80%, white)`, borderLeftColor: c }}
+                          className="text-[11px] font-bold py-1.5 px-3 rounded-xl border-l-4 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
+                          style={{ backgroundColor: `color-mix(in srgb, ${c} 12%, white)`, borderLeftColor: c, color: c }}
                         >
                           {label}
                         </div>
@@ -926,16 +963,16 @@ export default function MonPlanning() {
                 >
                   <div className="flex flex-col">
                     {hoursDay.map((h) => (
-                      <div key={h} className="flex items-start justify-end pr-1.5" style={{ height: `${slotHeight}px` }}>
-                        <span className="text-[9px] font-bold text-muted-foreground -translate-y-1 tabular-nums">{String(h).padStart(2, "0")}:00</span>
+                      <div key={h} className="flex items-start justify-end pr-2" style={{ height: `${slotHeight}px` }}>
+                        <span className="text-[10px] font-semibold text-muted-foreground -translate-y-1.5 tabular-nums">{String(h).padStart(2, "0")}:00</span>
                       </div>
                     ))}
                   </div>
-                  <div className="relative border-l border-black/[0.04]">
+                  <div className="relative border-l border-border/20">
                     {hoursDay.map((h) => (
                       <div
                         key={h}
-                        className="border-b border-black/[0.03] relative cursor-crosshair"
+                        className="border-b border-dashed border-border/50 relative cursor-crosshair"
                         style={{ height: `${slotHeight}px` }}
                         onMouseDown={(e) => { e.preventDefault(); handleGridMouseDown(calDate, h); }}
                         onMouseMove={() => handleGridMouseMove(h + 0.5)}
@@ -972,7 +1009,7 @@ export default function MonPlanning() {
                           {dragPreview && (() => {
                             const dTop = ((dragStart.hour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
                             const dH = Math.max(1, ((dragEnd.hour - dragStart.hour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
-                            return <div className="absolute left-1 right-1 bg-violet-500/12 border-2 border-dashed border-violet-500/40 rounded-md z-[5] pointer-events-none" style={{ top: `${dTop}%`, height: `${dH}%` }} />;
+                            return <div className="absolute left-1 right-1 bg-violet-100 border-2 border-dashed border-violet-400/50 rounded-xl z-[5] pointer-events-none" style={{ top: `${dTop}%`, height: `${dH}%` }} />;
                           })()}
                           {laid.map((ev, j) => {
                             const top = ((ev.startHour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
@@ -984,11 +1021,14 @@ export default function MonPlanning() {
                             return (
                               <div
                                 key={j}
-                                className="absolute rounded-lg px-3 py-2 overflow-hidden z-[1] cursor-pointer flex flex-col gap-0.5 text-white border-l-4 backdrop-blur-[4px] shadow-md transition-all duration-150 hover:shadow-xl hover:z-10 hover:scale-[1.01]"
+                                className="absolute rounded-xl px-3 py-2 overflow-hidden z-[1] cursor-pointer flex flex-col gap-0.5 border-l-4 shadow-md transition-all duration-200 hover:shadow-xl hover:z-10 hover:scale-[1.01]"
                                 style={{
                                   top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`,
-                                  backgroundColor: `color-mix(in srgb, ${ev.color} 85%, white)`,
+                                  backgroundColor: `color-mix(in srgb, ${ev.color} 15%, white)`,
                                   borderLeftColor: ev.color,
+                                  backdropFilter: "blur(8px)",
+                                  WebkitBackdropFilter: "blur(8px)",
+                                  color: ev.color,
                                 }}
                                 title={`${ev.title}\n${ttS} — ${ttE}${ev.calendarName ? `\n${ev.calendarName}` : ""}${ev.tag?.label ? ` · ${ev.tag.label}` : ""}`}
                                 onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}
@@ -996,8 +1036,8 @@ export default function MonPlanning() {
                                 <span className="text-[13px] font-extrabold leading-snug whitespace-nowrap overflow-hidden text-ellipsis flex items-center">
                                   {ev.tag?.shape && <EventShape shape={ev.tag.shape} />} {ev.title}
                                 </span>
-                                <span className="text-[11px] font-bold opacity-85">{ttS} — {ttE}</span>
-                                {ev.calendarName && <span className="text-[10px] font-semibold opacity-60">{ev.calendarName} {ev.tag ? `· ${ev.tag.label}` : ""}</span>}
+                                <span className="text-[11px] font-bold opacity-75">{ttS} — {ttE}</span>
+                                {ev.calendarName && <span className="text-[10px] font-semibold opacity-55">{ev.calendarName} {ev.tag ? `· ${ev.tag.label}` : ""}</span>}
                               </div>
                             );
                           })}
@@ -1011,36 +1051,37 @@ export default function MonPlanning() {
           })()}
         </Card>
 
-        {/* ═══ PANEL ═══ */}
+        {/* ═══ SIDE PANEL ═══ */}
         {selectedDate && (() => {
           const dateStr = toYMD(selectedDate); const isFuture = dateStr >= today;
           return (
-            <Card className="w-72 shrink-0 rounded-2xl border-border p-5 shadow-[0_4px_16px_rgba(124,58,237,0.05)] animate-[slide-in-right_200ms_ease] sticky top-4 max-[900px]:w-full max-[900px]:static">
+            <Card className="w-80 shrink-0 rounded-2xl border-border/60 p-5 animate-[slide-in-right_200ms_ease] sticky top-4 max-[900px]:w-full max-[900px]:static" style={{ boxShadow: "0 8px 30px rgba(124,58,237,0.06)" }}>
               {/* Header */}
-              <div className="flex justify-between items-start mb-3">
+              <div className="flex justify-between items-start mb-4">
                 <div>
-                  <div className="text-[10px] font-extrabold uppercase tracking-wide text-violet-600">{dayOfWeekFr(selectedDate)}</div>
-                  <div className="text-xl font-black text-foreground leading-none">{selectedDate.getDate()} {MOIS[selectedDate.getMonth()]}</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-violet-500 mb-0.5">{dayOfWeekFr(selectedDate)}</div>
+                  <div className="text-3xl font-black text-foreground leading-none tracking-tight">{selectedDate.getDate()} <span className="text-lg font-bold text-muted-foreground">{MOIS[selectedDate.getMonth()]}</span></div>
                 </div>
-                <button className="bg-transparent border-none text-base text-muted-foreground cursor-pointer p-0.5 hover:text-foreground" onClick={() => setSelectedDate(null)}>
+                <Button variant="ghost" size="icon-sm" onClick={() => setSelectedDate(null)} className="rounded-lg text-muted-foreground hover:text-foreground">
                   <X className="size-4" />
-                </button>
+                </Button>
               </div>
 
               {/* Projets */}
               {selectedEvents.projs.length > 0 && (
-                <div className="mb-3">
-                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">🎬 Projets</h3>
+                <div className="mb-4">
+                  <Separator className="mb-3" />
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-1.5">🎬 Projets</h3>
                   {selectedEvents.projs.map((p, j) => (
                     <div
                       key={j}
-                      className="py-2 px-2.5 rounded-lg border-l-[3px] mb-1 cursor-pointer transition-all hover:translate-x-0.5"
-                      style={{ background: `color-mix(in srgb, ${p.color} 5%, white)`, borderLeftColor: p.color }}
+                      className="py-2.5 px-3 rounded-xl border-l-4 mb-1.5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                      style={{ background: `color-mix(in srgb, ${p.color} 6%, white)`, borderLeftColor: p.color }}
                       onClick={() => handleEventClick(null, p)}
                     >
                       <div className="text-xs font-extrabold text-foreground">{p.title}</div>
-                      <div className="text-[10px] text-muted-foreground">{p.branche} · {p.statut}</div>
-                      {p.id && <a href={`/projets/${p.id}`} className="block text-[10px] font-bold text-violet-600 no-underline mt-1 transition-opacity hover:opacity-70 flex items-center gap-1" onClick={(e) => e.stopPropagation()}><ExternalLink className="size-3" /> Voir le projet</a>}
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{p.branche} · {p.statut}</div>
+                      {p.id && <a href={`/projets/${p.id}`} className="flex items-center gap-1 text-[10px] font-bold text-violet-600 no-underline mt-1.5 transition-opacity hover:opacity-70" onClick={(e) => e.stopPropagation()}><ExternalLink className="size-3" /> Voir le projet</a>}
                     </div>
                   ))}
                 </div>
@@ -1048,17 +1089,18 @@ export default function MonPlanning() {
 
               {/* Missions */}
               {selectedEvents.missions.length > 0 && (
-                <div className="mb-3">
-                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">👤 Mes missions</h3>
+                <div className="mb-4">
+                  <Separator className="mb-3" />
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-1.5">👤 Mes missions</h3>
                   {selectedEvents.missions.map((p, j) => (
                     <div
                       key={j}
-                      className="py-2 px-2.5 rounded-lg border-l-[3px] mb-1 cursor-pointer transition-all hover:translate-x-0.5"
-                      style={{ background: `color-mix(in srgb, ${p.color} 5%, white)`, borderLeftColor: p.color }}
+                      className="py-2.5 px-3 rounded-xl border-l-4 mb-1.5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                      style={{ background: `color-mix(in srgb, ${p.color} 6%, white)`, borderLeftColor: p.color }}
                       onClick={() => handleEventClick(null, p)}
                     >
                       <div className="text-xs font-extrabold text-foreground">{p.title}</div>
-                      <div className="text-[10px] text-muted-foreground">{p.branche} · {p.statut}</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{p.branche} · {p.statut}</div>
                     </div>
                   ))}
                 </div>
@@ -1066,26 +1108,27 @@ export default function MonPlanning() {
 
               {/* Absences */}
               {selectedEvents.abs.length > 0 && (
-                <div className="mb-3">
-                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">🌴 Absences</h3>
+                <div className="mb-4">
+                  <Separator className="mb-3" />
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-1.5">🌴 Absences</h3>
                   {selectedEvents.abs.map((a, j) => {
                     const s = STATUT_LABELS[a.statut] || { label: a.statut, color: "#6b7280", bg: "transparent" };
                     return (
                       <div
                         key={j}
-                        className="py-2 px-2.5 rounded-lg border-l-[3px] mb-1 cursor-pointer transition-all hover:translate-x-0.5"
-                        style={{ background: `color-mix(in srgb, ${a.absType?.color || "#888"} 5%, white)`, borderLeftColor: a.absType?.color || "#888" }}
+                        className="py-2.5 px-3 rounded-xl border-l-4 mb-1.5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                        style={{ background: `color-mix(in srgb, ${a.absType?.color || "#888"} 6%, white)`, borderLeftColor: a.absType?.color || "#888" }}
                         onClick={() => handleEventClick(null, a)}
                       >
                         <div className="text-xs font-extrabold text-foreground">{a.absType?.icon} {a.absType?.label}{a.employeeNom ? ` — ${a.employeeNom}` : ""}</div>
                         <Badge
                           variant="outline"
-                          className="text-[9px] font-extrabold mt-0.5 h-auto py-0.5 px-1.5"
+                          className="text-[9px] font-extrabold mt-1 h-auto py-0.5 px-2 rounded-full"
                           style={{ background: s.bg, color: s.color, borderColor: "transparent" }}
                         >
                           {s.label}
                         </Badge>
-                        {a.employeeProfileId && <a href={`/rh/employe/${a.employeeProfileId}`} className="block text-[10px] font-bold text-violet-600 no-underline mt-1 transition-opacity hover:opacity-70 flex items-center gap-1" onClick={(e) => e.stopPropagation()}><ExternalLink className="size-3" /> Voir la fiche</a>}
+                        {a.employeeProfileId && <a href={`/rh/employe/${a.employeeProfileId}`} className="flex items-center gap-1 text-[10px] font-bold text-violet-600 no-underline mt-1.5 transition-opacity hover:opacity-70" onClick={(e) => e.stopPropagation()}><ExternalLink className="size-3" /> Voir la fiche</a>}
                       </div>
                     );
                   })}
@@ -1094,19 +1137,20 @@ export default function MonPlanning() {
 
               {/* Agenda */}
               {Object.keys(selectedEvents.gcalByBranch).length > 0 && (
-                <div className="mb-3">
-                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">📅 Agenda</h3>
+                <div className="mb-4">
+                  <Separator className="mb-3" />
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-1.5">📅 Agenda</h3>
                   {Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (
-                    <div key={branch} className="mb-2">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: data.color }} />
+                    <div key={branch} className="mb-2.5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full" style={{ background: data.color }} />
                         <span className="text-[10px] font-extrabold text-foreground uppercase tracking-tight">{branch}</span>
-                        <span className="text-[8px] font-extrabold opacity-40">{data.events.length}</span>
+                        <Badge variant="outline" className="text-[8px] font-extrabold h-4 px-1.5 rounded-full bg-transparent">{data.events.length}</Badge>
                       </div>
                       {data.events.map((g, j) => (
                         <div
                           key={j}
-                          className="text-[11px] text-muted-foreground py-1 pl-3.5 border-l border-border ml-0.5 font-semibold flex items-center gap-1 cursor-pointer rounded transition-all hover:bg-violet-500/[0.04] hover:text-foreground hover:pl-4"
+                          className="text-[11px] text-muted-foreground py-1.5 pl-4 border-l-2 border-border ml-1 font-semibold flex items-center gap-1 cursor-pointer rounded-r-lg transition-all duration-200 hover:bg-violet-50/50 hover:text-foreground hover:pl-5 hover:border-violet-300"
                           onClick={() => handleEventClick(null, g)}
                         >
                           <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{g.title}</span>
@@ -1119,31 +1163,37 @@ export default function MonPlanning() {
 
               {/* Empty state */}
               {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && Object.keys(selectedEvents.gcalByBranch).length === 0 && (
-                <div className="text-xs text-muted-foreground text-center py-4 italic">Rien de prévu</div>
+                <div className="text-sm text-muted-foreground text-center py-8 font-medium">
+                  <span className="text-2xl block mb-2">📭</span>
+                  Rien de prevu
+                </div>
               )}
 
               {/* Add section */}
               {isFuture && (
-                <div className="border-t border-border pt-2.5 mt-2">
-                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-1.5 uppercase tracking-wide">Ajouter</h3>
-                  <button
-                    className="w-full py-2 px-2.5 border border-border rounded-lg bg-card text-foreground font-bold text-[11px] cursor-pointer text-left mb-1 transition-all hover:border-emerald-500 hover:text-emerald-500 hover:bg-emerald-500/[0.03]"
-                    onClick={() => openAbsenceForm(dateStr)}
-                  >
-                    🌴 Absence
-                  </button>
-                  <button
-                    className="w-full py-2 px-2.5 border border-border rounded-lg bg-card text-foreground font-bold text-[11px] cursor-pointer text-left mb-1 transition-all hover:border-violet-600 hover:text-violet-600 hover:bg-violet-600/[0.03]"
-                    onClick={() => openProjForm(dateStr)}
-                  >
-                    🎬 Projet
-                  </button>
-                  <button
-                    className="w-full py-2 px-2.5 border border-border rounded-lg bg-card text-foreground font-bold text-[11px] cursor-pointer text-left mb-1 transition-all hover:border-amber-500 hover:text-amber-500 hover:bg-amber-500/[0.03]"
-                    onClick={() => openNoteForm(dateStr)}
-                  >
-                    📅 Événement
-                  </button>
+                <div className="pt-3 mt-3">
+                  <Separator className="mb-3" />
+                  <h3 className="text-[10px] font-extrabold text-muted-foreground mb-2 uppercase tracking-wider">Ajouter</h3>
+                  <div className="flex gap-1.5">
+                    <button
+                      className="flex-1 py-2.5 px-2 border border-border rounded-xl bg-card text-foreground font-bold text-[11px] cursor-pointer text-center transition-all duration-200 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50/50 hover:-translate-y-0.5 hover:shadow-sm"
+                      onClick={() => openAbsenceForm(dateStr)}
+                    >
+                      🌴<br /><span className="text-[10px]">Absence</span>
+                    </button>
+                    <button
+                      className="flex-1 py-2.5 px-2 border border-border rounded-xl bg-card text-foreground font-bold text-[11px] cursor-pointer text-center transition-all duration-200 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50/50 hover:-translate-y-0.5 hover:shadow-sm"
+                      onClick={() => openProjForm(dateStr)}
+                    >
+                      🎬<br /><span className="text-[10px]">Projet</span>
+                    </button>
+                    <button
+                      className="flex-1 py-2.5 px-2 border border-border rounded-xl bg-card text-foreground font-bold text-[11px] cursor-pointer text-center transition-all duration-200 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50/50 hover:-translate-y-0.5 hover:shadow-sm"
+                      onClick={() => openNoteForm(dateStr)}
+                    >
+                      📅<br /><span className="text-[10px]">Event</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </Card>
@@ -1153,42 +1203,42 @@ export default function MonPlanning() {
 
       {/* ═══ MES ABSENCES ═══ */}
       {absences.length > 0 && (
-        <section className="mb-4 animate-[fade-up_300ms_ease_0.25s_both]">
-          <h2 className="text-sm font-black text-foreground mb-2">Mes absences</h2>
-          <div className="flex flex-col gap-1">
-            {absences.map((a) => {
+        <section className="mb-5 animate-[fade-up_300ms_ease_0.25s_both]">
+          <h2 className="text-sm font-black mb-3 bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-500 bg-clip-text text-transparent tracking-tight">Mes absences</h2>
+          <div className="flex flex-col gap-1.5">
+            {absences.map((a, idx) => {
               const t = ABSENCE_TYPES.find((t) => t.value === a.type); const s = STATUT_LABELS[a.statut] || { label: a.statut, color: "#6b7280", bg: "transparent" };
               const canEdit = a.statut === "en_attente" && a.dateDebut >= today; const jours = countWorkDays(a.dateDebut, a.dateFin, a.demiJournee);
               return (
                 <Card
                   key={String(a._id)}
-                  className="flex-row items-center gap-2.5 py-2.5 px-3.5 rounded-xl border-l-[3px] transition-all hover:shadow-sm"
-                  style={{ borderLeftColor: t?.color || "#888" }}
+                  className="flex-row items-center gap-3 py-3 px-4 rounded-xl border-l-4 transition-all duration-200 hover:shadow-sm hover:-translate-y-0.5"
+                  style={{ borderLeftColor: t?.color || "#888", animationDelay: `${idx * 50}ms` }}
                 >
-                  <span className="text-xl">{t?.icon || "📋"}</span>
+                  <span className="text-2xl">{t?.icon || "📋"}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[11px] font-extrabold" style={{ color: t?.color }}>{t?.label}</span>
                       <Badge
                         variant="outline"
-                        className="text-[8px] font-extrabold h-auto py-0.5 px-1.5"
+                        className="text-[8px] font-extrabold h-auto py-0.5 px-2 rounded-full"
                         style={{ background: s.bg, color: s.color, borderColor: "transparent" }}
                       >
                         {s.label}
                       </Badge>
                       <span className="text-[10px] font-semibold text-muted-foreground">{a.dateDebut === a.dateFin ? a.dateDebut : `${a.dateDebut} → ${a.dateFin}`}</span>
-                      <span className="text-[8px] font-extrabold opacity-40">{jours}j</span>
+                      <Badge variant="outline" className="text-[8px] font-extrabold h-4 px-1.5 rounded-full bg-muted/50 text-muted-foreground border-transparent">{jours}j</Badge>
                     </div>
-                    {a.commentaire && <p className="text-[9px] text-muted-foreground italic mt-0.5 mb-0">{a.commentaire}</p>}
-                    {a.motifRefus && <p className="text-[9px] text-rose-700 mt-0.5 mb-0">Motif : {a.motifRefus}</p>}
+                    {a.commentaire && <p className="text-[9px] text-muted-foreground italic mt-1 mb-0">{a.commentaire}</p>}
+                    {a.motifRefus && <p className="text-[9px] text-rose-700 mt-1 mb-0 font-medium">Motif : {a.motifRefus}</p>}
                   </div>
                   {canEdit && (
                     <div className="flex gap-1">
-                      <Button variant="outline" size="xs" onClick={() => openEdit(a)} className="text-[9px] font-bold hover:border-violet-600 hover:text-violet-600">
-                        <Pencil className="size-3" /> Modifier
+                      <Button variant="ghost" size="icon-sm" onClick={() => openEdit(a)} className="text-muted-foreground hover:text-violet-600 hover:bg-violet-50 rounded-lg" title="Modifier">
+                        <Pencil className="size-3.5" />
                       </Button>
-                      <Button variant="destructive" size="xs" onClick={() => handleDelete(String(a._id))} className="text-[9px] font-bold">
-                        <Trash2 className="size-3" /> Supprimer
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(String(a._id))} className="text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded-lg" title="Supprimer">
+                        <Trash2 className="size-3.5" />
                       </Button>
                     </div>
                   )}
@@ -1200,7 +1250,7 @@ export default function MonPlanning() {
       )}
 
       {/* ═══ MODALE — EventForm universel ═══ */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalType === "choose" ? "Ajouter" : modalType === "absence" ? (editId ? "Modifier" : "Absence") : modalType === "projet" ? "Projet" : modalType === "editGcal" ? "Modifier" : "Événement"} size="sm">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalType === "choose" ? "Ajouter" : modalType === "absence" ? (editId ? "Modifier" : "Absence") : modalType === "projet" ? "Projet" : modalType === "editGcal" ? "Modifier" : "Evenement"} size="sm">
         <EventForm
           key={`${modalType}-${editId || "new"}`}
           mode={modalType === "note" ? "event" : modalType || "choose"}
@@ -1263,6 +1313,14 @@ export default function MonPlanning() {
           soldeReste={solde.reste}
         />
       </Modal>
+
+      {/* Shimmer keyframe for vibe bar */}
+      <style jsx>{`
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+      `}</style>
     </div>
   );
 }
