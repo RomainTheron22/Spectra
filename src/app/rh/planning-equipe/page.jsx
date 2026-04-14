@@ -9,7 +9,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import {
   Users, UserCheck, UserX, Briefcase, UserPlus, ChevronDown, ChevronLeft, ChevronRight,
   CalendarDays, LayoutGrid, Layers, AlertTriangle, ExternalLink, ArrowRight, Calendar, Zap, Eye, X,
+  DoorOpen, Plus, Clock,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 const JOURS = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
@@ -68,7 +71,25 @@ function generateMockData() {
     { _id: "a9", employeeProfileId: "m2", type: "tt", dateDebut: daysFromNow(3), dateFin: daysFromNow(3), statut: "valide" },
     { _id: "a10", employeeProfileId: "m10", type: "conge", dateDebut: daysFromNow(6), dateFin: daysFromNow(8), statut: "en_attente" },
   ];
-  return { profiles, contrats, absences };
+  const salles = [
+    { _id: "s1", nom: "Studio", etage: "Extérieur", type: "studio", capacite: 15, couleur: "#f43f5e", isActive: true },
+    { _id: "s2", nom: "Salle Creative Gen", etage: "RDC", type: "reunion", capacite: 10, couleur: "#e11d48", isActive: true },
+    { _id: "s3", nom: "Fab Lab", etage: "Sous-sol", type: "atelier", capacite: 8, couleur: "#ca8a04", isActive: true },
+    { _id: "s4", nom: "Bureau Fantasmagorie", etage: "RDC", type: "bureau", capacite: 6, couleur: "#7c3aed", isActive: true },
+    { _id: "s5", nom: "Atelier jaune", etage: "Extérieur", type: "atelier", capacite: 10, couleur: "#f59e0b", isActive: true },
+    { _id: "s6", nom: "Bureau de production", etage: "Étage", type: "bureau", capacite: 4, couleur: "#6366f1", isActive: true },
+  ];
+  const reservations = [
+    { _id: "r1", salleId: "s1", salleNom: "Studio", date: daysFromNow(0), heureDebut: "09:00", heureFin: "17:00", titre: "Tournage Clip Artiste X", type: "reunion", organisateurNom: "Thomas B." },
+    { _id: "r2", salleId: "s2", salleNom: "Salle Creative Gen", date: daysFromNow(0), heureDebut: "10:00", heureFin: "12:00", titre: "Point hebdo équipe", type: "reunion", organisateurNom: "Marie D." },
+    { _id: "r3", salleId: "s3", salleNom: "Fab Lab", date: daysFromNow(0), heureDebut: "08:00", heureFin: "13:00", titre: "Prototypage décor", type: "autre", organisateurNom: "Nathan L." },
+    { _id: "r4", salleId: "s2", salleNom: "Salle Creative Gen", date: daysFromNow(0), heureDebut: "14:00", heureFin: "16:00", titre: "RDV client Festival", type: "rdv", organisateurNom: "Alice P." },
+    { _id: "r5", salleId: "s1", salleNom: "Studio", date: daysFromNow(1), heureDebut: "08:00", heureFin: "18:00", titre: "Tournage Festival Lumières", type: "reunion", organisateurNom: "Thomas B." },
+    { _id: "r6", salleId: "s5", salleNom: "Atelier jaune", date: daysFromNow(0), heureDebut: "09:00", heureFin: "17:00", titre: "Construction décor spectacle", type: "autre", organisateurNom: "Chloé G." },
+    { _id: "r7", salleId: "s4", salleNom: "Bureau Fantasmagorie", date: daysFromNow(0), heureDebut: "14:00", heureFin: "15:00", titre: "Call production", type: "reunion", organisateurNom: "Hugo M." },
+    { _id: "r8", salleId: "s6", salleNom: "Bureau de production", date: daysFromNow(1), heureDebut: "10:00", heureFin: "12:00", titre: "Brief Campagne Été", type: "reunion", organisateurNom: "Léa S." },
+  ];
+  return { profiles, contrats, absences, salles, reservations };
 }
 function getBranchColor(br, db) { if (db?.length) { const f = db.find((b) => b.key === br); if (f) return f.color; } return BRANCH_COLORS_FALLBACK[br] || BRANCH_COLORS_FALLBACK.default; }
 function getWeekNumber(d) { const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); dt.setUTCDate(dt.getUTCDate() + 4 - (dt.getUTCDay() || 7)); return Math.ceil(((dt - new Date(Date.UTC(dt.getUTCFullYear(), 0, 1))) / 86400000 + 1) / 7); }
@@ -91,6 +112,11 @@ export default function PlanningEquipePage() {
   const [focusDay, setFocusDay] = useState(() => toYMD(new Date()));
   const [selectedProject, setSelectedProject] = useState(null);
 
+  // Salles state
+  const [salles, setSalles] = useState([]);
+  const [reservations, setReservations] = useState([]);
+  const [resaForm, setResaForm] = useState(null); // { salleId, salleNom, date, heureDebut, heureFin, titre, type }
+
   const openSheet = useCallback((emp, date = null) => { setSheetEmployee(emp); setSheetDate(date); }, []);
   const closeSheet = useCallback(() => { setSheetEmployee(null); setSheetDate(null); }, []);
 
@@ -111,16 +137,31 @@ export default function PlanningEquipePage() {
         setProfiles(mock.profiles);
         setAbsences(mock.absences);
         setContrats(mock.contrats);
+        setSalles(mock.salles);
+        setReservations(mock.reservations);
       } else {
         setProfiles(realProfiles);
         setAbsences(realAbsences);
         setContrats(realContrats);
+        try { const r = await fetch("/api/salles", { cache: "no-store" }); if (r.ok) { const d = await r.json(); setSalles(d.items || []); } } catch {}
       }
 
       try { const r = await fetch("/api/branches", { cache: "no-store" }); if (r.ok) { const d = await r.json(); setBranches(d.items?.length ? d.items : DEFAULT_BRANCHES); } else setBranches(DEFAULT_BRANCHES); } catch { setBranches(DEFAULT_BRANCHES); }
       setLoading(false);
     })();
   }, []);
+
+  // Fetch reservations when date range changes
+  useEffect(() => {
+    if (viewMode !== "salles") return;
+    const fd = toYMD(calDate);
+    (async () => {
+      try {
+        const r = await fetch(`/api/reservations-salles?date=${fd}`, { cache: "no-store" });
+        if (r.ok) { const d = await r.json(); setReservations(d.items || []); }
+      } catch {}
+    })();
+  }, [calDate, viewMode]);
 
   const days = useMemo(() => {
     const d = new Date(calDate), day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1);
@@ -368,7 +409,7 @@ export default function PlanningEquipePage() {
       {/* ── CONTROLS ── */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex rounded-md border bg-card p-0.5">
-          {[{ key: "branche", icon: Layers, label: "Branche" }, { key: "projet", icon: LayoutGrid, label: "Projet" }, { key: "jour", icon: CalendarDays, label: "Jour" }].map(({ key, icon: Ic, label }) => (
+          {[{ key: "branche", icon: Layers, label: "Branche" }, { key: "projet", icon: LayoutGrid, label: "Projet" }, { key: "jour", icon: CalendarDays, label: "Jour" }, { key: "salles", icon: DoorOpen, label: "Salles" }].map(({ key, icon: Ic, label }) => (
             <button key={key} onClick={() => { setViewMode(key); closeSheet(); }} className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all", viewMode === key ? "bg-accent text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}><Ic className="w-3.5 h-3.5" />{label}</button>
           ))}
         </div>
@@ -798,6 +839,151 @@ export default function PlanningEquipePage() {
                 )}
 
                 {filteredProfiles.length === 0 && <div className="p-8 text-center text-sm text-zinc-400 rounded-lg" style={{ backgroundColor: "#f4f4f5" }}>Aucun membre</div>}
+              </div>
+            );
+          })()}
+
+          {/* VUE: SALLES */}
+          {viewMode === "salles" && (() => {
+            const fd = toYMD(calDate), fDay = calDate;
+            const HOURS = Array.from({ length: 12 }, (_, i) => i + 8); // 8h → 19h
+            const dayResas = reservations.filter((r) => r.date === fd);
+            const activeSalles = salles.filter((s) => s.isActive !== false);
+
+            function getResasForSalle(salleId) {
+              return dayResas.filter((r) => r.salleId === salleId);
+            }
+
+            function openResaForm(salleId, salleNom, hour) {
+              setResaForm({
+                salleId, salleNom, date: fd,
+                heureDebut: `${String(hour).padStart(2, "0")}:00`,
+                heureFin: `${String(hour + 1).padStart(2, "0")}:00`,
+                titre: "", type: "reunion",
+              });
+            }
+
+            async function submitResa() {
+              if (!resaForm || !resaForm.titre.trim()) return;
+              const res = await fetch("/api/reservations-salles", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(resaForm),
+              });
+              const data = await res.json();
+              if (res.ok && data.item) {
+                setReservations((prev) => [...prev, data.item]);
+                setResaForm(null);
+              } else {
+                alert(data.error || "Erreur");
+              }
+            }
+
+            async function deleteResa(resaId) {
+              if (!confirm("Annuler cette réservation ?")) return;
+              const res = await fetch(`/api/reservations-salles/${resaId}`, { method: "DELETE" });
+              if (res.ok) setReservations((prev) => prev.filter((r) => String(r._id) !== resaId));
+            }
+
+            return (
+              <div className="space-y-4">
+                {/* Date header */}
+                <div className="rounded-lg px-5 py-4" style={{ backgroundColor: "#f0f9ff", border: "1px solid #bae6fd" }}>
+                  <div className="text-xl font-bold text-sky-900">{JOURS[fDay.getDay()]} {fDay.getDate()} {MOIS[fDay.getMonth()]} {fDay.getFullYear()}</div>
+                  <p className="text-[13px] text-sky-600 mt-0.5">{activeSalles.length} salles · {dayResas.length} réservation{dayResas.length > 1 ? "s" : ""}</p>
+                </div>
+
+                {activeSalles.length === 0 && (
+                  <div className="p-8 text-center text-sm text-muted-foreground rounded-lg bg-muted">
+                    Aucune salle configurée. <a href="/admin/salles" className="text-sky-600 underline hover:text-sky-700">Ajouter des salles</a>
+                  </div>
+                )}
+
+                {/* Reservation form */}
+                {resaForm && (
+                  <div className="rounded-lg border border-sky-200 bg-sky-50/50 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-sky-800">Réserver — {resaForm.salleNom}</span>
+                      <button onClick={() => setResaForm(null)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                    </div>
+                    <Input value={resaForm.titre} onChange={(e) => setResaForm((f) => ({ ...f, titre: e.target.value }))} placeholder="Titre (ex: Point hebdo, RDV client...)" className="h-8 text-sm" />
+                    <div className="flex gap-2 items-center">
+                      <Input type="time" value={resaForm.heureDebut} onChange={(e) => setResaForm((f) => ({ ...f, heureDebut: e.target.value }))} className="h-8 text-sm w-28" />
+                      <span className="text-xs text-muted-foreground">→</span>
+                      <Input type="time" value={resaForm.heureFin} onChange={(e) => setResaForm((f) => ({ ...f, heureFin: e.target.value }))} className="h-8 text-sm w-28" />
+                      <select value={resaForm.type} onChange={(e) => setResaForm((f) => ({ ...f, type: e.target.value }))}
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs">
+                        <option value="reunion">Réunion interne</option>
+                        <option value="rdv">Rendez-vous</option>
+                        <option value="autre">Autre</option>
+                      </select>
+                      <Button size="sm" onClick={submitResa} disabled={!resaForm.titre.trim()} className="h-8 text-xs">Réserver</Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Salles timeline */}
+                {activeSalles.map((salle) => {
+                  const salleResas = getResasForSalle(String(salle._id));
+                  return (
+                    <div key={String(salle._id)} className="rounded-lg border bg-card overflow-hidden">
+                      {/* Salle header */}
+                      <div className="flex items-center gap-2.5 px-4 py-2.5 border-b bg-muted/30">
+                        <div className="w-2.5 h-8 rounded-full" style={{ background: salle.couleur || "#6b7280" }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-semibold">{salle.nom}</div>
+                          <div className="text-[10px] text-muted-foreground">{salle.etage}{salle.capacite ? ` · ${salle.capacite} pers.` : ""}</div>
+                        </div>
+                        {salleResas.length > 0 && (
+                          <Badge variant="outline" className="text-[10px] bg-sky-50 text-sky-600 border-sky-200">
+                            {salleResas.length} résa
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Hour grid */}
+                      <div className="flex overflow-x-auto">
+                        {HOURS.map((h) => {
+                          const hStr = `${String(h).padStart(2, "0")}:00`;
+                          const hEnd = `${String(h + 1).padStart(2, "0")}:00`;
+                          const resa = salleResas.find((r) => r.heureDebut < hEnd && r.heureFin > hStr);
+                          const isStart = resa && resa.heureDebut >= hStr && resa.heureDebut < hEnd;
+
+                          return (
+                            <div key={h} className={cn(
+                              "flex-1 min-w-[72px] border-r last:border-r-0 relative group",
+                              resa ? "" : "hover:bg-sky-50/50 cursor-pointer"
+                            )}
+                              onClick={() => !resa && openResaForm(String(salle._id), salle.nom, h)}
+                            >
+                              <div className="text-[9px] text-muted-foreground text-center pt-1 font-medium">{h}h</div>
+                              {resa ? (
+                                <div className="px-1 pb-1.5 pt-0.5">
+                                  {isStart ? (
+                                    <div className="rounded px-1.5 py-1 text-[10px] font-medium text-white truncate cursor-pointer hover:opacity-90 transition-opacity"
+                                      style={{ background: salle.couleur || "#0284c7" }}
+                                      onClick={(e) => { e.stopPropagation(); deleteResa(String(resa._id)); }}
+                                      title={`${resa.titre} (${resa.heureDebut}→${resa.heureFin}) — ${resa.organisateurNom || "?"}\nCliquer pour annuler`}
+                                    >
+                                      {resa.titre || "Réservé"}
+                                      <div className="text-[8px] opacity-80">{resa.heureDebut}→{resa.heureFin}</div>
+                                    </div>
+                                  ) : (
+                                    <div className="rounded px-1 py-1 h-[30px]" style={{ background: `${salle.couleur || "#0284c7"}20` }} />
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="h-[38px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Plus className="w-3 h-3 text-sky-400" />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             );
           })()}
