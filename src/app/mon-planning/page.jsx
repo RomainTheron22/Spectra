@@ -608,73 +608,6 @@ export default function MonPlanning() {
         </div>
       </div>
 
-      {/* ═══ CALENDAR NAV ═══ */}
-      <div className="flex items-center gap-3 mb-4 flex-wrap">
-        {/* Left: Aujourd'hui + nav arrows + month label */}
-        <div className="flex gap-1.5 items-center flex-1 min-w-0">
-          <Button variant="outline" size="sm" onClick={goToday} className="text-[11px] font-bold text-muted-foreground rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200 shrink-0">
-            Aujourd&apos;hui
-          </Button>
-          <Button variant="outline" size="icon-sm" onClick={navPrev} className="rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200">
-            <ChevronLeft className="size-4" />
-          </Button>
-          <Button variant="outline" size="icon-sm" onClick={navNext} className="rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200">
-            <ChevronRight className="size-4" />
-          </Button>
-          <h2 className="text-lg font-black tracking-tight m-0 text-foreground ml-2">{calLabel()}</h2>
-        </div>
-
-        {/* Right: Zoom + View switcher + Détails */}
-        <div className="flex items-center gap-2 shrink-0">
-          {view !== "month" && (
-            <div className="flex gap-0.5">
-              <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.max(32, h - 16))} title="Reduire" className="rounded-xl">
-                <ZoomOut className="size-3.5" />
-              </Button>
-              <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.min(96, h + 16))} title="Agrandir" className="rounded-xl">
-                <ZoomIn className="size-3.5" />
-              </Button>
-            </div>
-          )}
-          <div className="flex bg-muted/60 rounded-xl p-1 gap-0.5">
-            <button
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-none ${view === "day" ? "bg-white shadow-sm text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setView("day")}
-            >
-              Jour
-            </button>
-            <button
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-none ${view === "week" ? "bg-white shadow-sm text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setView("week")}
-            >
-              Semaine
-            </button>
-            <button
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-none ${view === "month" ? "bg-white shadow-sm text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setView("month")}
-            >
-              Mois
-            </button>
-          </div>
-          <div className="w-px h-5 bg-border" />
-          <Button
-            variant={selectedDate ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              if (selectedDate) {
-                setSelectedDate(null);
-              } else {
-                setSelectedDate(new Date());
-              }
-            }}
-            className={`rounded-xl text-[11px] font-bold transition-all duration-200 ${selectedDate ? "bg-violet-600 hover:bg-violet-700 text-white" : "text-muted-foreground hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600"}`}
-            title={selectedDate ? "Fermer le panneau" : "Voir le détail du jour"}
-          >
-            {selectedDate ? <PanelRightClose className="size-3.5" /> : <PanelRightOpen className="size-3.5" />}
-          </Button>
-        </div>
-      </div>
-
       {/* ═══ MAIN: MiniCal + Calendar + Panel ═══ */}
       <div className="flex gap-4 items-start mb-5 max-md:flex-col">
 
@@ -767,7 +700,59 @@ export default function MonPlanning() {
         </Card>
 
         {/* ─── Main Calendar ─── */}
-        <Card className={`flex-1 min-w-0 rounded-2xl border-border/60 p-5 overflow-hidden ${loaded ? "animate-[fade-up_300ms_ease_0.08s_both]" : "opacity-0"}`} style={{ boxShadow: "0 8px 30px rgba(124,58,237,0.06)" }}>
+        <Card className={`flex-1 min-w-0 rounded-2xl border-border/60 overflow-hidden ${loaded ? "animate-[fade-up_300ms_ease_0.08s_both]" : "opacity-0"}`} style={{ boxShadow: "0 8px 30px rgba(124,58,237,0.06)" }}>
+
+          {/* ── Calendar header (nav intégrée) ── */}
+          <div className="flex items-center gap-3 px-5 py-3 border-b border-border/40 flex-wrap">
+            <div className="flex gap-1.5 items-center flex-1 min-w-0">
+              <Button variant="outline" size="sm" onClick={goToday} className="text-[11px] font-bold text-muted-foreground rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200 shrink-0">
+                Aujourd&apos;hui
+              </Button>
+              <Button variant="outline" size="icon-sm" onClick={navPrev} className="rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200">
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button variant="outline" size="icon-sm" onClick={navNext} className="rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200">
+                <ChevronRight className="size-4" />
+              </Button>
+              <h2 className="text-lg font-black tracking-tight m-0 text-foreground ml-2">{calLabel()}</h2>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {view !== "month" && (
+                <div className="flex gap-0.5">
+                  <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.max(32, h - 16))} title="Réduire" className="rounded-xl">
+                    <ZoomOut className="size-3.5" />
+                  </Button>
+                  <Button variant="outline" size="icon-sm" onClick={() => setSlotHeight((h) => Math.min(96, h + 16))} title="Agrandir" className="rounded-xl">
+                    <ZoomIn className="size-3.5" />
+                  </Button>
+                </div>
+              )}
+              <div className="flex bg-muted/60 rounded-xl p-1 gap-0.5">
+                {["day", "week", "month"].map((v) => (
+                  <button
+                    key={v}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-none ${view === v ? "bg-white shadow-sm text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setView(v)}
+                  >
+                    {v === "day" ? "Jour" : v === "week" ? "Semaine" : "Mois"}
+                  </button>
+                ))}
+              </div>
+              <div className="w-px h-5 bg-border" />
+              <Button
+                variant={selectedDate ? "default" : "outline"}
+                size="icon-sm"
+                onClick={() => selectedDate ? setSelectedDate(null) : setSelectedDate(new Date())}
+                className={`rounded-xl transition-all duration-200 ${selectedDate ? "bg-violet-600 hover:bg-violet-700 text-white" : "text-muted-foreground hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600"}`}
+                title={selectedDate ? "Fermer le panneau" : "Voir le détail du jour"}
+              >
+                {selectedDate ? <PanelRightClose className="size-3.5" /> : <PanelRightOpen className="size-3.5" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* ── Calendar content ── */}
+          <div className="p-5">
 
           {/* VUE MOIS */}
           {view === "month" && (
@@ -1047,6 +1032,7 @@ export default function MonPlanning() {
               </div>
             );
           })()}
+          </div>
         </Card>
 
         {/* ═══ SIDE PANEL ═══ */}
