@@ -468,33 +468,14 @@ export default function MonPlanning() {
           <button className={`${styles.tg} ${showAbsences ? styles.tgOn : ""}`} style={{ "--tgc": "#10b981" }} onClick={() => setShowAbsences((v) => !v)}>
             <span className={styles.tgDot} /> Absences <span className={styles.tgN}>{absences.length}</span>
           </button>
-          {gcalConnected && gcalCalendars.filter((c) => gcalSelectedIds.includes(c.id)).map((cal) => {
-            const calColor = cal.backgroundColor || "#4285f4";
-            const calEvCount = gcalEvents.filter((e) => e.calendarId === cal.id).length;
-            const isHidden = !showGcal;
-            return (
-              <button key={cal.id} className={`${styles.tg} ${!isHidden ? styles.tgOn : ""}`} style={{ "--tgc": calColor }} onClick={() => setShowGcal((v) => !v)}>
-                <span className={styles.tgDot} /> {cal.summary.length > 12 ? cal.summary.slice(0, 12) + "…" : cal.summary} <span className={styles.tgN}>{calEvCount}</span>
-              </button>
-            );
-          })}
-          {gcalConnected && <button className={styles.gearBtn} onClick={() => setShowCalPicker((v) => !v)}>⚙</button>}
+          {gcalConnected && (
+            <button className={`${styles.tg} ${showGcal ? styles.tgOn : ""}`} style={{ "--tgc": "#4285f4" }} onClick={() => setShowGcal((v) => !v)}>
+              <span className={styles.tgDot} /> Agenda
+            </button>
+          )}
         </div>
         <button className={styles.addBtn} onClick={openNew}>+ Ajouter</button>
       </div>
-
-      {/* Calendar picker */}
-      {showCalPicker && (
-        <div className={styles.calPicker}>
-          <div className={styles.cpHead}><span className={styles.cpTitle}>Agendas Google</span><button className={styles.cpClose} onClick={() => setShowCalPicker(false)}>✕</button></div>
-          {gcalCalendars.map((cal) => {
-            const isOn = gcalSelectedIds.includes(cal.id);
-            return (<button key={cal.id} className={`${styles.cpItem} ${isOn ? styles.cpItemOn : ""}`} style={{ "--cpb": cal.backgroundColor || "#4285f4" }} onClick={() => toggleGcalCalendar(cal.id)}>
-              <span className={styles.cpDot} /><span className={styles.cpName}>{cal.summary}</span>{isOn && <span className={styles.cpCheck}>✓</span>}
-            </button>);
-          })}
-        </div>
-      )}
 
       {/* ═══ CALENDAR NAV ═══ */}
       <div className={styles.calNav2}>
@@ -547,16 +528,30 @@ export default function MonPlanning() {
               });
             })()}
           </div>
-          {/* Calendriers Google */}
+          {/* Calendriers Google — toggles par branche */}
           {gcalConnected && gcalCalendars.length > 0 && (
             <div className={styles.miniCalendars}>
-              <div className={styles.miniCalLabel}>Agendas</div>
-              {gcalCalendars.filter((c) => gcalSelectedIds.includes(c.id)).slice(0, 6).map((cal) => (
-                <div key={cal.id} className={styles.miniCalItem}>
+              <div className={styles.miniCalLabelRow}>
+                <span className={styles.miniCalLabel}>Agendas</span>
+                <button className={styles.miniCalGear} onClick={() => setShowCalPicker((v) => !v)}>⚙</button>
+              </div>
+              {gcalCalendars.filter((c) => gcalSelectedIds.includes(c.id)).map((cal) => (
+                <button key={cal.id} className={styles.miniCalToggle} onClick={() => toggleGcalCalendar(cal.id)} style={{ "--mcb": cal.backgroundColor || "#4285f4" }}>
                   <span className={styles.miniCalDot} style={{ background: cal.backgroundColor || "#4285f4" }} />
-                  <span className={styles.miniCalName}>{cal.summary.length > 16 ? cal.summary.slice(0, 16) + "…" : cal.summary}</span>
-                </div>
+                  <span className={styles.miniCalName}>{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "…" : cal.summary}</span>
+                </button>
               ))}
+              {showCalPicker && gcalCalendars.filter((c) => !gcalSelectedIds.includes(c.id)).length > 0 && (
+                <div className={styles.miniCalAdd}>
+                  {gcalCalendars.filter((c) => !gcalSelectedIds.includes(c.id)).map((cal) => (
+                    <button key={cal.id} className={styles.miniCalAddBtn} onClick={() => toggleGcalCalendar(cal.id)} style={{ "--mcb": cal.backgroundColor || "#4285f4" }}>
+                      <span className={styles.miniCalDot} style={{ background: cal.backgroundColor || "#4285f4", opacity: 0.4 }} />
+                      <span className={styles.miniCalNameOff}>{cal.summary.length > 18 ? cal.summary.slice(0, 18) + "…" : cal.summary}</span>
+                      <span className={styles.miniCalPlus}>+</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
