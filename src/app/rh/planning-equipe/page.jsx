@@ -117,12 +117,74 @@ export default function PlanningEquipePage() {
     return { present, absent, onProject, available, total: profiles.filter((x) => x.isActive !== false).length };
   }, [profiles, absMap, projAssignMap, today]);
 
-  const alerts = useMemo(() => {
-    const items = [];
-    for (const p of profiles) { const projs = projAssignMap[String(p._id)]?.[today] || []; if (projs.length >= 3) items.push({ type: "overload", emp: p, count: projs.length }); }
-    for (const d of days) { if (d.getDay() === 0 || d.getDay() === 6) continue; const key = toYMD(d), absC = profiles.filter((p) => { const a = absMap[String(p._id)]?.[key]; return a && a.statut === "valide"; }).length; if (profiles.length > 0 && (profiles.length - absC) / profiles.length < 0.5) items.push({ type: "understaffed", date: key, day: d, present: profiles.length - absC, total: profiles.length }); }
-    return items;
-  }, [profiles, projAssignMap, absMap, today, days]);
+  /* ── Computed: friction points ── */
+  const friction = useMemo(() => {
+    const overloads = []; // Employés surchargés
+    const understaffed = []; // Jours sous-effectif
+    const conflicts = []; // Conflits projet (membre absent pendant projet)
+    const poleEmpty = []; // Pôle entier absent
+
+    // 1. Surcharges — par employé, on garde le pire jour
+    const seenOverload = {};
+    for (const p of profiles) {
+      const pid = String(p._id);
+      let worst = 0, worstDate = "";
+      for (const d of days) {
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
+        const k = toYMD(d), cnt = (projAssignMap[pid]?.[k] || []).length;
+        if (cnt >= 3 && cnt > worst) { worst = cnt; worstDate = k; }
+      }
+      if (worst >= 3) overloads.push({ emp: p, count: worst, date: worstDate });
+    }
+
+    // 2. Sous-effectif — jours < 60% présents
+    for (const d of days) {
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      const k = toYMD(d), absC = profiles.filter((p) => { const a = absMap[String(p._id)]?.[k]; return a && a.statut === "valide"; }).length;
+      const ratio = profiles.length > 0 ? (profiles.length - absC) / profiles.length : 1;
+      if (ratio < 0.6) understaffed.push({ date: k, present: profiles.length - absC, total: profiles.length, ratio });
+    }
+
+    // 3. Conflits projets — un membre absent pendant un projet actif
+    const seenConflict = new Set();
+    for (const c of contrats) {
+      if (!c.dateDebut || !c.dateFin || c.dateFin < today) continue;
+      const team = (c.assignees || []).map((a) => profiles.find((p) => String(p._id) === String(a))).filter(Boolean);
+      for (const emp of team) {
+        const pid = String(emp._id), ck = `${pid}:${String(c._id)}`;
+        if (seenConflict.has(ck)) continue;
+        const d = new Date(Math.max(new Date(c.dateDebut + "T12:00:00"), new Date(today + "T12:00:00")));
+        const end = new Date(c.dateFin + "T12:00:00");
+        while (d <= end) {
+          if (d.getDay() !== 0 && d.getDay() !== 6) {
+            const abs = absMap[pid]?.[toYMD(d)];
+            if (abs && abs.statut === "valide") {
+              seenConflict.add(ck);
+              conflicts.push({ emp, project: c, date: toYMD(d), absType: abs.type, projectColor: getBranchColor(c.branche, branches) });
+              break;
+            }
+          }
+          d.setDate(d.getDate() + 1);
+        }
+      }
+    }
+
+    // 4. Pôle vide — tous les membres d'un pôle absents le même jour
+    const allGroups = {};
+    for (const p of profiles) { const pole = p.pole || "Sans pôle"; if (!allGroups[pole]) { const branch = branches.find((b) => (b.poles || []).includes(pole)); allGroups[pole] = { label: pole, color: branch?.color || "#6b7280", employees: [] }; } allGroups[pole].employees.push(p); }
+    for (const [, group] of Object.entries(allGroups)) {
+      if (group.employees.length < 2) continue;
+      for (const d of days) {
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
+        const k = toYMD(d), allAbsent = group.employees.every((e) => { const a = absMap[String(e._id)]?.[k]; return a && a.statut === "valide"; });
+        if (allAbsent) { poleEmpty.push({ pole: group.label, color: group.color, date: k, count: group.employees.length }); break; }
+      }
+    }
+
+    const total = overloads.length + understaffed.length + conflicts.length + poleEmpty.length;
+    const score = total === 0 ? 100 : Math.max(0, 100 - overloads.length * 15 - understaffed.length * 10 - conflicts.length * 8 - poleEmpty.length * 20);
+    return { overloads, understaffed, conflicts, poleEmpty, total, score };
+  }, [profiles, projAssignMap, absMap, days, today, contrats, branches]);
 
   /* Mini calendar */
   const miniCalDays = useMemo(() => {
@@ -230,9 +292,18 @@ export default function PlanningEquipePage() {
           </button>
         ))}
       </div>
-      {alerts.length > 0 && <div className="flex flex-wrap gap-1.5">
-        {alerts.slice(0, 4).map((a, i) => <span key={i} className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium", a.type === "overload" ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600")}>{a.type === "overload" ? <><Zap className="w-3 h-3" />{a.emp.prenom} {a.emp.nom?.[0]}. — {a.count}p</> : <><AlertTriangle className="w-3 h-3" />{new Date(a.date + "T12:00:00").getDate()} {MOIS[new Date(a.date + "T12:00:00").getMonth()].slice(0, 3)} — {a.present}/{a.total}</>}</span>)}
-      </div>}
+      {friction.total > 0 && (
+        <div className={cn("flex items-center gap-3 px-3 py-1.5 rounded-lg text-[12px] font-medium", friction.score >= 70 ? "bg-amber-50 text-amber-700" : "bg-rose-50 text-rose-700")}>
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span>
+            {friction.total} point{friction.total > 1 ? "s" : ""} de friction
+            {friction.overloads.length > 0 && ` · ${friction.overloads.length} surcharge${friction.overloads.length > 1 ? "s" : ""}`}
+            {friction.understaffed.length > 0 && ` · ${friction.understaffed.length}j sous-effectif`}
+            {friction.conflicts.length > 0 && ` · ${friction.conflicts.length} conflit${friction.conflicts.length > 1 ? "s" : ""}`}
+          </span>
+          <span className="ml-auto text-[11px] font-bold tabular-nums">Score {friction.score}/100</span>
+        </div>
+      )}
 
       {/* ── CONTROLS ── */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -303,6 +374,85 @@ export default function PlanningEquipePage() {
               <span className="flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-amber-400" />Deadlines</span>
             </div>
           </div>
+
+          {/* Santé de l'équipe */}
+          {friction.total > 0 && (
+            <div className="rounded-lg border bg-card">
+              <div className="px-3 pt-3 pb-2 flex items-center justify-between">
+                <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Santé équipe</div>
+                <div className={cn("text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded", friction.score >= 80 ? "bg-emerald-50 text-emerald-600" : friction.score >= 50 ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600")}>{friction.score}/100</div>
+              </div>
+              <div className="max-h-[240px] overflow-y-auto">
+                {/* Surcharges */}
+                {friction.overloads.length > 0 && (
+                  <div className="px-3 py-1.5 border-t">
+                    <div className="text-[10px] font-semibold text-rose-600 mb-1 flex items-center gap-1"><Zap className="w-3 h-3" />Surcharges ({friction.overloads.length})</div>
+                    {friction.overloads.map((o, i) => (
+                      <button key={i} onClick={() => { setFocusDay(o.date); setCalDate(new Date(o.date + "T12:00:00")); openSheet(o.emp, o.date); }}
+                        className="flex items-center gap-2 w-full text-left py-1 px-1 rounded hover:bg-accent/50 transition-colors cursor-pointer">
+                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold bg-rose-100 text-rose-600">{o.count}</span>
+                        <span className="text-[11px] font-medium text-foreground truncate">{o.emp.prenom} {o.emp.nom?.[0]}.</span>
+                        <span className="text-[9px] text-muted-foreground ml-auto">{new Date(o.date + "T12:00:00").getDate()} {MOIS[new Date(o.date + "T12:00:00").getMonth()].slice(0, 3)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Sous-effectif */}
+                {friction.understaffed.length > 0 && (
+                  <div className="px-3 py-1.5 border-t">
+                    <div className="text-[10px] font-semibold text-amber-600 mb-1 flex items-center gap-1"><Users className="w-3 h-3" />Sous-effectif ({friction.understaffed.length}j)</div>
+                    {friction.understaffed.slice(0, 5).map((u, i) => {
+                      const dt = new Date(u.date + "T12:00:00");
+                      return (
+                        <button key={i} onClick={() => { setFocusDay(u.date); setCalDate(new Date(u.date + "T12:00:00")); }}
+                          className="flex items-center gap-2 w-full text-left py-1 px-1 rounded hover:bg-accent/50 transition-colors cursor-pointer">
+                          <span className={cn("text-[11px] font-medium", u.ratio < 0.4 ? "text-rose-600" : "text-amber-600")}>{u.present}/{u.total}</span>
+                          <span className="text-[11px] text-foreground">{JOURS[dt.getDay()].slice(0, 3)} {dt.getDate()} {MOIS[dt.getMonth()].slice(0, 3)}</span>
+                          <div className="ml-auto w-8 h-1 rounded-full bg-muted overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${u.ratio * 100}%`, backgroundColor: u.ratio < 0.4 ? "#f43f5e" : "#f59e0b" }} />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {/* Conflits projets */}
+                {friction.conflicts.length > 0 && (
+                  <div className="px-3 py-1.5 border-t">
+                    <div className="text-[10px] font-semibold text-violet-600 mb-1 flex items-center gap-1"><Briefcase className="w-3 h-3" />Conflits ({friction.conflicts.length})</div>
+                    {friction.conflicts.slice(0, 5).map((c, i) => {
+                      const meta = ABSENCE_META[c.absType] || ABSENCE_META.absence_autre;
+                      return (
+                        <button key={i} onClick={() => { setFocusDay(c.date); setCalDate(new Date(c.date + "T12:00:00")); openSheet(c.emp, c.date); }}
+                          className="flex items-center gap-1.5 w-full text-left py-1 px-1 rounded hover:bg-accent/50 transition-colors cursor-pointer">
+                          <span className="text-xs">{meta.icon}</span>
+                          <span className="text-[11px] font-medium text-foreground truncate">{c.emp.prenom} {c.emp.nom?.[0]}.</span>
+                          <span className="text-[9px] text-muted-foreground truncate">sur {c.project.nomContrat || c.project.nom}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {/* Pôle vide */}
+                {friction.poleEmpty.length > 0 && (
+                  <div className="px-3 py-1.5 border-t">
+                    <div className="text-[10px] font-semibold text-rose-600 mb-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Pôle vide</div>
+                    {friction.poleEmpty.map((pe, i) => {
+                      const dt = new Date(pe.date + "T12:00:00");
+                      return (
+                        <button key={i} onClick={() => { setFocusDay(pe.date); setCalDate(new Date(pe.date + "T12:00:00")); }}
+                          className="flex items-center gap-2 w-full text-left py-1 px-1 rounded hover:bg-accent/50 transition-colors cursor-pointer">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pe.color }} />
+                          <span className="text-[11px] font-medium text-foreground">{pe.pole}</span>
+                          <span className="text-[9px] text-muted-foreground ml-auto">{JOURS[dt.getDay()].slice(0, 3)} {dt.getDate()}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Project List / Detail */}
           <div className="rounded-lg border bg-card">
