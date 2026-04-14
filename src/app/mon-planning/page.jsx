@@ -879,8 +879,23 @@ export default function MonPlanning() {
                         onClick={() => handleDayClick(d)}
                       >
                         {hoursWeek.map((h) => (
-                          <div key={h} className="border-b border-dashed border-border/50 relative cursor-crosshair" style={{ height: `${slotHeight}px` }} />
+                          <div key={h} className="border-b border-border/40 relative cursor-crosshair" style={{ height: `${slotHeight}px` }}>
+                            <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/20" />
+                          </div>
                         ))}
+                        {/* Ligne heure actuelle */}
+                        {isToday2 && (() => {
+                          const now = new Date();
+                          const currentHour = now.getHours() + now.getMinutes() / 60;
+                          if (currentHour < HOUR_START_WEEK || currentHour > HOUR_END_WEEK) return null;
+                          const topPct = ((currentHour - HOUR_START_WEEK) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100;
+                          return (
+                            <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: `${topPct}%` }}>
+                              <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 shrink-0" />
+                              <div className="flex-1 h-[2px] bg-red-500" />
+                            </div>
+                          );
+                        })()}
                         {laid.map((ev, j) => {
                           const top = ((ev.startHour - HOUR_START_WEEK) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100;
                           const height = Math.max(2.5, ((ev.endHour - ev.startHour) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100);
@@ -894,7 +909,9 @@ export default function MonPlanning() {
                               key={j}
                               className="absolute rounded-lg px-2 py-1.5 overflow-hidden z-[1] cursor-pointer flex flex-col gap-px border-l-4 shadow-sm text-white transition-all duration-150 hover:shadow-md hover:z-10 min-w-0"
                               style={{
-                                top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`,
+                                top: `${top}%`, height: `${height}%`,
+                                left: `calc(${left}% + ${ev.col > 0 ? "2px" : "0px"})`,
+                                width: `calc(${width}% - ${ev.totalCols > 1 ? "3px" : "0px"})`,
                                 backgroundColor: `color-mix(in srgb, ${ev.color} 85%, white)`,
                                 borderLeftColor: ev.color,
                               }}
@@ -954,15 +971,17 @@ export default function MonPlanning() {
                       </div>
                     ))}
                   </div>
-                  <div className="relative border-l border-border/20">
+                  <div className="relative border-l border-border/30">
                     {hoursDay.map((h) => (
                       <div
                         key={h}
-                        className="border-b border-dashed border-border/50 relative cursor-crosshair"
+                        className="border-b border-border/40 relative cursor-crosshair"
                         style={{ height: `${slotHeight}px` }}
                         onMouseDown={(e) => { e.preventDefault(); handleGridMouseDown(calDate, h); }}
                         onMouseMove={() => handleGridMouseMove(h + 0.5)}
                       >
+                        {/* Demi-heure */}
+                        <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/20" />
                         <div
                           className="absolute bottom-0 left-0 right-0 h-1/2"
                           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleGridMouseDown(calDate, h + 0.5); }}
@@ -970,6 +989,19 @@ export default function MonPlanning() {
                         />
                       </div>
                     ))}
+                    {/* ── Ligne heure actuelle ── */}
+                    {toYMD(calDate) === today && (() => {
+                      const now = new Date();
+                      const currentHour = now.getHours() + now.getMinutes() / 60;
+                      if (currentHour < HOUR_START_DAY || currentHour > HOUR_END_DAY) return null;
+                      const topPct = ((currentHour - HOUR_START_DAY) / (HOUR_END_DAY - HOUR_START_DAY)) * 100;
+                      return (
+                        <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: `${topPct}%` }}>
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-[5px] shrink-0 shadow-sm" />
+                          <div className="flex-1 h-[2px] bg-red-500 shadow-sm" />
+                        </div>
+                      );
+                    })()}
                     {(() => {
                       // Layout algorithm — same as week view
                       const sorted = [...timed].sort((a, b) => a.startHour - b.startHour);
@@ -1009,7 +1041,9 @@ export default function MonPlanning() {
                                 key={j}
                                 className="absolute rounded-lg px-3 py-2 overflow-hidden z-[1] cursor-pointer flex flex-col gap-0.5 border-l-4 text-white shadow-sm transition-all duration-150 hover:shadow-md hover:z-10"
                                 style={{
-                                  top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`,
+                                  top: `${top}%`, height: `${height}%`,
+                                  left: `calc(${left}% + ${ev.col > 0 ? "2px" : "0px"})`,
+                                  width: `calc(${width}% - ${ev.totalCols > 1 ? "3px" : "0px"})`,
                                   backgroundColor: `color-mix(in srgb, ${ev.color} 85%, white)`,
                                   borderLeftColor: ev.color,
                                 }}
