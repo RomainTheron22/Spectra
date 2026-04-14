@@ -85,6 +85,7 @@ export default function MonPlanning() {
   const [calDate, setCalDate] = useState(new Date());
   const [view, setView] = useState("month");
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null); // event cliqué dans la grille
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const [form, setForm] = useState({ type: "", dateDebut: "", dateFin: "", demiJournee: "", commentaire: "" });
@@ -378,16 +379,35 @@ export default function MonPlanning() {
     return `${dayOfWeekFr(calDate)} ${calDate.getDate()} ${MOIS[calDate.getMonth()]}`;
   }
 
-  // Render cell events for MONTH view — compact, hierarchical
+  function handleEventClick(e, ev) {
+    e.stopPropagation();
+    setSelectedEvent(ev);
+    if (ev.type === "gcal" && ev.gcalId) {
+      // Open edit modal for Google event
+      const dateStr = selectedDate ? toYMD(selectedDate) : toYMD(new Date());
+      setNoteForm({
+        contenu: ev.title || "", dateDebut: dateStr,
+        heureDebut: ev.startHour != null ? `${String(Math.floor(ev.startHour)).padStart(2,"0")}:${String(Math.round((ev.startHour%1)*60)).padStart(2,"0")}` : "09:00",
+        heureFin: ev.endHour != null ? `${String(Math.floor(ev.endHour)).padStart(2,"0")}:${String(Math.round((ev.endHour%1)*60)).padStart(2,"0")}` : "10:00",
+        lieu: "", participants: "", allDay: ev.isAllDay || false, gcalEditId: ev.gcalId,
+      });
+      setModalType("editGcal"); setModalOpen(true);
+    } else if (ev.type === "absence" && ev.statut === "en_attente" && ev.dateDebut >= today) {
+      openEdit(ev);
+    }
+    // For projects, just show in panel (no edit yet)
+  }
+
+  // Render cell events for MONTH view — compact, hierarchical, CLICKABLE
   function renderMonthCell(events) {
     const projs = events.filter((e) => e.type === "projet" || e.type === "mission");
     const abs = events.filter((e) => e.type === "absence");
     const gcals = events.filter((e) => e.type === "gcal");
     return (
       <>
-        {projs.slice(0, 3).map((p, j) => <div key={`p${j}`} className={styles.mEvtProj} style={{ "--ec": p.color }}>{p.isMine ? "👤 " : ""}{p.title.length > 14 ? p.title.slice(0, 14) + "…" : p.title}</div>)}
-        {abs.slice(0, 1).map((a, j) => <div key={`a${j}`} className={styles.mEvtAbs} style={{ "--ec": a.absType?.color }}>{a.absType?.icon} {a.absType?.label}</div>)}
-        {gcals.slice(0, 3).map((g, j) => <div key={`g${j}`} className={styles.mEvtRdv} style={{ "--ec": g.color }}><span className={styles.mDot} />{g.title.length > 14 ? g.title.slice(0, 14) + "…" : g.title}</div>)}
+        {projs.slice(0, 3).map((p, j) => <div key={`p${j}`} className={`${styles.mEvtProj} ${styles.mEvtClick}`} style={{ "--ec": p.color }} onClick={(e) => handleEventClick(e, p)}>{p.isMine ? "👤 " : ""}{p.title.length > 14 ? p.title.slice(0, 14) + "…" : p.title}</div>)}
+        {abs.slice(0, 1).map((a, j) => <div key={`a${j}`} className={`${styles.mEvtAbs} ${styles.mEvtClick}`} style={{ "--ec": a.absType?.color }} onClick={(e) => handleEventClick(e, a)}>{a.absType?.icon} {a.absType?.label}</div>)}
+        {gcals.slice(0, 3).map((g, j) => <div key={`g${j}`} className={`${styles.mEvtRdv} ${styles.mEvtClick}`} style={{ "--ec": g.color }} onClick={(e) => handleEventClick(e, g)}><span className={styles.mDot} />{g.title.length > 14 ? g.title.slice(0, 14) + "…" : g.title}</div>)}
         {(projs.length + abs.length + gcals.length) > 7 && <div className={styles.mEvtMore}>+{projs.length + abs.length + gcals.length - 7}</div>}
       </>
     );
@@ -580,7 +600,8 @@ export default function MonPlanning() {
                         const height = Math.max(2.5, ((ev.endHour - ev.startHour) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100);
                         const width = 100 / ev.totalCols;
                         const left = ev.col * width;
-                        return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}>
+                        return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
+                          onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
                           <span className={styles.tgEvtTitle}>{ev.title}</span>
                           <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")}</span>
                         </div>);
@@ -649,7 +670,8 @@ export default function MonPlanning() {
                         const height = Math.max(2, ((ev.endHour - ev.startHour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
                         const width = 100 / ev.totalCols;
                         const left = ev.col * width;
-                        return (<div key={j} className={styles.tgEvtDay} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}>
+                        return (<div key={j} className={styles.tgEvtDay} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
+                          onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
                           <span className={styles.tgEvtTitle}>{ev.title}</span>
                           <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} — {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
                           {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName}</span>}
