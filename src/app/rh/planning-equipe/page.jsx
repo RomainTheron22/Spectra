@@ -33,26 +33,20 @@ import {
   ExternalLink,
   ArrowRight,
   Calendar,
-  Clock,
   Zap,
 } from "lucide-react";
 
-/* ═══════════════════════════════════════════
-   CONSTANTS
-   ═══════════════════════════════════════════ */
+/* ═══ CONSTANTS ═══ */
 
-const MOIS = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-];
-const JOURS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-const JOURS_SHORT = ["D", "L", "M", "M", "J", "V", "S"];
+const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+const JOURS = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+const JOURS_SHORT = ["D","L","M","M","J","V","S"];
 
 const ABSENCE_META = {
-  conge: { color: "#10b981", icon: "🌴", label: "Congé", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-  tt: { color: "#8b5cf6", icon: "🏡", label: "Télétravail", bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-200" },
-  maladie: { color: "#f43f5e", icon: "🤧", label: "Maladie", bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
-  absence_autre: { color: "#f59e0b", icon: "—", label: "Autre absence", bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+  conge: { color: "#10b981", icon: "🌴", label: "Congé", bg: "bg-emerald-50/80", text: "text-emerald-600", border: "border-emerald-200/60" },
+  tt: { color: "#8b5cf6", icon: "🏡", label: "Télétravail", bg: "bg-violet-50/80", text: "text-violet-600", border: "border-violet-200/60" },
+  maladie: { color: "#f43f5e", icon: "🤧", label: "Maladie", bg: "bg-rose-50/80", text: "text-rose-600", border: "border-rose-200/60" },
+  absence_autre: { color: "#f59e0b", icon: "—", label: "Autre absence", bg: "bg-amber-50/80", text: "text-amber-600", border: "border-amber-200/60" },
 };
 
 const DEFAULT_BRANCHES = [
@@ -69,9 +63,7 @@ const BRANCH_COLORS_FALLBACK = {
   SFX: "#ca8a04", Atelier: "#059669", Communication: "#0284c7", default: "#6b7280",
 };
 
-/* ═══════════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════════ */
+/* ═══ HELPERS ═══ */
 
 function toYMD(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -92,72 +84,28 @@ function getWeekNumber(d) {
   return Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
 }
 
-/* ═══════════════════════════════════════════
-   STAT CARD
-   ═══════════════════════════════════════════ */
-
-function StatCard({ icon: Icon, label, value, total, colorClass, iconBg, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "relative overflow-hidden rounded-xl border p-4 text-left transition-all hover:shadow-md cursor-pointer w-full",
-        active ? "ring-2 ring-violet-400 shadow-md border-violet-200" : "border-border hover:border-border/80"
-      )}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
-          <p className={cn("text-3xl font-black mt-0.5 tracking-tight", colorClass)}>{value}</p>
-          {total !== undefined && (
-            <p className="text-[10px] text-muted-foreground mt-0.5">sur {total}</p>
-          )}
-        </div>
-        <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shadow-sm", iconBg)}>
-          <Icon className="w-5 h-5 text-white" strokeWidth={2.5} />
-        </div>
-      </div>
-    </button>
-  );
-}
-
-/* ═══════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════ */
+/* ═══ MAIN ═══ */
 
 export default function PlanningEquipePage() {
-  /* ── State ── */
   const [profiles, setProfiles] = useState([]);
   const [absences, setAbsences] = useState([]);
   const [contrats, setContrats] = useState([]);
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [calDate, setCalDate] = useState(new Date());
   const [viewWeeks, setViewWeeks] = useState(2);
   const [filterPole, setFilterPole] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [viewMode, setViewMode] = useState("branche");
   const [openGroups, setOpenGroups] = useState({});
-
-  // Sheet state — replaces old selectedCell
   const [sheetEmployee, setSheetEmployee] = useState(null);
   const [sheetDate, setSheetDate] = useState(null);
-
-  // Mini calendar
   const [showMiniCal, setShowMiniCal] = useState(false);
   const [miniCalDate, setMiniCalDate] = useState(() => new Date());
 
-  const openSheet = useCallback((emp, date = null) => {
-    setSheetEmployee(emp);
-    setSheetDate(date);
-  }, []);
-  const closeSheet = useCallback(() => {
-    setSheetEmployee(null);
-    setSheetDate(null);
-  }, []);
+  const openSheet = useCallback((emp, date = null) => { setSheetEmployee(emp); setSheetDate(date); }, []);
+  const closeSheet = useCallback(() => { setSheetEmployee(null); setSheetDate(null); }, []);
 
-  /* ── Data fetching ── */
   useEffect(() => {
     (async () => {
       const [profRes, absRes, projRes] = await Promise.all([
@@ -165,79 +113,51 @@ export default function PlanningEquipePage() {
         fetch("/api/employee-absences?all=true", { cache: "no-store" }),
         fetch("/api/contrats", { cache: "no-store" }),
       ]);
-      const profData = await profRes.json();
-      setProfiles((profData.items || []).filter((p) => p.isActive !== false));
-      const absData = await absRes.json();
-      setAbsences(absData.items || []);
-      const projData = await projRes.json();
-      setContrats(projData.items || []);
-
+      setProfiles(((await profRes.json()).items || []).filter((p) => p.isActive !== false));
+      setAbsences((await absRes.json()).items || []);
+      setContrats((await projRes.json()).items || []);
       try {
         const brRes = await fetch("/api/branches", { cache: "no-store" });
-        if (brRes.ok) {
-          const brData = await brRes.json();
-          if (brData.items?.length) { setBranches(brData.items); }
-          else { setBranches(DEFAULT_BRANCHES); }
-        } else { setBranches(DEFAULT_BRANCHES); }
+        if (brRes.ok) { const d = await brRes.json(); setBranches(d.items?.length ? d.items : DEFAULT_BRANCHES); }
+        else setBranches(DEFAULT_BRANCHES);
       } catch { setBranches(DEFAULT_BRANCHES); }
-
       setLoading(false);
     })();
   }, []);
 
-  /* ── Computed: days ── */
   const days = useMemo(() => {
-    const d = new Date(calDate);
-    const day = d.getDay();
+    const d = new Date(calDate); const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const mon = new Date(d);
-    mon.setDate(diff);
-    return Array.from({ length: viewWeeks * 7 }, (_, i) => {
-      const dd = new Date(mon);
-      dd.setDate(dd.getDate() + i);
-      return dd;
-    });
+    const mon = new Date(d); mon.setDate(diff);
+    return Array.from({ length: viewWeeks * 7 }, (_, i) => { const dd = new Date(mon); dd.setDate(dd.getDate() + i); return dd; });
   }, [calDate, viewWeeks]);
 
-  /* ── Computed: period label ── */
   const periodLabel = useMemo(() => {
     if (!days.length) return "";
-    const first = days[0];
-    const last = days[days.length - 1];
-    const w1 = getWeekNumber(first);
-    const w2 = getWeekNumber(last);
-    const weekPart = w1 === w2 ? `Sem. ${w1}` : `Sem. ${w1}–${w2}`;
-    const firstStr = `${first.getDate()} ${MOIS[first.getMonth()].slice(0, 3)}`;
-    const lastStr = `${last.getDate()} ${MOIS[last.getMonth()].slice(0, 3)} ${last.getFullYear()}`;
-    return `${weekPart} · ${firstStr} — ${lastStr}`;
+    const f = days[0], l = days[days.length - 1];
+    const w1 = getWeekNumber(f), w2 = getWeekNumber(l);
+    return `S${w1}${w1 !== w2 ? `–${w2}` : ""} · ${f.getDate()} ${MOIS[f.getMonth()].slice(0, 3)} — ${l.getDate()} ${MOIS[l.getMonth()].slice(0, 3)} ${l.getFullYear()}`;
   }, [days]);
 
-  /* ── Computed: absence map ── */
   const absMap = useMemo(() => {
     const map = {};
     for (const a of absences) {
       if (a.statut === "refuse") continue;
       const pid = a.employeeProfileId || a.userId;
       if (!map[pid]) map[pid] = {};
-      const d = new Date(a.dateDebut + "T12:00:00");
-      const end = new Date(a.dateFin + "T12:00:00");
-      while (d <= end) {
-        map[pid][toYMD(d)] = a;
-        d.setDate(d.getDate() + 1);
-      }
+      const d = new Date(a.dateDebut + "T12:00:00"), end = new Date(a.dateFin + "T12:00:00");
+      while (d <= end) { map[pid][toYMD(d)] = a; d.setDate(d.getDate() + 1); }
     }
     return map;
   }, [absences]);
 
-  /* ── Computed: project assignment map ── */
   const projAssignMap = useMemo(() => {
     const map = {};
     for (const c of contrats) {
       if (!c.dateDebut || !c.dateFin) continue;
       const assignees = c.assignees || c.equipe || [];
-      if (assignees.length === 0) continue;
-      const d = new Date(c.dateDebut + "T12:00:00");
-      const end = new Date(c.dateFin + "T12:00:00");
+      if (!assignees.length) continue;
+      const d = new Date(c.dateDebut + "T12:00:00"), end = new Date(c.dateFin + "T12:00:00");
       while (d <= end) {
         const key = toYMD(d);
         for (const aId of assignees) {
@@ -254,21 +174,16 @@ export default function PlanningEquipePage() {
 
   const today = toYMD(new Date());
 
-  /* ── Computed: filtered profiles ── */
   const filteredProfiles = useMemo(() => {
     let list = profiles;
     if (filterPole) list = list.filter((p) => p.pole === filterPole);
     if (filterStatus) {
       list = list.filter((p) => {
-        const pid = String(p._id);
-        const abs = absMap[pid]?.[today];
-        const projs = projAssignMap[pid]?.[today] || [];
+        const pid = String(p._id), abs = absMap[pid]?.[today], projs = projAssignMap[pid]?.[today] || [];
         const isAbsent = abs && abs.statut === "valide";
         switch (filterStatus) {
-          case "present": return !isAbsent;
-          case "absent": return isAbsent;
-          case "projet": return !isAbsent && projs.length > 0;
-          case "dispo": return !isAbsent && projs.length === 0;
+          case "present": return !isAbsent; case "absent": return isAbsent;
+          case "projet": return !isAbsent && projs.length > 0; case "dispo": return !isAbsent && projs.length === 0;
           default: return true;
         }
       });
@@ -276,452 +191,225 @@ export default function PlanningEquipePage() {
     return list;
   }, [profiles, filterPole, filterStatus, absMap, projAssignMap, today]);
 
-  const poles = useMemo(
-    () => [...new Set(profiles.map((p) => p.pole).filter(Boolean))].sort(),
-    [profiles]
-  );
+  const poles = useMemo(() => [...new Set(profiles.map((p) => p.pole).filter(Boolean))].sort(), [profiles]);
 
-  /* ── Computed: employee groups ── */
   const employeeGroups = useMemo(() => {
     const groups = {};
     for (const p of filteredProfiles) {
       const pole = p.pole || "Sans pôle";
       if (!groups[pole]) {
         const branch = branches.find((b) => (b.poles || []).includes(pole));
-        groups[pole] = {
-          key: pole,
-          label: pole,
-          color: branch?.color || "#6b7280",
-          branchLabel: branch?.label || null,
-          employees: [],
-        };
+        groups[pole] = { key: pole, label: pole, color: branch?.color || "#6b7280", branchLabel: branch?.label || null, employees: [] };
       }
       groups[pole].employees.push(p);
     }
     return Object.values(groups).sort((a, b) => b.employees.length - a.employees.length);
   }, [filteredProfiles, branches]);
 
-  /* ── Computed: today stats ── */
   const todayStats = useMemo(() => {
     let present = 0, absent = 0, onProject = 0, available = 0;
     for (const p of profiles.filter((x) => x.isActive !== false)) {
-      const pid = String(p._id);
-      const abs = absMap[pid]?.[today];
-      const projs = projAssignMap[pid]?.[today] || [];
-      if (abs && abs.statut === "valide") { absent++; }
-      else {
-        present++;
-        if (projs.length > 0) onProject++;
-        else available++;
-      }
+      const pid = String(p._id), abs = absMap[pid]?.[today], projs = projAssignMap[pid]?.[today] || [];
+      if (abs && abs.statut === "valide") absent++;
+      else { present++; if (projs.length > 0) onProject++; else available++; }
     }
     return { present, absent, onProject, available, total: profiles.filter((x) => x.isActive !== false).length };
   }, [profiles, absMap, projAssignMap, today]);
 
-  /* ── Computed: CEO alerts ── */
   const alerts = useMemo(() => {
     const items = [];
-    // Overloaded employees today
-    for (const p of profiles) {
-      const pid = String(p._id);
-      const projs = projAssignMap[pid]?.[today] || [];
-      if (projs.length >= 3) {
-        items.push({ type: "overload", emp: p, count: projs.length });
-      }
-    }
-    // Under-staffed days in period
+    for (const p of profiles) { const projs = projAssignMap[String(p._id)]?.[today] || []; if (projs.length >= 3) items.push({ type: "overload", emp: p, count: projs.length }); }
     for (const d of days) {
       if (d.getDay() === 0 || d.getDay() === 6) continue;
-      const key = toYMD(d);
-      const absentCount = profiles.filter((p) => {
-        const a = absMap[String(p._id)]?.[key];
-        return a && a.statut === "valide";
-      }).length;
-      const ratio = profiles.length > 0 ? (profiles.length - absentCount) / profiles.length : 1;
-      if (ratio < 0.5) {
-        items.push({ type: "understaffed", date: key, day: d, present: profiles.length - absentCount, total: profiles.length });
-      }
+      const key = toYMD(d), absentCount = profiles.filter((p) => { const a = absMap[String(p._id)]?.[key]; return a && a.statut === "valide"; }).length;
+      if (profiles.length > 0 && (profiles.length - absentCount) / profiles.length < 0.5) items.push({ type: "understaffed", date: key, day: d, present: profiles.length - absentCount, total: profiles.length });
     }
     return items;
   }, [profiles, projAssignMap, absMap, today, days]);
 
-  /* ── Computed: mini calendar days ── */
   const miniCalDays = useMemo(() => {
-    const year = miniCalDate.getFullYear();
-    const month = miniCalDate.getMonth();
+    const year = miniCalDate.getFullYear(), month = miniCalDate.getMonth();
     const firstOfMonth = new Date(year, month, 1);
-    const startDow = (firstOfMonth.getDay() + 6) % 7; // Monday = 0
-    const startDate = new Date(firstOfMonth);
-    startDate.setDate(startDate.getDate() - startDow);
-
-    const rangeStart = days.length > 0 ? toYMD(days[0]) : "";
-    const rangeEnd = days.length > 0 ? toYMD(days[days.length - 1]) : "";
-
+    const startDow = (firstOfMonth.getDay() + 6) % 7;
+    const startDate = new Date(firstOfMonth); startDate.setDate(startDate.getDate() - startDow);
+    const rangeStart = days.length > 0 ? toYMD(days[0]) : "", rangeEnd = days.length > 0 ? toYMD(days[days.length - 1]) : "";
     const result = [];
     for (let i = 0; i < 42; i++) {
-      const d = new Date(startDate);
-      d.setDate(d.getDate() + i);
-      const key = toYMD(d);
-      const inMonth = d.getMonth() === month;
-
-      let projectCount = 0;
-      let absenceCount = 0;
-      if (inMonth) {
-        for (const p of profiles) {
-          const pid = String(p._id);
-          if (projAssignMap[pid]?.[key]?.length > 0) projectCount++;
-          const abs = absMap[pid]?.[key];
-          if (abs && abs.statut === "valide") absenceCount++;
-        }
-      }
-
-      const isDeadline = contrats.some((c) => c.dateDebut === key || c.dateFin === key);
-      const inRange = key >= rangeStart && key <= rangeEnd;
-
-      result.push({ date: d, key, inMonth, projectCount, absenceCount, isDeadline, inRange });
+      const d = new Date(startDate); d.setDate(d.getDate() + i); const key = toYMD(d); const inMonth = d.getMonth() === month;
+      let projectCount = 0, absenceCount = 0;
+      if (inMonth) { for (const p of profiles) { const pid = String(p._id); if (projAssignMap[pid]?.[key]?.length > 0) projectCount++; const abs = absMap[pid]?.[key]; if (abs && abs.statut === "valide") absenceCount++; } }
+      result.push({ date: d, key, inMonth, projectCount, absenceCount, isDeadline: contrats.some((c) => c.dateDebut === key || c.dateFin === key), inRange: key >= rangeStart && key <= rangeEnd });
     }
     return result;
   }, [miniCalDate, profiles, projAssignMap, absMap, contrats, days]);
 
-  /* ── Computed: Sheet employee data ── */
   const sheetData = useMemo(() => {
     if (!sheetEmployee) return null;
     const pid = String(sheetEmployee._id);
-
-    // Period summary
-    let daysOnProject = 0, daysAbsent = 0, daysFree = 0;
-    const periodProjects = {};
+    let daysOnProject = 0, daysAbsent = 0, daysFree = 0; const periodProjects = {};
     for (const d of days) {
       if (d.getDay() === 0 || d.getDay() === 6) continue;
-      const key = toYMD(d);
-      const abs = absMap[pid]?.[key];
-      const projs = projAssignMap[pid]?.[key] || [];
-      if (abs && abs.statut === "valide") {
-        daysAbsent++;
-      } else if (projs.length > 0) {
-        daysOnProject++;
-        for (const proj of projs) {
-          periodProjects[String(proj._id)] = proj;
-        }
-      } else {
-        daysFree++;
-      }
+      const key = toYMD(d), abs = absMap[pid]?.[key], projs = projAssignMap[pid]?.[key] || [];
+      if (abs && abs.statut === "valide") daysAbsent++;
+      else if (projs.length > 0) { daysOnProject++; for (const proj of projs) periodProjects[String(proj._id)] = proj; }
+      else daysFree++;
     }
     const workDays = days.filter((d) => d.getDay() !== 0 && d.getDay() !== 6).length;
-
-    // Selected day detail
     let dayDetail = null;
-    if (sheetDate) {
-      const abs = absMap[pid]?.[sheetDate];
-      const projs = projAssignMap[pid]?.[sheetDate] || [];
-      dayDetail = { date: sheetDate, abs, projs, isAbsent: abs && abs.statut === "valide" };
-    }
-
-    // Upcoming absences
-    const upcoming = absences
-      .filter((a) => (a.employeeProfileId === pid || a.userId === pid) && a.statut === "valide" && a.dateFin >= today)
-      .sort((a, b) => a.dateDebut.localeCompare(b.dateDebut))
-      .slice(0, 3);
-
-    return {
-      daysOnProject,
-      daysAbsent,
-      daysFree,
-      workDays,
-      periodProjects: Object.values(periodProjects),
-      dayDetail,
-      upcoming,
-    };
+    if (sheetDate) { const abs = absMap[pid]?.[sheetDate], projs = projAssignMap[pid]?.[sheetDate] || []; dayDetail = { date: sheetDate, abs, projs, isAbsent: abs && abs.statut === "valide" }; }
+    const upcoming = absences.filter((a) => (a.employeeProfileId === pid || a.userId === pid) && a.statut === "valide" && a.dateFin >= today).sort((a, b) => a.dateDebut.localeCompare(b.dateDebut)).slice(0, 3);
+    return { daysOnProject, daysAbsent, daysFree, workDays, periodProjects: Object.values(periodProjects), dayDetail, upcoming };
   }, [sheetEmployee, days, absMap, projAssignMap, absences, sheetDate, today]);
 
-  /* ── Navigation ── */
   const navPrev = useCallback(() => {
-    if (viewMode === "jour") {
-      setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n; });
-    } else {
-      setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() - viewWeeks * 7); return n; });
-    }
+    if (viewMode === "jour") setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n; });
+    else setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() - viewWeeks * 7); return n; });
   }, [viewMode, viewWeeks]);
-
   const navNext = useCallback(() => {
-    if (viewMode === "jour") {
-      setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; });
-    } else {
-      setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() + viewWeeks * 7); return n; });
-    }
+    if (viewMode === "jour") setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; });
+    else setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() + viewWeeks * 7); return n; });
   }, [viewMode, viewWeeks]);
 
-  /* ── Cell data helper ── */
   function getCellData(profileId, dateStr) {
-    const projs = projAssignMap[profileId]?.[dateStr] || [];
-    const abs = absMap[profileId]?.[dateStr];
-    return {
-      projs, abs,
-      projCount: projs.length,
-      isAbsent: abs && abs.statut === "valide",
-      isPending: abs && abs.statut === "en_attente",
-      isOverloaded: projs.length >= 3,
-    };
+    const projs = projAssignMap[profileId]?.[dateStr] || [], abs = absMap[profileId]?.[dateStr];
+    return { projs, abs, projCount: projs.length, isAbsent: abs && abs.statut === "valide", isPending: abs && abs.statut === "en_attente", isOverloaded: projs.length >= 3 };
   }
 
   const isGroupOpen = (key) => openGroups[key] !== false;
-  const gridCols = `180px repeat(${days.length}, minmax(28px, 1fr))`;
+  const gridCols = `172px repeat(${days.length}, minmax(26px, 1fr))`;
 
-  /* ══════════════════════════════════════════════════════════════
-     RENDER
-     ══════════════════════════════════════════════════════════════ */
+  /* ═══ RENDER ═══ */
 
-  if (loading) {
-    return (
-      <div className="p-6 max-w-[1800px] mx-auto space-y-4">
-        <div className="h-8 w-56 rounded-lg bg-muted animate-pulse" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />
-          ))}
-        </div>
-        <div className="h-96 rounded-xl bg-muted animate-pulse" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="p-6 max-w-[1800px] mx-auto space-y-4 animate-in fade-in duration-300">
+      <div className="h-7 w-48 rounded-md bg-muted animate-pulse" />
+      <div className="h-12 rounded-lg bg-muted animate-pulse" />
+      <div className="h-[500px] rounded-lg bg-muted animate-pulse" />
+    </div>
+  );
 
   return (
-    <div className="p-5 md:p-6 max-w-[1800px] mx-auto space-y-5">
+    <div className="p-6 max-w-[1800px] mx-auto space-y-4">
 
-      {/* ═══ HEADER ═══ */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+      {/* ── HEADER ── */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-2xl font-black tracking-tight bg-gradient-to-r from-violet-600 to-rose-600 bg-clip-text text-transparent">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground !bg-none !text-foreground" style={{ background: "none", WebkitTextFillColor: "unset" }}>
             Planning Équipe
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {filteredProfiles.length} membre{filteredProfiles.length > 1 ? "s" : ""} · {contrats.filter((c) => c.dateDebut && c.dateFin).length} projets actifs
+          </h2>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            {filteredProfiles.length} membre{filteredProfiles.length > 1 ? "s" : ""} · {contrats.filter((c) => c.dateDebut && c.dateFin).length} projets
           </p>
         </div>
-        {/* Period label + mini cal toggle */}
         <div className="flex items-center gap-2">
           {viewMode !== "jour" && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border">
-              <Calendar className="w-3.5 h-3.5 text-violet-500" />
-              <span className="text-xs font-bold text-foreground">{periodLabel}</span>
-            </div>
+            <span className="text-[13px] font-medium text-muted-foreground">{periodLabel}</span>
           )}
           <button
             onClick={() => { setShowMiniCal((v) => !v); setMiniCalDate(new Date(calDate)); }}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all",
-              showMiniCal
-                ? "bg-violet-50 border-violet-200 text-violet-700"
-                : "bg-background border-border text-muted-foreground hover:border-violet-300 hover:text-violet-600"
-            )}
+            className={cn("p-1.5 rounded-md transition-colors", showMiniCal ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground")}
           >
-            <CalendarDays className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Mini-cal</span>
+            <Calendar className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* ═══ DASHBOARD MACROS ═══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          icon={UserCheck} label="Présents" value={todayStats.present} total={todayStats.total}
-          colorClass="text-emerald-600" iconBg="bg-gradient-to-br from-emerald-500 to-emerald-600"
-          active={filterStatus === "present"}
-          onClick={() => setFilterStatus((s) => s === "present" ? "" : "present")}
-        />
-        <StatCard
-          icon={UserX} label="Absents" value={todayStats.absent} total={todayStats.total}
-          colorClass="text-rose-600" iconBg="bg-gradient-to-br from-rose-500 to-rose-600"
-          active={filterStatus === "absent"}
-          onClick={() => setFilterStatus((s) => s === "absent" ? "" : "absent")}
-        />
-        <StatCard
-          icon={Briefcase} label="Sur projet" value={todayStats.onProject}
-          colorClass="text-violet-600" iconBg="bg-gradient-to-br from-violet-500 to-violet-600"
-          active={filterStatus === "projet"}
-          onClick={() => setFilterStatus((s) => s === "projet" ? "" : "projet")}
-        />
-        <StatCard
-          icon={UserPlus} label="Disponibles" value={todayStats.available}
-          colorClass="text-sky-600" iconBg="bg-gradient-to-br from-sky-500 to-sky-600"
-          active={filterStatus === "dispo"}
-          onClick={() => setFilterStatus((s) => s === "dispo" ? "" : "dispo")}
-        />
+      {/* ── STAT ROW ── */}
+      <div className="flex items-center gap-1 rounded-lg border bg-card p-1">
+        {[
+          { key: "present", label: "Présents", value: todayStats.present, color: "text-emerald-600", icon: UserCheck },
+          { key: "absent", label: "Absents", value: todayStats.absent, color: "text-rose-500", icon: UserX },
+          { key: "projet", label: "En projet", value: todayStats.onProject, color: "text-violet-600", icon: Briefcase },
+          { key: "dispo", label: "Disponibles", value: todayStats.available, color: "text-sky-600", icon: UserPlus },
+        ].map(({ key, label, value, color, icon: Ic }) => (
+          <button
+            key={key}
+            onClick={() => setFilterStatus((s) => s === key ? "" : key)}
+            className={cn(
+              "flex items-center gap-2 flex-1 px-3 py-2 rounded-md text-left transition-all",
+              filterStatus === key ? "bg-accent shadow-sm" : "hover:bg-accent/50"
+            )}
+          >
+            <Ic className={cn("w-4 h-4", color)} strokeWidth={1.8} />
+            <span className={cn("text-lg font-bold tabular-nums leading-none", color)}>{value}</span>
+            <span className="text-[11px] text-muted-foreground font-medium hidden sm:inline">{label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* ═══ CEO ALERTS ═══ */}
+      {/* ── ALERTS ── */}
       {alerts.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {alerts.slice(0, 5).map((a, i) => (
-            <div
-              key={i}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold",
-                a.type === "overload"
-                  ? "bg-rose-50 text-rose-700 border border-rose-200"
-                  : "bg-amber-50 text-amber-700 border border-amber-200"
-              )}
-            >
-              {a.type === "overload" ? (
-                <>
-                  <Zap className="w-3 h-3" />
-                  {a.emp.prenom} {a.emp.nom?.[0]}. — {a.count} projets
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="w-3 h-3" />
-                  {new Date(a.date + "T12:00:00").getDate()} {MOIS[new Date(a.date + "T12:00:00").getMonth()].slice(0, 3)} — {a.present}/{a.total} présents
-                </>
-              )}
-            </div>
-          ))}
-          {alerts.length > 5 && (
-            <span className="text-[10px] font-semibold text-muted-foreground self-center">
-              +{alerts.length - 5} alertes
+        <div className="flex flex-wrap gap-1.5">
+          {alerts.slice(0, 4).map((a, i) => (
+            <span key={i} className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium", a.type === "overload" ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600")}>
+              {a.type === "overload" ? <><Zap className="w-3 h-3" />{a.emp.prenom} {a.emp.nom?.[0]}. — {a.count}p</> : <><AlertTriangle className="w-3 h-3" />{new Date(a.date + "T12:00:00").getDate()} {MOIS[new Date(a.date + "T12:00:00").getMonth()].slice(0, 3)} — {a.present}/{a.total}</>}
             </span>
-          )}
+          ))}
         </div>
       )}
 
-      {/* ═══ MINI CALENDAR ═══ */}
+      {/* ── MINI CALENDAR ── */}
       {showMiniCal && (
-        <div className="rounded-xl border bg-background p-4 max-w-xs">
-          {/* Month nav */}
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => setMiniCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}
-              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm font-bold text-foreground">
-              {MOIS[miniCalDate.getMonth()]} {miniCalDate.getFullYear()}
-            </span>
-            <button
-              onClick={() => setMiniCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}
-              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        <div className="w-64 rounded-lg border bg-card p-3">
+          <div className="flex items-center justify-between mb-2">
+            <button onClick={() => setMiniCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })} className="p-1 rounded hover:bg-accent text-muted-foreground"><ChevronLeft className="w-3.5 h-3.5" /></button>
+            <span className="text-xs font-semibold">{MOIS[miniCalDate.getMonth()]} {miniCalDate.getFullYear()}</span>
+            <button onClick={() => setMiniCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })} className="p-1 rounded hover:bg-accent text-muted-foreground"><ChevronRight className="w-3.5 h-3.5" /></button>
           </div>
-
-          {/* Day labels */}
-          <div className="grid grid-cols-7 mb-1">
-            {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
-              <div key={i} className="text-center text-[9px] font-bold text-muted-foreground py-1">{d}</div>
+          <div className="grid grid-cols-7 mb-0.5">
+            {["L","M","M","J","V","S","D"].map((d, i) => <div key={i} className="text-center text-[9px] font-medium text-muted-foreground py-0.5">{d}</div>)}
+          </div>
+          <div className="grid grid-cols-7">
+            {miniCalDays.map((day, i) => (
+              <button key={i} onClick={() => { setCalDate(new Date(day.date)); if (viewMode === "jour") setShowMiniCal(false); }}
+                className={cn("relative flex flex-col items-center py-[3px] rounded text-[10px] font-medium transition-all",
+                  !day.inMonth && "opacity-20", day.inRange && "bg-accent", day.key === today && "font-bold text-violet-600 ring-1 ring-violet-400",
+                  day.inMonth && !day.inRange && "hover:bg-accent/50"
+                )}>
+                {day.date.getDate()}
+                {day.inMonth && (day.projectCount > 0 || day.absenceCount > 0 || day.isDeadline) && (
+                  <div className="flex gap-[2px] h-1">
+                    {day.projectCount > 0 && <span className="w-1 h-1 rounded-full bg-violet-500" />}
+                    {day.absenceCount > 0 && <span className="w-1 h-1 rounded-full bg-rose-400" />}
+                    {day.isDeadline && <span className="w-1 h-1 rounded-full bg-amber-400" />}
+                  </div>
+                )}
+              </button>
             ))}
           </div>
-
-          {/* Days grid */}
-          <div className="grid grid-cols-7">
-            {miniCalDays.map((day, i) => {
-              const isToday = day.key === today;
-              const isWE = day.date.getDay() === 0 || day.date.getDay() === 6;
-              const hasHeavyActivity = day.projectCount >= 3;
-
-              return (
-                <button
-                  key={i}
-                  onClick={() => {
-                    setCalDate(new Date(day.date));
-                    if (viewMode === "jour") setShowMiniCal(false);
-                  }}
-                  className={cn(
-                    "relative flex flex-col items-center justify-center py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer",
-                    !day.inMonth && "opacity-20",
-                    day.inMonth && !day.inRange && "text-foreground hover:bg-muted",
-                    day.inRange && "bg-violet-50 text-violet-700",
-                    isToday && "ring-1 ring-violet-500 text-violet-600 font-black",
-                    isWE && day.inMonth && !day.inRange && "text-muted-foreground",
-                    hasHeavyActivity && day.inMonth && "bg-violet-100",
-                  )}
-                >
-                  {day.date.getDate()}
-                  {/* Activity dots */}
-                  {day.inMonth && (
-                    <div className="flex gap-[2px] mt-[1px] h-[5px] items-center">
-                      {day.projectCount > 0 && <span className="w-[4px] h-[4px] rounded-full bg-violet-500" />}
-                      {day.absenceCount > 0 && <span className="w-[4px] h-[4px] rounded-full bg-rose-400" />}
-                      {day.isDeadline && <span className="w-[4px] h-[4px] rounded-full bg-amber-500" />}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Legend */}
-          <div className="flex gap-3 mt-3 pt-2 border-t">
-            <span className="flex items-center gap-1 text-[9px] font-semibold text-muted-foreground">
-              <span className="w-[5px] h-[5px] rounded-full bg-violet-500" /> Projets
-            </span>
-            <span className="flex items-center gap-1 text-[9px] font-semibold text-muted-foreground">
-              <span className="w-[5px] h-[5px] rounded-full bg-rose-400" /> Absences
-            </span>
-            <span className="flex items-center gap-1 text-[9px] font-semibold text-muted-foreground">
-              <span className="w-[5px] h-[5px] rounded-full bg-amber-500" /> Deadline
-            </span>
-          </div>
         </div>
       )}
 
-      {/* ═══ CONTROLS ═══ */}
+      {/* ── CONTROLS ── */}
       <div className="flex items-center gap-2 flex-wrap">
-        {/* View mode */}
-        <div className="flex bg-muted/60 rounded-lg p-0.5">
+        <div className="flex rounded-md border bg-card p-0.5">
           {[
-            { key: "branche", icon: Layers, label: "Par branche" },
-            { key: "projet", icon: LayoutGrid, label: "Par projet" },
-            { key: "jour", icon: CalendarDays, label: "Vue du jour" },
+            { key: "branche", icon: Layers, label: "Branche" },
+            { key: "projet", icon: LayoutGrid, label: "Projet" },
+            { key: "jour", icon: CalendarDays, label: "Jour" },
           ].map(({ key, icon: Ic, label }) => (
-            <button
-              key={key}
-              onClick={() => { setViewMode(key); closeSheet(); }}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all",
-                viewMode === key
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Ic className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{label}</span>
+            <button key={key} onClick={() => { setViewMode(key); closeSheet(); }}
+              className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all",
+                viewMode === key ? "bg-accent text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}>
+              <Ic className="w-3.5 h-3.5" />{label}
             </button>
           ))}
         </div>
 
-        {/* Pole filter */}
-        <select
-          className="text-xs font-bold px-3 py-1.5 rounded-lg border border-border bg-background text-foreground cursor-pointer hover:border-violet-300 transition-colors"
-          value={filterPole}
-          onChange={(e) => setFilterPole(e.target.value)}
-        >
+        <select value={filterPole} onChange={(e) => setFilterPole(e.target.value)}
+          className="text-xs font-medium px-2.5 py-1.5 rounded-md border bg-card text-foreground cursor-pointer">
           <option value="">Tous les pôles</option>
-          {poles.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
+          {poles.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
 
-        {/* Week range */}
         {viewMode !== "jour" && (
-          <div className="flex bg-muted/60 rounded-lg p-0.5">
-            {[
-              { w: 1, label: "1 sem" },
-              { w: 2, label: "2 sem" },
-              { w: 4, label: "1 mois" },
-            ].map(({ w, label }) => (
-              <button
-                key={w}
-                onClick={() => setViewWeeks(w)}
-                className={cn(
-                  "px-2.5 py-1 rounded-md text-xs font-bold transition-all",
-                  viewWeeks === w
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {label}
-              </button>
+          <div className="flex rounded-md border bg-card p-0.5">
+            {[{ w: 1, l: "1S" }, { w: 2, l: "2S" }, { w: 4, l: "1M" }].map(({ w, l }) => (
+              <button key={w} onClick={() => setViewWeeks(w)}
+                className={cn("px-2 py-1 rounded text-xs font-medium transition-all",
+                  viewWeeks === w ? "bg-accent text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}>{l}</button>
             ))}
           </div>
         )}
@@ -729,189 +417,106 @@ export default function PlanningEquipePage() {
         <div className="flex-1" />
 
         {filterStatus && (
-          <button
-            onClick={() => setFilterStatus("")}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-violet-100 text-violet-700 hover:bg-violet-200 transition-colors"
-          >
-            Filtre actif
-            <span className="ml-0.5">✕</span>
+          <button onClick={() => setFilterStatus("")} className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Réinitialiser filtre ✕
           </button>
         )}
 
-        {/* Navigation */}
-        <div className="flex items-center gap-1">
-          <button onClick={navPrev} className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:border-violet-300 hover:text-violet-600 text-muted-foreground transition-all">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button onClick={() => setCalDate(new Date())} className="px-3 py-1.5 rounded-lg border border-border text-xs font-bold text-muted-foreground hover:border-violet-300 hover:text-violet-600 transition-all">
-            Aujourd&apos;hui
-          </button>
-          <button onClick={navNext} className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:border-violet-300 hover:text-violet-600 text-muted-foreground transition-all">
-            <ChevronRight className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-0.5">
+          <button onClick={navPrev} className="p-1.5 rounded-md hover:bg-accent text-muted-foreground transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+          <button onClick={() => setCalDate(new Date())} className="px-2.5 py-1 rounded-md text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">Aujourd&apos;hui</button>
+          <button onClick={navNext} className="p-1.5 rounded-md hover:bg-accent text-muted-foreground transition-colors"><ChevronRight className="w-4 h-4" /></button>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════
-          VIEW: PAR BRANCHE
-          ═══════════════════════════════════════════ */}
+      {/* ════════════════════════════════════════
+          VUE: PAR BRANCHE
+          ════════════════════════════════════════ */}
       {viewMode === "branche" && (
-        <div className="rounded-xl border overflow-hidden bg-background">
+        <div className="rounded-lg border bg-card overflow-hidden">
           {/* Day headers */}
-          <div className="grid sticky top-0 z-20 bg-background border-b" style={{ gridTemplateColumns: gridCols }}>
-            <div className="sticky left-0 z-30 bg-background px-3 py-2 flex items-center border-r">
-              <Users className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="ml-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Équipe</span>
-            </div>
+          <div className="grid sticky top-0 z-20 bg-card border-b" style={{ gridTemplateColumns: gridCols }}>
+            <div className="sticky left-0 z-30 bg-card px-3 py-2 border-r text-[11px] font-medium text-muted-foreground">Équipe</div>
             {days.map((d) => {
-              const key = toYMD(d);
-              const isToday = key === today;
-              const isWE = d.getDay() === 0 || d.getDay() === 6;
+              const key = toYMD(d), isT = key === today, isWE = d.getDay() === 0 || d.getDay() === 6;
               return (
-                <div key={key} className={cn("text-center py-1.5 px-0.5 select-none", isToday && "bg-violet-50", isWE && "bg-muted/40")}>
-                  <div className="text-[8px] font-bold text-muted-foreground uppercase">{JOURS_SHORT[d.getDay()]}</div>
-                  <div className={cn("text-xs font-black", isToday ? "text-violet-600" : "text-foreground")}>{d.getDate()}</div>
-                  {d.getDate() === 1 && <div className="text-[7px] font-bold text-violet-500">{MOIS[d.getMonth()].slice(0, 3)}</div>}
+                <div key={key} className={cn("text-center py-1.5 select-none", isT && "bg-violet-50/60", isWE && "bg-muted/30")}>
+                  <div className={cn("text-[9px] font-medium", isWE ? "text-muted-foreground/50" : "text-muted-foreground")}>{JOURS_SHORT[d.getDay()]}</div>
+                  <div className={cn("text-[11px] font-semibold", isT ? "text-violet-600" : isWE ? "text-muted-foreground/50" : "text-foreground")}>{d.getDate()}</div>
+                  {d.getDate() === 1 && <div className="text-[8px] font-medium text-violet-500">{MOIS[d.getMonth()].slice(0, 3)}</div>}
                 </div>
               );
             })}
           </div>
 
           {/* Charge row */}
-          <div className="grid border-b bg-muted/20" style={{ gridTemplateColumns: gridCols }}>
-            <div className="sticky left-0 z-10 bg-muted/20 px-3 py-1 flex items-center border-r">
-              <span className="text-[10px] font-bold text-muted-foreground">Charge</span>
-            </div>
+          <div className="grid border-b bg-muted/10" style={{ gridTemplateColumns: gridCols }}>
+            <div className="sticky left-0 z-10 bg-muted/10 px-3 py-0.5 border-r text-[10px] font-medium text-muted-foreground">Charge</div>
             {days.map((d) => {
-              const key = toYMD(d);
-              const isWE = d.getDay() === 0 || d.getDay() === 6;
-              const absentCount = filteredProfiles.filter((p) => { const a = absMap[String(p._id)]?.[key]; return a && a.statut === "valide"; }).length;
-              const presentCount = filteredProfiles.length - absentCount;
-              const ratio = filteredProfiles.length > 0 ? presentCount / filteredProfiles.length : 1;
+              const key = toYMD(d), isWE = d.getDay() === 0 || d.getDay() === 6;
+              const absC = filteredProfiles.filter((p) => { const a = absMap[String(p._id)]?.[key]; return a && a.statut === "valide"; }).length;
+              const presC = filteredProfiles.length - absC, ratio = filteredProfiles.length > 0 ? presC / filteredProfiles.length : 1;
               return (
-                <div key={key} className={cn("text-center py-1 text-[9px] font-bold", isWE && "opacity-30", !isWE && ratio < 0.5 && "text-rose-600 bg-rose-50", !isWE && ratio >= 0.5 && ratio < 0.75 && "text-amber-600 bg-amber-50", !isWE && ratio >= 0.75 && "text-muted-foreground")}>
-                  {presentCount}/{filteredProfiles.length}
+                <div key={key} className={cn("text-center py-0.5 text-[9px] font-medium tabular-nums", isWE && "opacity-20",
+                  !isWE && ratio < 0.5 && "text-rose-500", !isWE && ratio >= 0.5 && ratio < 0.75 && "text-amber-500", !isWE && ratio >= 0.75 && "text-muted-foreground")}>
+                  {presC}/{filteredProfiles.length}
                 </div>
               );
             })}
           </div>
 
-          {/* Employee groups */}
-          {employeeGroups.length === 0 && (
-            <div className="p-8 text-center text-sm text-muted-foreground">Aucun membre trouvé</div>
-          )}
+          {/* Groups */}
+          {employeeGroups.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">Aucun membre</div>}
           {employeeGroups.map((group) => {
-            // Group-level stats for the period
-            const groupPresent = group.employees.filter((e) => {
-              const a = absMap[String(e._id)]?.[today];
-              return !(a && a.statut === "valide");
-            }).length;
-            const groupTotal = group.employees.length;
-
+            const gPresent = group.employees.filter((e) => { const a = absMap[String(e._id)]?.[today]; return !(a && a.statut === "valide"); }).length;
             return (
-              <Collapsible
-                key={group.key}
-                open={isGroupOpen(group.key)}
-                onOpenChange={(open) => setOpenGroups((prev) => ({ ...prev, [group.key]: open }))}
-              >
-                <CollapsibleTrigger className="flex items-center w-full px-3 py-2 border-b hover:bg-muted/30 transition-colors cursor-pointer">
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
-                  <span className="ml-2 text-sm font-bold text-foreground">{group.label}</span>
-                  {group.branchLabel && group.branchLabel !== group.label && (
-                    <span className="ml-1.5 text-[10px] font-semibold text-muted-foreground">({group.branchLabel})</span>
-                  )}
-                  <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">{groupTotal}</Badge>
-
-                  {/* Mini presence bar */}
-                  <div className="ml-3 flex items-center gap-1.5">
-                    <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${groupTotal > 0 ? (groupPresent / groupTotal) * 100 : 0}%`,
-                          backgroundColor: groupPresent / groupTotal >= 0.75 ? "#10b981" : groupPresent / groupTotal >= 0.5 ? "#f59e0b" : "#f43f5e",
-                        }}
-                      />
+              <Collapsible key={group.key} open={isGroupOpen(group.key)} onOpenChange={(open) => setOpenGroups((prev) => ({ ...prev, [group.key]: open }))}>
+                <CollapsibleTrigger className="flex items-center w-full px-3 py-1.5 border-b bg-muted/5 hover:bg-muted/20 transition-colors cursor-pointer gap-2">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
+                  <span className="text-[13px] font-semibold text-foreground">{group.label}</span>
+                  <span className="text-[11px] text-muted-foreground">{group.employees.length}</span>
+                  <div className="flex items-center gap-1 ml-2">
+                    <div className="w-12 h-1 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${group.employees.length > 0 ? (gPresent / group.employees.length) * 100 : 0}%`, backgroundColor: gPresent / group.employees.length >= 0.75 ? "#10b981" : gPresent / group.employees.length >= 0.5 ? "#f59e0b" : "#f43f5e" }} />
                     </div>
-                    <span className="text-[9px] font-bold text-muted-foreground">{groupPresent}/{groupTotal}</span>
+                    <span className="text-[9px] font-medium text-muted-foreground tabular-nums">{gPresent}/{group.employees.length}</span>
                   </div>
-
-                  <ChevronDown className={cn("ml-auto w-4 h-4 text-muted-foreground transition-transform duration-200", isGroupOpen(group.key) ? "rotate-0" : "-rotate-90")} />
+                  <ChevronDown className={cn("ml-auto w-3.5 h-3.5 text-muted-foreground transition-transform duration-150", isGroupOpen(group.key) ? "" : "-rotate-90")} />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   {group.employees.map((emp) => {
                     const pid = String(emp._id);
                     return (
-                      <div key={pid} className="grid border-b last:border-b-0 hover:bg-muted/10 transition-colors" style={{ gridTemplateColumns: gridCols }}>
-                        {/* Name cell — opens Sheet instead of navigating */}
-                        <button
-                          onClick={() => openSheet(emp)}
-                          className="sticky left-0 z-10 bg-background flex items-center gap-2 px-3 py-1 border-r min-w-0 text-left cursor-pointer hover:bg-violet-50/50 transition-colors group/emp"
-                        >
-                          <div
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                            style={{ background: `linear-gradient(135deg, ${group.color}, ${group.color}dd)` }}
-                          >
+                      <div key={pid} className="grid border-b last:border-b-0 group/row hover:bg-accent/30 transition-colors" style={{ gridTemplateColumns: gridCols }}>
+                        <button onClick={() => openSheet(emp)} className="sticky left-0 z-10 bg-card group-hover/row:bg-accent/30 flex items-center gap-2 px-3 py-1 border-r text-left transition-colors cursor-pointer">
+                          <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0" style={{ backgroundColor: `${group.color}18`, color: group.color }}>
                             {(emp.prenom || "?")[0].toUpperCase()}
-                          </div>
+                          </span>
                           <div className="min-w-0">
-                            <div className="text-xs font-bold text-foreground truncate group-hover/emp:text-violet-600 transition-colors">
-                              {emp.prenom} {emp.nom?.[0]}.
-                            </div>
+                            <div className="text-[12px] font-medium text-foreground truncate">{emp.prenom} {emp.nom?.[0]}.</div>
                             <div className="text-[10px] text-muted-foreground truncate">{emp.contrat || "—"}</div>
                           </div>
                         </button>
-
-                        {/* Day cells — opens Sheet with date context */}
                         {days.map((d) => {
-                          const key = toYMD(d);
-                          const isWE = d.getDay() === 0 || d.getDay() === 6;
-                          const isToday = key === today;
+                          const key = toYMD(d), isWE = d.getDay() === 0 || d.getDay() === 6, isT = key === today;
                           const { projs, abs, projCount, isAbsent, isPending, isOverloaded } = getCellData(pid, key);
-
-                          let cellClass = "h-8 flex items-center justify-center text-[10px] font-bold cursor-pointer transition-all select-none relative";
-                          let cellContent = null;
-                          let cellStyle = {};
-                          let cellTitle = "Disponible";
-
-                          if (isWE) {
-                            cellClass += " bg-muted/30";
-                            cellTitle = "Week-end";
-                          } else if (isAbsent) {
+                          let cls = "h-8 flex items-center justify-center text-[10px] font-medium cursor-pointer transition-all select-none";
+                          let content = null, style = {};
+                          if (isWE) { cls += " bg-muted/20"; }
+                          else if (isAbsent) {
                             const meta = ABSENCE_META[abs.type] || ABSENCE_META.absence_autre;
-                            cellStyle = { backgroundColor: `${meta.color}20` };
-                            cellContent = <span className="text-sm leading-none">{meta.icon}</span>;
-                            cellTitle = `${meta.label} (validé)`;
+                            style = { backgroundColor: `${meta.color}12` };
+                            content = <span className="text-xs leading-none">{meta.icon}</span>;
                           } else if (isPending) {
-                            cellClass += " border border-dashed border-amber-300 bg-amber-50/60 text-amber-600";
-                            cellContent = "?";
-                            cellTitle = `${ABSENCE_META[abs.type]?.label || "Absence"} (en attente)`;
+                            cls += " bg-amber-50/40 text-amber-500"; content = "?";
                           } else if (projCount > 0) {
                             const bc = getBranchColor(projs[0]?.branche, branches);
-                            cellStyle = { backgroundColor: `${bc}15`, borderLeft: `3px solid ${bc}` };
-                            cellContent = projCount > 1 ? <span style={{ color: bc }}>{projCount}</span> : null;
-                            cellTitle = projs.map((c) => c.nomContrat || c.nom).join(", ");
-                            if (isOverloaded) {
-                              cellClass += " ring-2 ring-rose-400/60";
-                              cellStyle.backgroundColor = `${bc}20`;
-                            }
-                          } else {
-                            cellClass += " bg-emerald-50/40";
+                            style = { backgroundColor: `${bc}0c` };
+                            content = projCount > 1 ? <span className="text-[9px]" style={{ color: bc }}>{projCount}</span> : <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: bc }} />;
+                            if (isOverloaded) cls += " ring-1 ring-inset ring-rose-300";
                           }
-
-                          if (isToday) cellClass += " ring-1 ring-inset ring-violet-300/50";
-
-                          return (
-                            <div
-                              key={key}
-                              className={cellClass}
-                              style={cellStyle}
-                              title={cellTitle}
-                              onClick={() => openSheet(emp, key)}
-                            >
-                              {cellContent}
-                            </div>
-                          );
+                          if (isT) cls += " border-b-2 border-violet-400";
+                          return <div key={key} className={cls} style={style} onClick={() => openSheet(emp, key)}>{content}</div>;
                         })}
                       </div>
                     );
@@ -923,353 +528,227 @@ export default function PlanningEquipePage() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════
-          VIEW: PAR PROJET
-          ═══════════════════════════════════════════ */}
+      {/* ════════════════════════════════════════
+          VUE: PAR PROJET
+          ════════════════════════════════════════ */}
       {viewMode === "projet" && (() => {
-        const activeContrats = contrats.filter((c) => c.dateDebut && c.dateFin);
-        const firstStr = toYMD(days[0]);
-        const lastStr = toYMD(days[days.length - 1]);
-        const visibleProjects = activeContrats.filter((c) => c.dateFin >= firstStr && c.dateDebut <= lastStr);
-        const projGridCols = `220px repeat(${days.length}, minmax(28px, 1fr))`;
-
+        const active = contrats.filter((c) => c.dateDebut && c.dateFin);
+        const fStr = toYMD(days[0]), lStr = toYMD(days[days.length - 1]);
+        const visible = active.filter((c) => c.dateFin >= fStr && c.dateDebut <= lStr);
+        const pCols = `200px repeat(${days.length}, minmax(26px, 1fr))`;
         return (
-          <div className="rounded-xl border overflow-hidden bg-background">
-            <div className="grid border-b bg-muted/20" style={{ gridTemplateColumns: projGridCols }}>
-              <div className="px-3 py-2 font-bold text-[10px] text-muted-foreground uppercase tracking-wider border-r">Projet</div>
-              {days.map((d) => {
-                const key = toYMD(d);
-                const isToday = key === today;
-                const isWE = d.getDay() === 0 || d.getDay() === 6;
-                return (
-                  <div key={key} className={cn("text-center py-1.5 text-[9px] font-bold", isToday ? "text-violet-600 bg-violet-50" : "text-muted-foreground", isWE && "opacity-30")}>
-                    <div>{JOURS_SHORT[d.getDay()]}</div>
-                    <div className="text-xs font-black">{d.getDate()}</div>
-                  </div>
-                );
+          <div className="rounded-lg border bg-card overflow-hidden">
+            <div className="grid border-b bg-muted/10" style={{ gridTemplateColumns: pCols }}>
+              <div className="px-3 py-2 text-[11px] font-medium text-muted-foreground border-r">Projet</div>
+              {days.map((d) => { const key = toYMD(d), isT = key === today, isWE = d.getDay() === 0 || d.getDay() === 6;
+                return <div key={key} className={cn("text-center py-1.5 text-[9px] font-medium", isT ? "text-violet-600 bg-violet-50/60" : "text-muted-foreground", isWE && "opacity-20")}>
+                  <div>{JOURS_SHORT[d.getDay()]}</div><div className="text-[11px] font-semibold">{d.getDate()}</div></div>;
               })}
             </div>
-
-            {visibleProjects.map((c) => {
+            {visible.map((c) => {
               const bc = getBranchColor(c.branche, branches);
-              const assignees = c.assignees || [];
-              const assigneeProfiles = assignees
-                .map((a) => profiles.find((p) => String(p._id) === String(a) || p.email === String(a)))
-                .filter(Boolean);
-
+              const ap = (c.assignees || []).map((a) => profiles.find((p) => String(p._id) === String(a) || p.email === String(a))).filter(Boolean);
               return (
-                <div key={String(c._id)} className="grid border-b last:border-b-0 hover:bg-muted/10 transition-colors" style={{ gridTemplateColumns: projGridCols }}>
-                  <Link href={`/projets/${String(c._id)}`} className="flex flex-col gap-1 px-3 py-2 border-r group/proj" style={{ borderLeftWidth: 4, borderLeftColor: bc }}>
-                    <span className="text-xs font-bold text-foreground group-hover/proj:text-violet-600 truncate transition-colors">{c.nomContrat || c.nom}</span>
-                    <span className="text-[10px] font-semibold" style={{ color: bc }}>{c.branche}</span>
-                    {assigneeProfiles.length > 0 && (
-                      <div className="flex -space-x-1.5 mt-0.5">
-                        {assigneeProfiles.slice(0, 5).map((p, i) => (
-                          <button key={i} onClick={(e) => { e.preventDefault(); openSheet(p); }} className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold ring-2 ring-background hover:ring-violet-300 transition-all cursor-pointer" style={{ backgroundColor: bc }} title={`${p.prenom} ${p.nom}`}>
-                            {(p.prenom || "?")[0]}
-                          </button>
-                        ))}
-                        {assigneeProfiles.length > 5 && <span className="ml-2 text-[9px] font-bold text-muted-foreground self-center">+{assigneeProfiles.length - 5}</span>}
-                      </div>
-                    )}
+                <div key={String(c._id)} className="grid border-b last:border-b-0 hover:bg-accent/20 transition-colors" style={{ gridTemplateColumns: pCols }}>
+                  <Link href={`/projets/${String(c._id)}`} className="flex flex-col gap-0.5 px-3 py-2 border-r group/proj" style={{ borderLeftWidth: 3, borderLeftColor: bc }}>
+                    <span className="text-[12px] font-medium text-foreground group-hover/proj:text-violet-600 truncate transition-colors">{c.nomContrat || c.nom}</span>
+                    <span className="text-[10px] font-medium" style={{ color: bc }}>{c.branche}</span>
+                    {ap.length > 0 && <div className="flex -space-x-1 mt-0.5">
+                      {ap.slice(0, 4).map((p, i) => <button key={i} onClick={(e) => { e.preventDefault(); openSheet(p); }} className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[7px] font-semibold ring-1 ring-card hover:ring-violet-300 transition-all" style={{ backgroundColor: bc }}>{(p.prenom || "?")[0]}</button>)}
+                      {ap.length > 4 && <span className="ml-1.5 text-[9px] text-muted-foreground self-center">+{ap.length - 4}</span>}
+                    </div>}
                   </Link>
                   {days.map((d) => {
-                    const key = toYMD(d);
-                    const inRange = key >= c.dateDebut && key <= c.dateFin;
-                    const isFirst = key === c.dateDebut;
-                    const isLast = key === c.dateFin;
-                    const isWE = d.getDay() === 0 || d.getDay() === 6;
-                    if (!inRange) return <div key={key} className={cn("h-12", isWE && "bg-muted/20")} />;
-                    return (
-                      <div key={key} className="h-12" style={{
-                        backgroundColor: `${bc}15`, borderTop: `2px solid ${bc}`, borderBottom: `2px solid ${bc}`,
-                        borderLeft: isFirst ? `2px solid ${bc}` : "none", borderRight: isLast ? `2px solid ${bc}` : "none",
-                        borderRadius: isFirst && isLast ? "6px" : isFirst ? "6px 0 0 6px" : isLast ? "0 6px 6px 0" : "0",
-                      }} />
-                    );
+                    const key = toYMD(d), inR = key >= c.dateDebut && key <= c.dateFin, isF = key === c.dateDebut, isL = key === c.dateFin, isWE = d.getDay() === 0 || d.getDay() === 6;
+                    if (!inR) return <div key={key} className={cn("h-11", isWE && "bg-muted/10")} />;
+                    return <div key={key} className="h-11" style={{ backgroundColor: `${bc}0c`, borderTop: `2px solid ${bc}`, borderBottom: `2px solid ${bc}`, borderLeft: isF ? `2px solid ${bc}` : "none", borderRight: isL ? `2px solid ${bc}` : "none", borderRadius: isF && isL ? "4px" : isF ? "4px 0 0 4px" : isL ? "0 4px 4px 0" : "0" }} />;
                   })}
                 </div>
               );
             })}
-            {visibleProjects.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">Aucun projet sur cette période</div>}
+            {visible.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">Aucun projet sur cette période</div>}
           </div>
         );
       })()}
 
-      {/* ═══════════════════════════════════════════
-          VIEW: VUE DU JOUR
-          ═══════════════════════════════════════════ */}
+      {/* ════════════════════════════════════════
+          VUE: JOUR
+          ════════════════════════════════════════ */}
       {viewMode === "jour" && (() => {
-        const focusDate = toYMD(calDate);
-        const focusDay = calDate;
-        const absentToday = [], onProjectToday = [], availableToday = [];
-        const projectsToday = {};
-
+        const fd = toYMD(calDate), fDay = calDate;
+        const absentT = [], onProjT = [], availT = [], projT = {};
         for (const p of filteredProfiles) {
-          const pid = String(p._id);
-          const abs = absMap[pid]?.[focusDate];
-          const projs = projAssignMap[pid]?.[focusDate] || [];
-          if (abs && abs.statut === "valide") {
-            absentToday.push({ ...p, absence: abs });
-          } else if (projs.length > 0) {
-            onProjectToday.push({ ...p, projects: projs });
-            for (const proj of projs) {
-              const k = String(proj._id);
-              if (!projectsToday[k]) projectsToday[k] = { ...proj, members: [] };
-              projectsToday[k].members.push(p);
-            }
-          } else {
-            availableToday.push(p);
-          }
+          const pid = String(p._id), abs = absMap[pid]?.[fd], projs = projAssignMap[pid]?.[fd] || [];
+          if (abs && abs.statut === "valide") absentT.push({ ...p, absence: abs });
+          else if (projs.length > 0) { onProjT.push({ ...p, projects: projs }); for (const proj of projs) { const k = String(proj._id); if (!projT[k]) projT[k] = { ...proj, members: [] }; projT[k].members.push(p); } }
+          else availT.push(p);
         }
-        const projectsList = Object.values(projectsToday);
-
+        const pList = Object.values(projT);
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="text-lg font-black text-foreground">{JOURS[focusDay.getDay()]} {focusDay.getDate()} {MOIS[focusDay.getMonth()]} {focusDay.getFullYear()}</div>
-              <p className="text-xs text-muted-foreground mt-0.5">{filteredProfiles.length} membres dans l&apos;équipe</p>
+          <div className="space-y-5">
+            <div>
+              <div className="text-lg font-semibold text-foreground">{JOURS[fDay.getDay()]} {fDay.getDate()} {MOIS[fDay.getMonth()]} {fDay.getFullYear()}</div>
+              <p className="text-[13px] text-muted-foreground">{filteredProfiles.length} membres</p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <Card size="sm"><CardContent className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center"><UserX className="w-4 h-4 text-white" strokeWidth={2.5} /></div>
-                <div><p className="text-[10px] font-semibold text-muted-foreground uppercase">Absents</p><p className="text-xl font-black text-rose-600">{absentToday.length}</p></div>
-              </CardContent></Card>
-              <Card size="sm"><CardContent className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center"><Briefcase className="w-4 h-4 text-white" strokeWidth={2.5} /></div>
-                <div><p className="text-[10px] font-semibold text-muted-foreground uppercase">En projet</p><p className="text-xl font-black text-violet-600">{onProjectToday.length}</p></div>
-              </CardContent></Card>
-              <Card size="sm"><CardContent className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center"><UserPlus className="w-4 h-4 text-white" strokeWidth={2.5} /></div>
-                <div><p className="text-[10px] font-semibold text-muted-foreground uppercase">Disponibles</p><p className="text-xl font-black text-emerald-600">{availableToday.length}</p></div>
-              </CardContent></Card>
+            <div className="flex gap-6">
+              <div className="flex items-center gap-2"><UserX className="w-4 h-4 text-rose-500" /><span className="text-lg font-bold text-rose-500 tabular-nums">{absentT.length}</span><span className="text-[13px] text-muted-foreground">absents</span></div>
+              <div className="flex items-center gap-2"><Briefcase className="w-4 h-4 text-violet-600" /><span className="text-lg font-bold text-violet-600 tabular-nums">{onProjT.length}</span><span className="text-[13px] text-muted-foreground">en projet</span></div>
+              <div className="flex items-center gap-2"><UserPlus className="w-4 h-4 text-emerald-600" /><span className="text-lg font-bold text-emerald-600 tabular-nums">{availT.length}</span><span className="text-[13px] text-muted-foreground">disponibles</span></div>
             </div>
 
-            {/* Projects */}
-            {projectsList.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Briefcase className="w-4 h-4 text-violet-600" />
-                  <span className="text-sm font-bold text-foreground">Projets du jour ({projectsList.length})</span>
-                </div>
-                <div className="space-y-2">
-                  {projectsList.map((proj) => {
-                    const bc = getBranchColor(proj.branche, branches);
-                    const absentMembers = proj.members.filter((m) => { const a = absMap[String(m._id)]?.[focusDate]; return a && a.statut === "valide"; });
-                    return (
-                      <Card key={String(proj._id)} size="sm">
-                        <CardContent>
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: bc }} />
-                            <Link href={`/projets/${String(proj._id)}`} className="text-sm font-bold text-foreground hover:text-violet-600 transition-colors">{proj.nomContrat || proj.nom}</Link>
-                            <Badge variant="secondary" className="text-[10px]" style={{ color: bc }}>{proj.branche}</Badge>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {proj.members.map((m) => {
-                              const isAbsent = absentMembers.some((a) => String(a._id) === String(m._id));
-                              return (
-                                <button key={String(m._id)} onClick={() => openSheet(m, focusDate)} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold cursor-pointer hover:ring-1 hover:ring-violet-300 transition-all", isAbsent ? "bg-rose-50 text-rose-600 line-through" : "bg-muted text-foreground")}>
-                                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold" style={{ backgroundColor: isAbsent ? "#f43f5e" : bc }}>{(m.prenom || "?")[0]}</span>
-                                  {m.prenom} {m.nom?.[0]}.
-                                </button>
-                              );
-                            })}
-                          </div>
-                          {absentMembers.length > 0 && (
-                            <div className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-rose-500">
-                              <AlertTriangle className="w-3 h-3" />{absentMembers.length} absent{absentMembers.length > 1 ? "s" : ""}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
+            {pList.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[13px] font-medium text-muted-foreground">Projets du jour</div>
+                {pList.map((proj) => {
+                  const bc = getBranchColor(proj.branche, branches);
+                  const absMem = proj.members.filter((m) => { const a = absMap[String(m._id)]?.[fd]; return a && a.statut === "valide"; });
+                  return (
+                    <div key={String(proj._id)} className="rounded-lg border bg-card p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: bc }} />
+                        <Link href={`/projets/${String(proj._id)}`} className="text-[13px] font-medium text-foreground hover:text-violet-600 transition-colors">{proj.nomContrat || proj.nom}</Link>
+                        <span className="text-[11px] font-medium" style={{ color: bc }}>{proj.branche}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {proj.members.map((m) => {
+                          const isAbs = absMem.some((a) => String(a._id) === String(m._id));
+                          return <button key={String(m._id)} onClick={() => openSheet(m, fd)} className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-all hover:ring-1 hover:ring-violet-300 cursor-pointer", isAbs ? "bg-rose-50 text-rose-500 line-through" : "bg-muted text-foreground")}>
+                            <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[7px] font-semibold" style={{ backgroundColor: isAbs ? "#f43f5e" : bc }}>{(m.prenom || "?")[0]}</span>
+                            {m.prenom} {m.nom?.[0]}.
+                          </button>;
+                        })}
+                      </div>
+                      {absMem.length > 0 && <div className="mt-1.5 text-[10px] font-medium text-rose-500 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />{absMem.length} absent{absMem.length > 1 ? "s" : ""}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {absentT.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[13px] font-medium text-muted-foreground">Absents</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {absentT.map((emp) => { const meta = ABSENCE_META[emp.absence?.type] || ABSENCE_META.absence_autre;
+                    return <button key={String(emp._id)} onClick={() => openSheet(emp, fd)} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer transition-colors hover:shadow-sm", meta.bg, meta.border)}>
+                      <span className="text-sm leading-none">{meta.icon}</span>
+                      <span className="text-[12px] font-medium text-foreground">{emp.prenom} {emp.nom?.[0]}.</span>
+                    </button>;
                   })}
                 </div>
               </div>
             )}
 
-            {/* Absents */}
-            {absentToday.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3"><UserX className="w-4 h-4 text-rose-500" /><span className="text-sm font-bold text-foreground">Absents ({absentToday.length})</span></div>
-                <div className="flex flex-wrap gap-2">
-                  {absentToday.map((emp) => {
-                    const meta = ABSENCE_META[emp.absence?.type] || ABSENCE_META.absence_autre;
-                    return (
-                      <button key={String(emp._id)} onClick={() => openSheet(emp, focusDate)} className={cn("flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors hover:shadow-sm cursor-pointer", meta.bg, meta.border)}>
-                        <span className="text-base leading-none">{meta.icon}</span>
-                        <div className="text-left">
-                          <div className="text-xs font-bold text-foreground">{emp.prenom} {emp.nom?.[0]}.</div>
-                          <div className={cn("text-[10px] font-semibold", meta.text)}>{meta.label}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Available */}
-            {availableToday.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3"><UserPlus className="w-4 h-4 text-emerald-600" /><span className="text-sm font-bold text-foreground">Disponibles ({availableToday.length})</span></div>
-                <div className="flex flex-wrap gap-2">
-                  {availableToday.map((emp) => (
-                    <button key={String(emp._id)} onClick={() => openSheet(emp, focusDate)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50/50 border border-emerald-100 hover:border-emerald-200 hover:shadow-sm transition-all cursor-pointer">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold" style={{ background: "#10b981" }}>{(emp.prenom || "?")[0]}</div>
-                      <div className="text-xs font-bold text-foreground">{emp.prenom} {emp.nom?.[0]}.</div>
+            {availT.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[13px] font-medium text-muted-foreground">Disponibles</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {availT.map((emp) => (
+                    <button key={String(emp._id)} onClick={() => openSheet(emp, fd)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50/50 border border-emerald-100/60 hover:border-emerald-200 transition-all cursor-pointer">
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-semibold bg-emerald-500">{(emp.prenom || "?")[0]}</span>
+                      <span className="text-[12px] font-medium text-foreground">{emp.prenom} {emp.nom?.[0]}.</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
-
-            {filteredProfiles.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">Aucun membre trouvé</div>}
           </div>
         );
       })()}
 
-      {/* ═══════════════════════════════════════════
-          EMPLOYEE SHEET (right side panel)
-          ═══════════════════════════════════════════ */}
+      {/* ════════════════════════════════════════
+          SHEET EMPLOYÉ
+          ════════════════════════════════════════ */}
       <Sheet open={!!sheetEmployee} onOpenChange={(open) => { if (!open) closeSheet(); }}>
-        <SheetContent side="right" className="w-[400px] sm:max-w-[400px] overflow-y-auto">
+        <SheetContent side="right" className="w-[380px] sm:max-w-[380px] overflow-y-auto">
           {sheetEmployee && sheetData && (() => {
-            const emp = sheetEmployee;
-            const pid = String(emp._id);
+            const emp = sheetEmployee, pid = String(emp._id);
             const group = employeeGroups.find((g) => g.employees.some((e) => String(e._id) === pid));
-            const groupColor = group?.color || "#6b7280";
-
+            const gc = group?.color || "#6b7280";
             return (
               <>
                 <SheetHeader className="pb-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style={{ background: `linear-gradient(135deg, ${groupColor}, ${groupColor}cc)` }}>
-                      {(emp.prenom || "?")[0].toUpperCase()}
-                    </div>
+                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold" style={{ backgroundColor: `${gc}18`, color: gc }}>{(emp.prenom || "?")[0].toUpperCase()}</span>
                     <div>
-                      <SheetTitle className="text-base">{emp.prenom} {emp.nom}</SheetTitle>
-                      <SheetDescription>{emp.pole || "—"} · {emp.contrat || "—"}</SheetDescription>
+                      <SheetTitle className="text-[15px]">{emp.prenom} {emp.nom}</SheetTitle>
+                      <SheetDescription className="text-[12px]">{emp.pole || "—"} · {emp.contrat || "—"}</SheetDescription>
                     </div>
                   </div>
                 </SheetHeader>
-
-                <div className="px-4 pb-4 space-y-5">
-
-                  {/* Period summary bar */}
-                  <div className="pt-2">
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Résumé de la période</div>
-                    <div className="flex gap-0.5 h-2.5 rounded-full overflow-hidden bg-muted">
-                      {sheetData.workDays > 0 && (
-                        <>
-                          <div className="bg-violet-500 transition-all" style={{ width: `${(sheetData.daysOnProject / sheetData.workDays) * 100}%` }} title={`${sheetData.daysOnProject}j en projet`} />
-                          <div className="bg-rose-400 transition-all" style={{ width: `${(sheetData.daysAbsent / sheetData.workDays) * 100}%` }} title={`${sheetData.daysAbsent}j absent`} />
-                          <div className="bg-emerald-400 transition-all" style={{ width: `${(sheetData.daysFree / sheetData.workDays) * 100}%` }} title={`${sheetData.daysFree}j dispo`} />
-                        </>
-                      )}
+                <div className="px-4 pb-4 space-y-4 mt-1">
+                  {/* Summary bar */}
+                  <div>
+                    <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Période</div>
+                    <div className="flex gap-px h-2 rounded-full overflow-hidden bg-muted">
+                      {sheetData.workDays > 0 && <>
+                        <div className="bg-violet-500 transition-all" style={{ width: `${(sheetData.daysOnProject / sheetData.workDays) * 100}%` }} />
+                        <div className="bg-rose-400 transition-all" style={{ width: `${(sheetData.daysAbsent / sheetData.workDays) * 100}%` }} />
+                        <div className="bg-emerald-400 transition-all" style={{ width: `${(sheetData.daysFree / sheetData.workDays) * 100}%` }} />
+                      </>}
                     </div>
-                    <div className="flex gap-3 mt-1.5 text-[10px] font-semibold">
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-500" />{sheetData.daysOnProject}j projet</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-400" />{sheetData.daysAbsent}j absent</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400" />{sheetData.daysFree}j dispo</span>
+                    <div className="flex gap-3 mt-1 text-[10px] font-medium text-muted-foreground">
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-violet-500" />{sheetData.daysOnProject}j projet</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{sheetData.daysAbsent}j absent</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{sheetData.daysFree}j dispo</span>
                     </div>
                   </div>
 
-                  {/* Selected day detail */}
+                  {/* Day detail */}
                   {sheetData.dayDetail && (() => {
-                    const dd = sheetData.dayDetail;
-                    const dateObj = new Date(dd.date + "T12:00:00");
+                    const dd = sheetData.dayDetail, dt = new Date(dd.date + "T12:00:00");
                     return (
                       <div>
-                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                          {JOURS[dateObj.getDay()]} {dateObj.getDate()} {MOIS[dateObj.getMonth()]}
-                        </div>
-                        {dd.isAbsent && dd.abs && (() => {
-                          const meta = ABSENCE_META[dd.abs.type] || ABSENCE_META.absence_autre;
-                          return (
-                            <div className={cn("flex items-center gap-2 px-3 py-2 rounded-lg", meta.bg)}>
-                              <span className="text-lg">{meta.icon}</span>
-                              <span className={cn("text-sm font-bold", meta.text)}>{meta.label}</span>
-                              <Badge variant="outline" className="ml-auto text-[10px]">{dd.abs.statut === "valide" ? "Validé" : "En attente"}</Badge>
-                            </div>
-                          );
+                        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">{JOURS[dt.getDay()]} {dt.getDate()} {MOIS[dt.getMonth()]}</div>
+                        {dd.isAbsent && dd.abs && (() => { const meta = ABSENCE_META[dd.abs.type] || ABSENCE_META.absence_autre;
+                          return <div className={cn("flex items-center gap-2 px-3 py-2 rounded-md", meta.bg)}><span className="text-base">{meta.icon}</span><span className={cn("text-[13px] font-medium", meta.text)}>{meta.label}</span></div>;
                         })()}
-                        {dd.projs.length > 0 && (
-                          <div className="space-y-1.5">
-                            {dd.projs.map((c, i) => {
-                              const bc = getBranchColor(c.branche, branches);
-                              return (
-                                <Link key={i} href={`/projets/${String(c._id)}`} className="flex items-center justify-between px-3 py-2 rounded-lg hover:shadow-sm transition-all" style={{ backgroundColor: `${bc}10`, borderLeft: `3px solid ${bc}` }}>
-                                  <span className="text-xs font-bold text-foreground">{c.nomContrat || c.nom}</span>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] font-semibold" style={{ color: bc }}>{c.branche}</span>
-                                    <ExternalLink className="w-3 h-3 text-muted-foreground" />
-                                  </div>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        )}
-                        {!dd.isAbsent && dd.projs.length === 0 && (
-                          <div className="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-semibold">
-                            ✓ Disponible — peut être assigné
-                          </div>
-                        )}
+                        {dd.projs.length > 0 && <div className="space-y-1">
+                          {dd.projs.map((c, i) => { const bc = getBranchColor(c.branche, branches);
+                            return <Link key={i} href={`/projets/${String(c._id)}`} className="flex items-center justify-between px-3 py-1.5 rounded-md hover:bg-accent transition-all" style={{ borderLeft: `2px solid ${bc}` }}>
+                              <span className="text-[12px] font-medium text-foreground">{c.nomContrat || c.nom}</span>
+                              <span className="text-[10px] font-medium" style={{ color: bc }}>{c.branche}</span>
+                            </Link>;
+                          })}
+                        </div>}
+                        {!dd.isAbsent && dd.projs.length === 0 && <div className="px-3 py-2 rounded-md bg-emerald-50/60 text-emerald-600 text-[13px] font-medium">Disponible</div>}
                       </div>
                     );
                   })()}
 
-                  {/* Projects this period */}
+                  {/* Period projects */}
                   {sheetData.periodProjects.length > 0 && (
                     <div>
-                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                        Projets sur la période ({sheetData.periodProjects.length})
-                      </div>
-                      <div className="space-y-1.5">
-                        {sheetData.periodProjects.map((c) => {
-                          const bc = getBranchColor(c.branche, branches);
-                          return (
-                            <Link key={String(c._id)} href={`/projets/${String(c._id)}`} className="flex items-center gap-2 px-3 py-2 rounded-lg hover:shadow-sm transition-all group/proj" style={{ backgroundColor: `${bc}08` }}>
-                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: bc }} />
-                              <span className="text-xs font-bold text-foreground group-hover/proj:text-violet-600 transition-colors flex-1 truncate">{c.nomContrat || c.nom}</span>
-                              <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover/proj:opacity-100 transition-opacity" />
-                            </Link>
-                          );
+                      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Projets ({sheetData.periodProjects.length})</div>
+                      <div className="space-y-1">
+                        {sheetData.periodProjects.map((c) => { const bc = getBranchColor(c.branche, branches);
+                          return <Link key={String(c._id)} href={`/projets/${String(c._id)}`} className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-accent transition-all group/p">
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: bc }} />
+                            <span className="text-[12px] font-medium text-foreground flex-1 truncate">{c.nomContrat || c.nom}</span>
+                            <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover/p:opacity-100 transition-opacity" />
+                          </Link>;
                         })}
                       </div>
                     </div>
                   )}
 
-                  {/* Upcoming absences */}
+                  {/* Upcoming */}
                   {sheetData.upcoming.length > 0 && (
                     <div>
-                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Absences à venir</div>
-                      <div className="space-y-1.5">
-                        {sheetData.upcoming.map((a, i) => {
-                          const meta = ABSENCE_META[a.type] || ABSENCE_META.absence_autre;
-                          const dStart = new Date(a.dateDebut + "T12:00:00");
-                          const dEnd = new Date(a.dateFin + "T12:00:00");
-                          return (
-                            <div key={i} className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-xs", meta.bg)}>
-                              <span>{meta.icon}</span>
-                              <span className="font-bold">{dStart.getDate()} {MOIS[dStart.getMonth()].slice(0, 3)}</span>
-                              {a.dateDebut !== a.dateFin && <><span className="text-muted-foreground">→</span><span className="font-bold">{dEnd.getDate()} {MOIS[dEnd.getMonth()].slice(0, 3)}</span></>}
-                              <span className={cn("ml-auto text-[10px] font-semibold", meta.text)}>{meta.label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Absences à venir</div>
+                      {sheetData.upcoming.map((a, i) => { const meta = ABSENCE_META[a.type] || ABSENCE_META.absence_autre; const s = new Date(a.dateDebut + "T12:00:00"), e = new Date(a.dateFin + "T12:00:00");
+                        return <div key={i} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px]", meta.bg)}>
+                          <span>{meta.icon}</span><span className="font-medium">{s.getDate()} {MOIS[s.getMonth()].slice(0, 3)}</span>
+                          {a.dateDebut !== a.dateFin && <><span className="text-muted-foreground">→</span><span className="font-medium">{e.getDate()} {MOIS[e.getMonth()].slice(0, 3)}</span></>}
+                          <span className={cn("ml-auto text-[10px] font-medium", meta.text)}>{meta.label}</span>
+                        </div>;
+                      })}
                     </div>
                   )}
 
-                  {/* Full profile link */}
-                  <Link
-                    href={`/rh/employe/${pid}`}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg bg-violet-50 text-violet-700 text-sm font-bold hover:bg-violet-100 transition-colors"
-                  >
-                    Voir la fiche complète
-                    <ArrowRight className="w-4 h-4" />
+                  <Link href={`/rh/employe/${pid}`} className="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border text-[13px] font-medium text-foreground hover:bg-accent transition-colors">
+                    Voir la fiche complète <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </>
@@ -1278,22 +757,14 @@ export default function PlanningEquipePage() {
         </SheetContent>
       </Sheet>
 
-      {/* ═══ LEGEND ═══ */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-2">
-        {[
-          { label: "Disponible", cls: "bg-emerald-50/60 border-emerald-100" },
-          { label: "🌴 Congé", cls: "bg-emerald-100/60 border-emerald-200" },
-          { label: "🏡 Télétravail", cls: "bg-violet-100/60 border-violet-200" },
-          { label: "🤧 Maladie", cls: "bg-rose-100/60 border-rose-200" },
-          { label: "Sur projet", cls: "bg-violet-50 border-l-[3px] border-l-violet-500 border-t-0 border-b-0 border-r-0" },
-          { label: "Surcharge (3+)", cls: "ring-2 ring-rose-400/60 bg-rose-50/60" },
-          { label: "? En attente", cls: "border border-dashed border-amber-300 bg-amber-50/60" },
-        ].map(({ label, cls }) => (
-          <span key={label} className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
-            <span className={cn("w-4 h-4 rounded inline-block border border-border", cls)} />
-            {label}
-          </span>
-        ))}
+      {/* ── LEGEND ── */}
+      <div className="flex flex-wrap gap-3 text-[10px] font-medium text-muted-foreground pt-1">
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-emerald-50/60 border border-border" /> Dispo</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-emerald-50/80 border border-border" /> 🌴</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-violet-50/80 border border-border" /> 🏡</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-rose-50/80 border border-border" /> 🤧</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm border border-border"><span className="block w-1.5 h-1.5 rounded-full bg-violet-500 mx-auto mt-[3px]" /></span> Projet</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm ring-1 ring-rose-300 border border-border" /> 3+</span>
       </div>
     </div>
   );
