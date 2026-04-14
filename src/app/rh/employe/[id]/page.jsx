@@ -133,6 +133,32 @@ export default function FicheEmployePage() {
         </div>
       </div>
 
+      {/* Réunions & rappels */}
+      {(() => {
+        const reunions = journal.filter((j) => j.type === "reunion").sort((a, b) => b.date.localeCompare(a.date));
+        const rappels = journal.filter((j) => j.type === "rappel" && j.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+        const lastReunion = reunions[0];
+        const daysSinceReunion = lastReunion ? Math.ceil((new Date() - new Date(lastReunion.date)) / 86400000) : null;
+        if (!lastReunion && !rappels.length) return null;
+        return (
+          <div className={styles.reunionBar}>
+            {lastReunion && (
+              <div className={styles.reunionItem}>
+                <span className={styles.reunionShape}>■</span>
+                <span>Dernier point : <strong>{lastReunion.date}</strong> ({daysSinceReunion}j)</span>
+                {daysSinceReunion > 90 && <span className={styles.reunionAlert}>+ de 3 mois sans point</span>}
+              </div>
+            )}
+            {rappels.slice(0, 2).map((r, i) => (
+              <div key={i} className={styles.reunionItem} style={{ "--ri": "#f59e0b" }}>
+                <span className={styles.reunionShape}>⏰</span>
+                <span>Rappel {r.date} : {r.text.length > 40 ? r.text.slice(0, 40) + "…" : r.text}</span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Alertes */}
       {alerts.length > 0 && (
         <div className={styles.alerts}>

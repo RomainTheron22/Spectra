@@ -315,7 +315,12 @@ export default function PlanningEquipePage() {
                 ))}
               </div>
             )}
-            {!abs && projs.length === 0 && <div className={styles.detailEmpty}>Disponible</div>}
+            {!abs && projs.length === 0 && <div className={styles.detailEmpty}>Disponible — peut être assigné</div>}
+            <div className={styles.detailActions}>
+              <Link href={`/rh/employe/${selectedCell.empId}`} className={styles.detailLink}>Voir la fiche →</Link>
+              {projs.length >= 3 && <span className={styles.detailWarn}>⚠ Surcharge — {projs.length} projets simultanés</span>}
+              {projs.length === 0 && !abs && <span className={styles.detailDispo}>✓ Disponible pour un nouveau projet</span>}
+            </div>
           </div>
         );
       })()}
