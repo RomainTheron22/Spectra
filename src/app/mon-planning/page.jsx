@@ -612,7 +612,7 @@ export default function MonPlanning() {
       <div className="flex gap-4 items-start mb-5 max-md:flex-col">
 
         {/* ─── Mini calendar ─── */}
-        <Card className="w-56 shrink-0 sticky top-4 rounded-2xl border-border/60 p-4 max-[900px]:hidden" style={{ boxShadow: "0 4px 20px rgba(124,58,237,0.04)" }}>
+        <Card className="w-56 shrink-0 sticky top-4 rounded-2xl border-border/60 p-4 overflow-hidden max-[900px]:hidden" style={{ boxShadow: "0 4px 20px rgba(124,58,237,0.04)" }}>
           <div className="flex items-center justify-between mb-3">
             <button className="bg-transparent border-none text-base font-black text-muted-foreground cursor-pointer p-1 px-2 rounded-lg transition-all duration-200 hover:text-foreground hover:bg-violet-50" onClick={() => setCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}>
               <ChevronLeft className="size-3.5" />
@@ -622,8 +622,8 @@ export default function MonPlanning() {
               <ChevronRight className="size-3.5" />
             </button>
           </div>
-          <div className="grid grid-cols-7 gap-px">
-            {["L","M","M","J","V","S","D"].map((d, i) => <div key={i} className="text-center text-[9px] font-extrabold text-muted-foreground py-1.5 uppercase tracking-wider">{d}</div>)}
+          <div className="grid grid-cols-7 gap-y-0.5">
+            {["L","M","M","J","V","S","D"].map((d, i) => <div key={i} className="text-center text-[9px] font-extrabold text-muted-foreground py-1 uppercase tracking-wider">{d}</div>)}
             {(() => {
               const y = calDate.getFullYear(), m = calDate.getMonth();
               const first = new Date(y, m, 1); let start = (first.getDay() + 6) % 7;
@@ -636,32 +636,31 @@ export default function MonPlanning() {
                 const hasEvents = dayEvts.length > 0;
                 const hasProj = dayEvts.some((e) => e.type === "projet" || e.type === "mission");
                 const hasAbs = dayEvts.some((e) => e.type === "absence");
-                const hasGcal = dayEvts.some((e) => e.type === "gcal");
-                const isSelected = selectedDate && toYMD(selectedDate) === key;
                 return (
-                  <button
-                    key={i}
-                    className={[
-                      "bg-transparent border-none text-[11px] font-semibold text-foreground w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 mx-auto relative",
-                      isToday2 && "!font-bold !text-white shadow-md",
-                      !isMonth && "text-muted-foreground opacity-30",
-                      isSelected && !isToday2 && "bg-violet-100 text-violet-700 font-bold ring-2 ring-violet-400/30",
-                      !isToday2 && !isSelected && "hover:bg-violet-50",
-                    ].filter(Boolean).join(" ")}
-                    style={isToday2 ? { background: "linear-gradient(135deg, #7c3aed, #a855f7)", boxShadow: "0 3px 10px rgba(124,58,237,0.3)" } : {}}
-                    onClick={() => { setCalDate(d); if (view === "day") setCalDate(d); handleDayClick(d); }}
-                  >
-                    {d.getDate()}
-                    {hasEvents && (
-                      <span
-                        className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                        style={{
-                          background: isToday2 ? "white" : hasProj ? "#e11d48" : hasAbs ? "#10b981" : "#4285f4",
-                          opacity: isToday2 ? 1 : hasProj || hasAbs ? 0.7 : 0.5,
-                        }}
-                      />
+                  <div key={i} className="flex flex-col items-center gap-0.5 py-px">
+                    <button
+                      className={[
+                        "bg-transparent border-none text-[11px] font-semibold text-foreground w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-all duration-150",
+                        isToday2 && "!font-bold !text-white",
+                        !isMonth && "text-muted-foreground opacity-25",
+                        selectedDate && toYMD(selectedDate) === key && !isToday2 && "bg-violet-100 text-violet-700 font-bold",
+                        !isToday2 && !(selectedDate && toYMD(selectedDate) === key) && isMonth && "hover:bg-violet-50",
+                      ].filter(Boolean).join(" ")}
+                      style={isToday2 ? { background: "linear-gradient(135deg, #7c3aed, #a855f7)" } : {}}
+                      onClick={() => { setCalDate(d); if (view === "day") setCalDate(d); handleDayClick(d); }}
+                    >
+                      {d.getDate()}
+                    </button>
+                    {hasEvents ? (
+                      <div className="flex gap-px h-1 items-center">
+                        {hasProj && <span className="w-1 h-1 rounded-full bg-rose-500" />}
+                        {hasAbs && <span className="w-1 h-1 rounded-full bg-emerald-500" />}
+                        {!hasProj && !hasAbs && <span className="w-1 h-1 rounded-full bg-blue-400" />}
+                      </div>
+                    ) : (
+                      <div className="h-1" />
                     )}
-                  </button>
+                  </div>
                 );
               });
             })()}
@@ -700,10 +699,10 @@ export default function MonPlanning() {
         </Card>
 
         {/* ─── Main Calendar ─── */}
-        <Card className={`flex-1 min-w-0 rounded-2xl border-border/60 overflow-hidden ${loaded ? "animate-[fade-up_300ms_ease_0.08s_both]" : "opacity-0"}`} style={{ boxShadow: "0 8px 30px rgba(124,58,237,0.06)" }}>
+        <Card className={`flex-1 min-w-0 rounded-2xl border-border overflow-hidden ${loaded ? "animate-[fade-up_300ms_ease_0.08s_both]" : "opacity-0"}`} style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }}>
 
           {/* ── Calendar header (nav intégrée) ── */}
-          <div className="flex items-center gap-3 px-5 py-3 border-b border-border/40 flex-wrap">
+          <div className="flex items-center gap-3 px-5 py-3 border-b border-border flex-wrap bg-muted/20">
             <div className="flex gap-1.5 items-center flex-1 min-w-0">
               <Button variant="outline" size="sm" onClick={goToday} className="text-[11px] font-bold text-muted-foreground rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200 shrink-0">
                 Aujourd&apos;hui
@@ -958,30 +957,30 @@ export default function MonPlanning() {
                   </div>
                 )}
                 <div
-                  className="grid max-h-[560px] overflow-y-auto"
+                  className="grid max-h-[560px] overflow-y-auto border-t border-border/50"
                   style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin", "--slot-h": `${slotHeight}px` }}
                   ref={dayGridRef}
                   onMouseUp={handleGridMouseUp}
                   onMouseLeave={() => { if (isDragging) handleGridMouseUp(); }}
                 >
-                  <div className="flex flex-col">
+                  <div className="flex flex-col border-r border-border/50">
                     {hoursDay.map((h) => (
-                      <div key={h} className="flex items-start justify-end pr-2" style={{ height: `${slotHeight}px` }}>
+                      <div key={h} className="flex items-start justify-end pr-2 border-b border-border/30" style={{ height: `${slotHeight}px` }}>
                         <span className="text-[10px] font-semibold text-muted-foreground -translate-y-1.5 tabular-nums">{String(h).padStart(2, "0")}:00</span>
                       </div>
                     ))}
                   </div>
-                  <div className="relative border-l border-border/30">
+                  <div className="relative border-l border-border/50">
                     {hoursDay.map((h) => (
                       <div
                         key={h}
-                        className="border-b border-border/40 relative cursor-crosshair"
+                        className="border-b border-border/50 relative cursor-crosshair"
                         style={{ height: `${slotHeight}px` }}
                         onMouseDown={(e) => { e.preventDefault(); handleGridMouseDown(calDate, h); }}
                         onMouseMove={() => handleGridMouseMove(h + 0.5)}
                       >
                         {/* Demi-heure */}
-                        <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/20" />
+                        <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/25" />
                         <div
                           className="absolute bottom-0 left-0 right-0 h-1/2"
                           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleGridMouseDown(calDate, h + 0.5); }}
