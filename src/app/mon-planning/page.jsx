@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, ChevronRight, Plus, X, Settings2, ZoomIn, ZoomOut, Pencil, Trash2, Calendar, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, Settings2, ZoomIn, ZoomOut, Pencil, Trash2, Calendar, ExternalLink, PanelRightOpen, PanelRightClose } from "lucide-react";
 
 /* ═══ CONSTANTS ═══ */
 const ABSENCE_TYPES = [
@@ -619,6 +619,23 @@ export default function MonPlanning() {
           </Button>
           <Button variant="outline" size="icon-sm" onClick={navNext} className="rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200">
             <ChevronRight className="size-4" />
+          </Button>
+          <div className="w-px h-5 bg-border mx-1" />
+          <Button
+            variant={selectedDate ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              if (selectedDate) {
+                setSelectedDate(null);
+              } else {
+                setSelectedDate(new Date());
+              }
+            }}
+            className={`rounded-xl text-[11px] font-bold transition-all duration-200 ${selectedDate ? "bg-violet-600 hover:bg-violet-700 text-white" : "text-muted-foreground hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600"}`}
+            title={selectedDate ? "Fermer le panneau" : "Voir le détail du jour"}
+          >
+            {selectedDate ? <PanelRightClose className="size-3.5 mr-1" /> : <PanelRightOpen className="size-3.5 mr-1" />}
+            {selectedDate ? "Fermer" : "Détails"}
           </Button>
         </div>
         <h2 className="text-lg font-black tracking-tight m-0 text-foreground">{calLabel()}</h2>
