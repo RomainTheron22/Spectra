@@ -22,8 +22,8 @@ const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août"
 const JOURS_HEAD = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 const JOURS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
 const DEFAULT_CONGES = 30;
-const HOUR_START_WEEK = 7;
-const HOUR_END_WEEK = 21;
+const HOUR_START_WEEK = 1;
+const HOUR_END_WEEK = 24;
 const HOUR_START_DAY = 0;
 const HOUR_END_DAY = 24;
 const DAY_SCROLL_TO = 8; // scroll auto vers 8h à l'ouverture
@@ -294,7 +294,8 @@ export default function MonPlanning() {
   useEffect(() => {
     const ref = view === "day" ? dayGridRef : weekGridRef;
     if (ref.current) {
-      ref.current.scrollTop = DAY_SCROLL_TO * slotHeight;
+      const scrollToHour = view === "day" ? DAY_SCROLL_TO : (DAY_SCROLL_TO - HOUR_START_WEEK);
+      ref.current.scrollTop = scrollToHour * slotHeight;
     }
   }, [view, calDate, slotHeight]);
 
