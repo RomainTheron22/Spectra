@@ -144,6 +144,10 @@ export default function PlanningEquipePage() {
   const [sheetEmployee, setSheetEmployee] = useState(null);
   const [sheetDate, setSheetDate] = useState(null);
 
+  // Mini calendar
+  const [showMiniCal, setShowMiniCal] = useState(false);
+  const [miniCalDate, setMiniCalDate] = useState(() => new Date());
+
   const openSheet = useCallback((emp, date = null) => {
     setSheetEmployee(emp);
     setSheetDate(date);
@@ -341,6 +345,44 @@ export default function PlanningEquipePage() {
     return items;
   }, [profiles, projAssignMap, absMap, today, days]);
 
+  /* ── Computed: mini calendar days ── */
+  const miniCalDays = useMemo(() => {
+    const year = miniCalDate.getFullYear();
+    const month = miniCalDate.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const startDow = (firstOfMonth.getDay() + 6) % 7; // Monday = 0
+    const startDate = new Date(firstOfMonth);
+    startDate.setDate(startDate.getDate() - startDow);
+
+    const rangeStart = days.length > 0 ? toYMD(days[0]) : "";
+    const rangeEnd = days.length > 0 ? toYMD(days[days.length - 1]) : "";
+
+    const result = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const key = toYMD(d);
+      const inMonth = d.getMonth() === month;
+
+      let projectCount = 0;
+      let absenceCount = 0;
+      if (inMonth) {
+        for (const p of profiles) {
+          const pid = String(p._id);
+          if (projAssignMap[pid]?.[key]?.length > 0) projectCount++;
+          const abs = absMap[pid]?.[key];
+          if (abs && abs.statut === "valide") absenceCount++;
+        }
+      }
+
+      const isDeadline = contrats.some((c) => c.dateDebut === key || c.dateFin === key);
+      const inRange = key >= rangeStart && key <= rangeEnd;
+
+      result.push({ date: d, key, inMonth, projectCount, absenceCount, isDeadline, inRange });
+    }
+    return result;
+  }, [miniCalDate, profiles, projAssignMap, absMap, contrats, days]);
+
   /* ── Computed: Sheet employee data ── */
   const sheetData = useMemo(() => {
     if (!sheetEmployee) return null;
@@ -456,13 +498,27 @@ export default function PlanningEquipePage() {
             {filteredProfiles.length} membre{filteredProfiles.length > 1 ? "s" : ""} · {contrats.filter((c) => c.dateDebut && c.dateFin).length} projets actifs
           </p>
         </div>
-        {/* Period label */}
-        {viewMode !== "jour" && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border">
-            <Calendar className="w-3.5 h-3.5 text-violet-500" />
-            <span className="text-xs font-bold text-foreground">{periodLabel}</span>
-          </div>
-        )}
+        {/* Period label + mini cal toggle */}
+        <div className="flex items-center gap-2">
+          {viewMode !== "jour" && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border">
+              <Calendar className="w-3.5 h-3.5 text-violet-500" />
+              <span className="text-xs font-bold text-foreground">{periodLabel}</span>
+            </div>
+          )}
+          <button
+            onClick={() => { setShowMiniCal((v) => !v); setMiniCalDate(new Date(calDate)); }}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all",
+              showMiniCal
+                ? "bg-violet-50 border-violet-200 text-violet-700"
+                : "bg-background border-border text-muted-foreground hover:border-violet-300 hover:text-violet-600"
+            )}
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Mini-cal</span>
+          </button>
+        </div>
       </div>
 
       {/* ═══ DASHBOARD MACROS ═══ */}
@@ -524,6 +580,88 @@ export default function PlanningEquipePage() {
               +{alerts.length - 5} alertes
             </span>
           )}
+        </div>
+      )}
+
+      {/* ═══ MINI CALENDAR ═══ */}
+      {showMiniCal && (
+        <div className="rounded-xl border bg-background p-4 max-w-xs">
+          {/* Month nav */}
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setMiniCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}
+              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-bold text-foreground">
+              {MOIS[miniCalDate.getMonth()]} {miniCalDate.getFullYear()}
+            </span>
+            <button
+              onClick={() => setMiniCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}
+              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Day labels */}
+          <div className="grid grid-cols-7 mb-1">
+            {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
+              <div key={i} className="text-center text-[9px] font-bold text-muted-foreground py-1">{d}</div>
+            ))}
+          </div>
+
+          {/* Days grid */}
+          <div className="grid grid-cols-7">
+            {miniCalDays.map((day, i) => {
+              const isToday = day.key === today;
+              const isWE = day.date.getDay() === 0 || day.date.getDay() === 6;
+              const hasHeavyActivity = day.projectCount >= 3;
+
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setCalDate(new Date(day.date));
+                    if (viewMode === "jour") setShowMiniCal(false);
+                  }}
+                  className={cn(
+                    "relative flex flex-col items-center justify-center py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer",
+                    !day.inMonth && "opacity-20",
+                    day.inMonth && !day.inRange && "text-foreground hover:bg-muted",
+                    day.inRange && "bg-violet-50 text-violet-700",
+                    isToday && "ring-1 ring-violet-500 text-violet-600 font-black",
+                    isWE && day.inMonth && !day.inRange && "text-muted-foreground",
+                    hasHeavyActivity && day.inMonth && "bg-violet-100",
+                  )}
+                >
+                  {day.date.getDate()}
+                  {/* Activity dots */}
+                  {day.inMonth && (
+                    <div className="flex gap-[2px] mt-[1px] h-[5px] items-center">
+                      {day.projectCount > 0 && <span className="w-[4px] h-[4px] rounded-full bg-violet-500" />}
+                      {day.absenceCount > 0 && <span className="w-[4px] h-[4px] rounded-full bg-rose-400" />}
+                      {day.isDeadline && <span className="w-[4px] h-[4px] rounded-full bg-amber-500" />}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="flex gap-3 mt-3 pt-2 border-t">
+            <span className="flex items-center gap-1 text-[9px] font-semibold text-muted-foreground">
+              <span className="w-[5px] h-[5px] rounded-full bg-violet-500" /> Projets
+            </span>
+            <span className="flex items-center gap-1 text-[9px] font-semibold text-muted-foreground">
+              <span className="w-[5px] h-[5px] rounded-full bg-rose-400" /> Absences
+            </span>
+            <span className="flex items-center gap-1 text-[9px] font-semibold text-muted-foreground">
+              <span className="w-[5px] h-[5px] rounded-full bg-amber-500" /> Deadline
+            </span>
+          </div>
         </div>
       )}
 
