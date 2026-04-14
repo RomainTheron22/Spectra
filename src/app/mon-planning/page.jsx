@@ -533,7 +533,7 @@ export default function MonPlanning() {
   }
 
   return (
-    <div className="px-6 py-5 max-w-[1440px] mx-auto relative font-sans">
+    <div className="px-6 py-5 max-w-[1440px] mx-auto relative font-sans bg-slate-50/60 min-h-screen -m-6 p-6">
 
       {/* ═══ VIBE BAR — Project Hot Quote ═══ */}
       <div
@@ -702,7 +702,7 @@ export default function MonPlanning() {
         <Card className={`flex-1 min-w-0 rounded-2xl border-border overflow-hidden ${loaded ? "animate-[fade-up_300ms_ease_0.08s_both]" : "opacity-0"}`} style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }}>
 
           {/* ── Calendar header (nav intégrée) ── */}
-          <div className="flex items-center gap-3 px-5 py-3 border-b border-border flex-wrap bg-muted/20">
+          <div className="flex items-center gap-3 px-5 py-3 border-b border-border flex-wrap bg-slate-50/80">
             <div className="flex gap-1.5 items-center flex-1 min-w-0">
               <Button variant="outline" size="sm" onClick={goToday} className="text-[11px] font-bold text-muted-foreground rounded-xl hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-200 shrink-0">
                 Aujourd&apos;hui
@@ -755,20 +755,24 @@ export default function MonPlanning() {
 
           {/* VUE MOIS */}
           {view === "month" && (
-            <div className="grid grid-cols-7 gap-1">
-              {JOURS_HEAD.map((j) => <div key={j} className="text-center text-[10px] font-extrabold uppercase tracking-[0.15em] text-muted-foreground py-3">{j}</div>)}
+            <div className="grid grid-cols-7 border border-border rounded-xl overflow-hidden">
+              {JOURS_HEAD.map((j, ji) => <div key={j} className={`text-center text-[10px] font-extrabold uppercase tracking-[0.15em] text-muted-foreground py-2.5 border-b border-border bg-slate-50 ${ji > 0 ? "border-l border-border" : ""}`}>{j}</div>)}
               {calDays.map((d, i) => {
                 const key = toYMD(d); const isMonth = d.getMonth() === month; const isToday2 = key === today;
                 const events = calEvents[key] || []; const isSelected = selectedDate && toYMD(selectedDate) === key;
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                const col = i % 7;
                 return (
                   <div
                     key={i}
                     className={[
-                      "bg-card min-h-[100px] p-2 cursor-pointer transition-all duration-200 flex flex-col gap-0.5 rounded-xl border border-transparent",
-                      "hover:bg-violet-50/50 hover:border-violet-200/40 hover:shadow-sm hover:-translate-y-0.5",
-                      isToday2 && "!bg-violet-50/80 !border-violet-200/50 animate-[pulse-ring_2.5s_ease-in-out_infinite]",
-                      !isMonth && "opacity-[0.10] pointer-events-none",
-                      isSelected && "!bg-violet-50 !border-violet-400 !ring-2 !ring-violet-400/20 !shadow-md",
+                      "min-h-[100px] p-2 cursor-pointer transition-all duration-150 flex flex-col gap-0.5 border-b border-border",
+                      col > 0 && "border-l border-border",
+                      isWeekend && isMonth ? "bg-slate-50/80" : "bg-white",
+                      "hover:bg-violet-50/40",
+                      isToday2 && "!bg-violet-50 animate-[pulse-ring_2.5s_ease-in-out_infinite]",
+                      !isMonth && "!bg-slate-100/50 opacity-40 pointer-events-none",
+                      isSelected && "!bg-violet-100/60 ring-2 ring-inset ring-violet-400/30",
                     ].filter(Boolean).join(" ")}
                     onClick={() => isMonth && handleDayClick(d)}
                     role={isMonth ? "button" : undefined}
@@ -789,13 +793,13 @@ export default function MonPlanning() {
           {view === "week" && (
             <div className="flex flex-col">
               {/* All-day row */}
-              <div className="grid gap-0.5 border-b border-border/50 pb-2 mb-1.5" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
-                <div className="w-12 shrink-0" />
+              <div className="grid border-b border-border bg-slate-50/40" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+                <div className="w-12 shrink-0 border-r border-border" />
                 {weekDays.map((d, i) => {
                   const key = toYMD(d); const events = calEvents[key] || [];
                   const allDay = events.filter((e) => (e.type === "gcal" && e.isAllDay) || e.type === "projet" || e.type === "mission" || e.type === "absence");
                   return (
-                    <div key={i} className="flex flex-col gap-0.5 px-0.5 py-0.5">
+                    <div key={i} className="flex flex-col gap-0.5 px-0.5 py-1 border-l border-border">
                       {allDay.slice(0, 4).map((ev, j) => {
                         const c = ev.type === "absence" ? (ev.absType?.color || "#888") : ev.color || "#4285f4";
                         const label = ev.type === "projet" || ev.type === "mission" ? `${ev.isMine ? "👤 " : ""}${ev.title}` : ev.type === "absence" ? `${ev.absType?.icon} ${ev.absType?.label}` : ev.title;
@@ -817,14 +821,14 @@ export default function MonPlanning() {
                 })}
               </div>
               {/* Header */}
-              <div className="grid gap-px border-b border-border/50" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
-                <div className="w-12 shrink-0" />
+              <div className="grid border-b border-border bg-slate-50/80" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+                <div className="w-12 shrink-0 border-r border-border" />
                 {weekDays.map((d, i) => {
                   const key = toYMD(d); const isToday2 = key === today; const isSel = selectedDate && toYMD(selectedDate) === key;
                   return (
                     <div
                       key={i}
-                      className={`text-center py-2 px-0.5 cursor-pointer rounded-lg transition-all duration-200 ${isToday2 ? "bg-violet-50/80" : ""} ${isSel ? "bg-violet-50" : ""} hover:bg-violet-50/50`}
+                      className={`text-center py-2.5 px-0.5 cursor-pointer transition-all duration-200 border-l border-border ${isToday2 ? "bg-violet-50" : ""} ${isSel ? "bg-violet-100/50" : ""} hover:bg-violet-50/60`}
                       onClick={() => handleDayClick(d)}
                       role="button"
                       tabIndex={0}
@@ -838,10 +842,10 @@ export default function MonPlanning() {
                 })}
               </div>
               {/* Time body */}
-              <div className="grid max-h-[560px] overflow-y-auto border-t border-border/50" style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin" }} ref={weekGridRef}>
-                <div className="flex flex-col border-r border-border/50">
+              <div className="grid max-h-[560px] overflow-y-auto" style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin" }} ref={weekGridRef}>
+                <div className="flex flex-col border-r border-border bg-slate-50/50">
                   {hoursWeek.map((h) => (
-                    <div key={h} className="flex items-start justify-end pr-2 border-b border-border/30" style={{ height: `${slotHeight}px` }}>
+                    <div key={h} className={`flex items-start justify-end pr-2 border-b border-border/60 ${h % 2 === 0 ? "" : ""}`} style={{ height: `${slotHeight}px` }}>
                       <span className="text-[10px] font-semibold text-muted-foreground -translate-y-1.5 tabular-nums">{String(h).padStart(2, "0")}:00</span>
                     </div>
                   ))}
@@ -874,12 +878,12 @@ export default function MonPlanning() {
                     return (
                       <div
                         key={i}
-                        className={`relative border-l border-border/50 cursor-pointer transition-colors duration-200 ${isToday2 ? "bg-violet-50/30" : ""} hover:bg-violet-50/20`}
+                        className={`relative border-l border-border cursor-pointer transition-colors duration-200 ${isToday2 ? "bg-violet-50/40" : ""} hover:bg-violet-50/20`}
                         onClick={() => handleDayClick(d)}
                       >
                         {hoursWeek.map((h) => (
-                          <div key={h} className="border-b border-border/50 relative cursor-crosshair" style={{ height: `${slotHeight}px` }}>
-                            <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/25" />
+                          <div key={h} className={`border-b border-border/60 relative cursor-crosshair ${h % 2 === 0 ? "bg-slate-50/40" : ""}`} style={{ height: `${slotHeight}px` }}>
+                            <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/30" />
                           </div>
                         ))}
                         {/* Ligne heure actuelle */}
@@ -957,30 +961,30 @@ export default function MonPlanning() {
                   </div>
                 )}
                 <div
-                  className="grid max-h-[560px] overflow-y-auto border-t border-border/50"
+                  className="grid max-h-[560px] overflow-y-auto"
                   style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin", "--slot-h": `${slotHeight}px` }}
                   ref={dayGridRef}
                   onMouseUp={handleGridMouseUp}
                   onMouseLeave={() => { if (isDragging) handleGridMouseUp(); }}
                 >
-                  <div className="flex flex-col border-r border-border/50">
+                  <div className="flex flex-col border-r border-border bg-slate-50/50">
                     {hoursDay.map((h) => (
-                      <div key={h} className="flex items-start justify-end pr-2 border-b border-border/30" style={{ height: `${slotHeight}px` }}>
+                      <div key={h} className="flex items-start justify-end pr-2 border-b border-border/60" style={{ height: `${slotHeight}px` }}>
                         <span className="text-[10px] font-semibold text-muted-foreground -translate-y-1.5 tabular-nums">{String(h).padStart(2, "0")}:00</span>
                       </div>
                     ))}
                   </div>
-                  <div className="relative border-l border-border/50">
+                  <div className="relative border-l border-border">
                     {hoursDay.map((h) => (
                       <div
                         key={h}
-                        className="border-b border-border/50 relative cursor-crosshair"
+                        className={`border-b border-border/60 relative cursor-crosshair ${h % 2 === 0 ? "bg-slate-50/40" : ""}`}
                         style={{ height: `${slotHeight}px` }}
                         onMouseDown={(e) => { e.preventDefault(); handleGridMouseDown(calDate, h); }}
                         onMouseMove={() => handleGridMouseMove(h + 0.5)}
                       >
                         {/* Demi-heure */}
-                        <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/25" />
+                        <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/30" />
                         <div
                           className="absolute bottom-0 left-0 right-0 h-1/2"
                           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleGridMouseDown(calDate, h + 0.5); }}
