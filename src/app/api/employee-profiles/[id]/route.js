@@ -57,7 +57,7 @@ export async function PATCH(request, { params }) {
   }
 
   const updates = {};
-  const allowed = ["userId", "nom", "prenom", "email", "contrat", "joursPresence", "dateDebut", "dateFin", "pole", "entite", "congesAnnuels", "isActive"];
+  const allowed = ["userId", "nom", "prenom", "email", "contrat", "joursPresence", "dateDebut", "dateFin", "pole", "entite", "congesAnnuels", "isActive", "competences", "tags", "branche"];
 
   for (const key of allowed) {
     if (key in payload) updates[key] = payload[key];

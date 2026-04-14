@@ -21,23 +21,23 @@ export default function FicheEmployePage() {
   const [contrats, setContrats] = useState([]);
   const [journal, setJournal] = useState([]);
   const [newNote, setNewNote] = useState("");
+  const [noteType, setNoteType] = useState("note");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [profRes, absRes, projRes] = await Promise.all([
+      const [profRes, absRes, projRes, journalRes] = await Promise.all([
         fetch(`/api/employee-profiles/${id}`, { cache: "no-store" }),
         fetch(`/api/employee-absences?all=true`, { cache: "no-store" }),
         fetch("/api/contrats", { cache: "no-store" }),
+        fetch(`/api/journal/${id}`, { cache: "no-store" }),
       ]);
       const profData = await profRes.json(); setProfile(profData.item || null);
       const absData = await absRes.json();
-      // Filter absences for this employee
       const allAbs = absData.items || [];
       setAbsences(allAbs.filter((a) => a.employeeProfileId === id || a.userId === profData.item?.userId));
       const projData = await projRes.json(); setContrats(projData.items || []);
-      // Load journal from localStorage (quick solution, DB later)
-      try { const j = JSON.parse(localStorage.getItem(`journal_${id}`) || "[]"); setJournal(j); } catch {}
+      try { const jData = await journalRes.json(); setJournal(jData.items || []); } catch {}
       setLoading(false);
     })();
   }, [id]);
@@ -87,19 +87,24 @@ export default function FicheEmployePage() {
     return a;
   }, [profile, congesReste, activeProjects, absStats]);
 
-  function addJournalEntry() {
+  async function addJournalEntry() {
     if (!newNote.trim()) return;
-    const entry = { date: toYMD(new Date()), text: newNote.trim(), id: Date.now() };
-    const updated = [entry, ...journal];
-    setJournal(updated);
-    localStorage.setItem(`journal_${id}`, JSON.stringify(updated));
-    setNewNote("");
+    const res = await fetch(`/api/journal/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: newNote.trim(), type: noteType }),
+    });
+    const data = await res.json();
+    if (res.ok && data.item) {
+      setJournal((prev) => [data.item, ...prev]);
+      setNewNote("");
+      setNoteType("note");
+    }
   }
 
-  function deleteJournalEntry(entryId) {
-    const updated = journal.filter((j) => j.id !== entryId);
-    setJournal(updated);
-    localStorage.setItem(`journal_${id}`, JSON.stringify(updated));
+  async function deleteJournalEntry(entryId) {
+    const res = await fetch(`/api/journal/${id}?entryId=${entryId}`, { method: "DELETE" });
+    if (res.ok) setJournal((prev) => prev.filter((j) => String(j._id) !== entryId));
   }
 
   if (loading) return <div className={styles.page}><p>Chargement...</p></div>;
@@ -185,6 +190,30 @@ export default function FicheEmployePage() {
             </div>
           </div>
 
+          {/* Compétences */}
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>Compétences & tags</h2>
+            <div className={styles.compList}>
+              {(profile.competences || []).map((c, i) => (
+                <span key={i} className={styles.compChip}>{c}</span>
+              ))}
+              {(profile.tags || []).map((t, i) => (
+                <span key={`t${i}`} className={styles.tagChip}>{t}</span>
+              ))}
+              {!(profile.competences?.length || profile.tags?.length) && <p className={styles.empty}>Aucune compétence renseignée</p>}
+            </div>
+            <div className={styles.compAdd}>
+              <input className={styles.compInput} placeholder="Ajouter une compétence..." onKeyDown={async (e) => {
+                if (e.key === "Enter" && e.target.value.trim()) {
+                  const newComp = [...(profile.competences || []), e.target.value.trim()];
+                  const res = await fetch(`/api/employee-profiles/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ competences: newComp }) });
+                  if (res.ok) { const d = await res.json(); setProfile(d.item); }
+                  e.target.value = "";
+                }
+              }} />
+            </div>
+          </div>
+
           {/* Projets */}
           <div className={styles.card}>
             <h2 className={styles.cardTitle}>Projets ({myProjects.length})</h2>
@@ -193,14 +222,14 @@ export default function FicheEmployePage() {
               const isActive = c.dateDebut <= today && c.dateFin >= today;
               const bc = BRANCH_COLORS[c.branche] || BRANCH_COLORS.default;
               return (
-                <div key={String(c._id)} className={`${styles.projItem} ${isActive ? styles.projActive : ""}`} style={{ "--pc": bc }}>
+                <Link key={String(c._id)} href={`/projets/${String(c._id)}`} className={`${styles.projItem} ${isActive ? styles.projActive : ""}`} style={{ "--pc": bc }}>
                   <div className={styles.projName}>{c.nomContrat || c.nom}</div>
                   <div className={styles.projMeta}>
                     <span className={styles.projBranch}>{c.branche}</span>
                     <span>{c.dateDebut} → {c.dateFin}</span>
                     <span className={styles.projStatut}>{c.statut}</span>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -212,17 +241,33 @@ export default function FicheEmployePage() {
           <div className={styles.card}>
             <h2 className={styles.cardTitle}>Journal de bord</h2>
             <div className={styles.journalForm}>
-              <textarea className={styles.journalInput} value={newNote} onChange={(e) => setNewNote(e.target.value)} rows={2} placeholder="Note de réunion, feedback, point d'attention..." />
+              <div className={styles.journalTypes}>
+                {[{ key: "note", label: "Note", shape: "●" }, { key: "reunion", label: "Réunion", shape: "■" }, { key: "feedback", label: "Feedback", shape: "◆" }, { key: "alerte", label: "Alerte", shape: "▲" }].map((t) => (
+                  <button key={t.key} type="button" className={`${styles.journalTypeBtn} ${noteType === t.key ? styles.journalTypeBtnOn : ""}`} onClick={() => setNoteType(t.key)}>
+                    <span className={styles.journalTypeShape}>{t.shape}</span> {t.label}
+                  </button>
+                ))}
+              </div>
+              <textarea className={styles.journalInput} value={newNote} onChange={(e) => setNewNote(e.target.value)} rows={2} placeholder={noteType === "reunion" ? "Compte-rendu de la réunion..." : noteType === "feedback" ? "Feedback, point positif ou à améliorer..." : noteType === "alerte" ? "Point d'attention, risque..." : "Note libre, observation, idée..."} />
               <button className={styles.journalBtn} onClick={addJournalEntry} disabled={!newNote.trim()}>Ajouter</button>
             </div>
             {journal.length === 0 && <p className={styles.empty}>Aucune note pour le moment</p>}
-            {journal.map((entry) => (
-              <div key={entry.id} className={styles.journalEntry}>
-                <span className={styles.journalDate}>{entry.date}</span>
-                <p className={styles.journalText}>{entry.text}</p>
-                <button className={styles.journalDel} onClick={() => deleteJournalEntry(entry.id)}>✕</button>
-              </div>
-            ))}
+            {journal.map((entry) => {
+              const typeColors = { note: "#7c3aed", reunion: "#0891b2", feedback: "#10b981", alerte: "#f43f5e" };
+              const typeShapes = { note: "●", reunion: "■", feedback: "◆", alerte: "▲" };
+              const typeLabels = { note: "Note", reunion: "Réunion", feedback: "Feedback", alerte: "Alerte" };
+              return (
+                <div key={String(entry._id)} className={styles.journalEntry} style={{ "--jc": typeColors[entry.type] || "#7c3aed" }}>
+                  <div className={styles.journalEntryHead}>
+                    <span className={styles.journalTypeTag} style={{ color: typeColors[entry.type] }}>{typeShapes[entry.type] || "●"} {typeLabels[entry.type] || "Note"}</span>
+                    <span className={styles.journalDate}>{entry.date}</span>
+                    {entry.authorName && <span className={styles.journalAuthor}>par {entry.authorName}</span>}
+                    <button className={styles.journalDel} onClick={() => deleteJournalEntry(String(entry._id))}>✕</button>
+                  </div>
+                  <p className={styles.journalText}>{entry.text}</p>
+                </div>
+              );
+            })}
           </div>
 
           {/* Absences récentes */}

@@ -150,7 +150,7 @@ export default function EntreprisePage() {
       <h2 className={styles.secTitle}>Projets actifs</h2>
       <div className={styles.projList}>
         {contrats.filter((c) => c.dateDebut && c.dateFin && c.dateFin >= today).slice(0, 15).map((c) => (
-          <div key={String(c._id)} className={styles.projCard} style={{ "--pc": BRANCHES.find((b) => b.key === c.branche)?.color || "#6b7280" }}>
+          <Link key={String(c._id)} href={`/projets/${String(c._id)}`} className={styles.projCard} style={{ "--pc": BRANCHES.find((b) => b.key === c.branche)?.color || "#6b7280" }}>
             <div className={styles.projHead}>
               <span className={styles.projName}>{c.nomContrat || c.nom}</span>
               <span className={styles.projBranch}>{c.branche}</span>
@@ -166,7 +166,7 @@ export default function EntreprisePage() {
                 {c.assignees.length > 5 && <span className={styles.projAssigneeMore}>+{c.assignees.length - 5}</span>}
               </div>
             )}
-          </div>
+          </Link>
         ))}
       </div>
     </div>

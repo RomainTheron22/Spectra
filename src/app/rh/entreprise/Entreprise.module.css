@@ -38,7 +38,7 @@
 
 /* Projects */
 .projList { display: flex; flex-direction: column; gap: 10px; }
-.projCard { padding: 16px 20px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; border-left: 5px solid var(--pc); transition: all 150ms; position: relative; overflow: hidden; }
+.projCard { display: block; text-decoration: none; color: inherit; padding: 16px 20px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; border-left: 5px solid var(--pc); transition: all 150ms; position: relative; overflow: hidden; cursor: pointer; }
 .projCard::before { content: ""; position: absolute; top: 0; right: 0; width: 100px; height: 100px; background: radial-gradient(circle at top right, color-mix(in srgb, var(--pc) 4%, transparent), transparent 70%); pointer-events: none; }
 .projCard:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.03); transform: translateY(-1px); }
 .projHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
