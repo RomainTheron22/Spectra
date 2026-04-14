@@ -98,6 +98,32 @@ export default function EntreprisePage() {
         </div>
       </div>
 
+      {/* Graphique charge par branche */}
+      <h2 className={styles.secTitle}>Charge par branche</h2>
+      <div className={styles.chartCard}>
+        {BRANCHES.map((b) => {
+          const data = stats.byBranch[b.key] || { total: 0, active: 0, team: 0 };
+          const maxProj = Math.max(1, ...BRANCHES.map((br) => (stats.byBranch[br.key]?.total || 0)));
+          const pct = (data.total / maxProj) * 100;
+          const activePct = (data.active / Math.max(1, data.total)) * 100;
+          return (
+            <div key={b.key} className={styles.chartRow}>
+              <span className={styles.chartLabel} style={{ color: b.color }}>{b.label}</span>
+              <div className={styles.chartBarWrap}>
+                <div className={styles.chartBarBg} style={{ width: `${pct}%` }}>
+                  <div className={styles.chartBarActive} style={{ width: `${activePct}%`, background: b.color }} />
+                </div>
+                <span className={styles.chartVal}>{data.active} actifs / {data.total} total</span>
+              </div>
+            </div>
+          );
+        })}
+        <div className={styles.chartLegend}>
+          <span className={styles.chartLegendItem}><span className={styles.chartLegendBar} style={{ background: "#7c3aed" }} /> Projets actifs</span>
+          <span className={styles.chartLegendItem}><span className={styles.chartLegendBarBg} /> Total projets</span>
+        </div>
+      </div>
+
       {/* Branches */}
       <h2 className={styles.secTitle}>Les pôles</h2>
       <div className={styles.branchGrid}>

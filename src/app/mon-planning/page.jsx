@@ -645,10 +645,13 @@ export default function MonPlanning() {
                         const height = Math.max(2.5, ((ev.endHour - ev.startHour) / (HOUR_END_WEEK - HOUR_START_WEEK)) * 100);
                         const width = 100 / ev.totalCols;
                         const left = ev.col * width;
+                        const ttStart = `${String(Math.floor(ev.startHour)).padStart(2,"0")}:${String(Math.round((ev.startHour%1)*60)).padStart(2,"0")}`;
+                        const ttEnd = `${String(Math.floor(ev.endHour)).padStart(2,"0")}:${String(Math.round((ev.endHour%1)*60)).padStart(2,"0")}`;
+                        const tooltip = `${ev.title}\n${ttStart} — ${ttEnd}${ev.calendarName ? `\n${ev.calendarName}` : ""}${ev.tag?.label ? ` · ${ev.tag.label}` : ""}`;
                         return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
-                          onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
+                          title={tooltip} onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
                           <span className={styles.tgEvtTitle}>{ev.tag?.shape && <span className={`${styles.shape} ${styles[`shape_${ev.tag.shape}`]}`} />} {ev.title}</span>
-                          <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} {ev.calendarName ? `· ${ev.calendarName}` : ""}</span>
+                          <span className={styles.tgEvtTime}>{ttStart} {ev.calendarName ? `· ${ev.calendarName}` : ""}</span>
                         </div>);
                       })}
                     </div>);
@@ -715,10 +718,13 @@ export default function MonPlanning() {
                         const height = Math.max(2, ((ev.endHour - ev.startHour) / (HOUR_END_DAY - HOUR_START_DAY)) * 100);
                         const width = 100 / ev.totalCols;
                         const left = ev.col * width;
+                        const ttS = `${String(Math.floor(ev.startHour)).padStart(2,"0")}:${String(Math.round((ev.startHour%1)*60)).padStart(2,"0")}`;
+                        const ttE = `${String(Math.floor(ev.endHour)).padStart(2,"0")}:${String(Math.round((ev.endHour%1)*60)).padStart(2,"0")}`;
                         return (<div key={j} className={styles.tgEvtDay} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
+                          title={`${ev.title}\n${ttS} — ${ttE}${ev.calendarName ? `\n${ev.calendarName}` : ""}${ev.tag?.label ? ` · ${ev.tag.label}` : ""}`}
                           onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
                           <span className={styles.tgEvtTitle}>{ev.tag?.shape && <span className={`${styles.shape} ${styles[`shape_${ev.tag.shape}`]}`} />} {ev.title}</span>
-                          <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} — {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
+                          <span className={styles.tgEvtTime}>{ttS} — {ttE}</span>
                           {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName} {ev.tag ? `· ${ev.tag.label}` : ""}</span>}
                         </div>);
                       })}</>);

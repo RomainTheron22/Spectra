@@ -12,6 +12,19 @@
 .kpiLabel { font-size: 11px; font-weight: 800; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
 .kpiDetail { font-size: 11px; color: var(--color-text-muted); margin-top: 4px; }
 
+/* Chart */
+.chartCard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 18px; padding: 22px; margin-bottom: 8px; }
+.chartRow { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.chartLabel { font-size: 12px; font-weight: 800; min-width: 110px; text-align: right; }
+.chartBarWrap { flex: 1; display: flex; align-items: center; gap: 10px; }
+.chartBarBg { height: 24px; background: rgba(0,0,0,0.04); border-radius: 6px; overflow: hidden; min-width: 4px; transition: width 600ms ease; }
+.chartBarActive { height: 100%; border-radius: 6px; transition: width 600ms ease; }
+.chartVal { font-size: 11px; font-weight: 700; color: var(--color-text-muted); white-space: nowrap; }
+.chartLegend { display: flex; gap: 16px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--color-border); }
+.chartLegendItem { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; color: var(--color-text-muted); }
+.chartLegendBar { width: 20px; height: 8px; border-radius: 3px; }
+.chartLegendBarBg { width: 20px; height: 8px; border-radius: 3px; background: rgba(0,0,0,0.06); }
+
 /* Branches */
 .branchGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .branchCard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 18px; padding: 22px; border-left: 5px solid var(--bc); transition: all 150ms; cursor: default; position: relative; overflow: hidden; }
