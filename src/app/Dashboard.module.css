@@ -334,3 +334,7 @@
     align-items: flex-start;
   }
 }
+
+.notifBar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.notifItem { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; background: color-mix(in srgb, var(--nc) 8%, white); border: 1px solid color-mix(in srgb, var(--nc) 15%, transparent); border-left: 4px solid var(--nc); color: var(--nc); font-size: 13px; font-weight: 700; text-decoration: none; transition: all 120ms; }
+.notifItem:hover { background: color-mix(in srgb, var(--nc) 12%, white); transform: translateY(-1px); }

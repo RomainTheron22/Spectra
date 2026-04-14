@@ -232,8 +232,27 @@ export default function DashboardPage() {
     };
   }, [planningTasks]);
 
+  // Notifications
+  const [notifs, setNotifs] = useState({ pending: 0, expiring: 0 });
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/planning-dashboard", { cache: "no-store" });
+        const d = await res.json();
+        setNotifs({ pending: d.absences?.pending || 0, expiring: d.alerts?.expiringContracts?.length || 0 });
+      } catch {}
+    })();
+  }, []);
+
   return (
     <div className={styles.page}>
+      {/* Bandeau notifications */}
+      {(notifs.pending > 0 || notifs.expiring > 0) && (
+        <div className={styles.notifBar}>
+          {notifs.pending > 0 && <a href="/rh/pilotage" className={styles.notifItem} style={{ "--nc": "#f59e0b" }}>{notifs.pending} demande{notifs.pending > 1 ? "s" : ""} d'absence à valider</a>}
+          {notifs.expiring > 0 && <a href="/rh/entreprise" className={styles.notifItem} style={{ "--nc": "#e11d48" }}>{notifs.expiring} contrat{notifs.expiring > 1 ? "s" : ""} expire{notifs.expiring > 1 ? "nt" : ""} bientôt</a>}
+        </div>
+      )}
       <div className={styles.headerRow}>
         <h1 className={styles.pageTitle}>Tableau de bord</h1>
       </div>
