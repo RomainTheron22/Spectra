@@ -111,6 +111,7 @@ const PATH_RESOURCE_RULES = [
   { test: (p) => p.startsWith("/mon-planning"),                     resource: "employeeAbsences" },
   { test: (p) => p.startsWith("/rh/planning-equipe"),               resource: "pilotageRh" },
   { test: (p) => p.startsWith("/rh/entreprise"),                    resource: "pilotageRh" },
+  { test: (p) => p.startsWith("/rh/employe"),                       resource: "employeeProfiles" },
 ];
 
 export function normalizeRoleName(value) {

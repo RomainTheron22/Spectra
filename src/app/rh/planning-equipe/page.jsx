@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import styles from "./PlanningEquipe.module.css";
 
 const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -179,13 +180,13 @@ export default function PlanningEquipePage() {
           return (
             <React.Fragment key={pid}>
               <div className={styles.nameCell}>
-                <div className={styles.empRow}>
+                <Link href={`/rh/employe/${pid}`} className={styles.empLink}>
                   <span className={styles.empAvatar}>{(p.prenom || "?")[0].toUpperCase()}</span>
                   <div>
                     <span className={styles.empName}>{p.prenom} {p.nom?.[0]}.</span>
                     <span className={styles.empInfo}>{p.pole || "—"} · {p.contrat || "—"}</span>
                   </div>
-                </div>
+                </Link>
               </div>
               {days.map((d) => {
                 const key = toYMD(d); const isWeekend = d.getDay() === 0 || d.getDay() === 6;

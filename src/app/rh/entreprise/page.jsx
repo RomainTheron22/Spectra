@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import styles from "./Entreprise.module.css";
 
 const BRANCHES = [
@@ -123,14 +124,14 @@ export default function EntreprisePage() {
       <h2 className={styles.secTitle}>L'équipe</h2>
       <div className={styles.teamGrid}>
         {profiles.map((p) => (
-          <div key={String(p._id)} className={styles.teamCard}>
+          <Link key={String(p._id)} href={`/rh/employe/${String(p._id)}`} className={styles.teamCard}>
             <span className={styles.teamAvatar}>{(p.prenom || "?")[0].toUpperCase()}</span>
             <div>
               <span className={styles.teamName}>{p.prenom} {p.nom}</span>
               <span className={styles.teamMeta}>{p.pole || "—"} · {p.contrat || "—"}</span>
               {p.entite && <span className={styles.teamEntite}>{p.entite}</span>}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
