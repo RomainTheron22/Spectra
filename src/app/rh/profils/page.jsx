@@ -283,12 +283,16 @@ export default function ProfilsPage() {
                                   <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
                                     {p.entite && <span>{p.entite}</span>}
                                   </div>
-                                  <div className="flex gap-0.5 mt-1">
-                                    {JOURS.map((j) => (
-                                      <span key={j.key} className={cn("w-3.5 h-3.5 rounded-full text-[7px] font-bold flex items-center justify-center",
-                                        (p.joursPresence || []).includes(j.key) ? "bg-sky-100 text-sky-600" : "bg-muted text-muted-foreground/30"
-                                      )}>{j.label}</span>
-                                    ))}
+                                  <div className="flex gap-[3px] mt-1.5">
+                                    {JOURS.map((j) => {
+                                      const isPresent = (p.joursPresence || []).includes(j.key);
+                                      const isWE = j.key === "sam" || j.key === "dim";
+                                      return (
+                                        <span key={j.key} className={cn("w-5 h-5 rounded text-[8px] font-bold flex items-center justify-center",
+                                          isPresent ? "bg-emerald-500 text-white" : isWE ? "bg-zinc-100 text-zinc-300" : "bg-rose-100 text-rose-400"
+                                        )}>{j.label}</span>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                                 <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0 mt-1" />
@@ -328,12 +332,16 @@ export default function ProfilsPage() {
                           {p.pole && <span>{p.pole}</span>}
                           {p.entite && <span>· {p.entite}</span>}
                         </div>
-                        <div className="flex gap-0.5 mt-1.5">
-                          {JOURS.map((j) => (
-                            <span key={j.key} className={cn("w-4 h-4 rounded-full text-[8px] font-bold flex items-center justify-center",
-                              (p.joursPresence || []).includes(j.key) ? "bg-sky-100 text-sky-600" : "bg-muted text-muted-foreground/30"
-                            )}>{j.label}</span>
-                          ))}
+                        <div className="flex gap-[3px] mt-1.5">
+                          {JOURS.map((j) => {
+                            const isPresent = (p.joursPresence || []).includes(j.key);
+                            const isWE = j.key === "sam" || j.key === "dim";
+                            return (
+                              <span key={j.key} className={cn("w-5 h-5 rounded text-[8px] font-bold flex items-center justify-center",
+                                isPresent ? "bg-emerald-500 text-white" : isWE ? "bg-zinc-100 text-zinc-300" : "bg-rose-100 text-rose-400"
+                              )}>{j.label}</span>
+                            );
+                          })}
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0 mt-1" />
