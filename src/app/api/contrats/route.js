@@ -73,6 +73,7 @@ export async function POST(req) {
       dateDebut: sanitizeDate(payload?.dateDebut),
       dateFin: sanitizeDate(payload?.dateFin),
       brief: sanitizeString(payload?.brief),
+      assignees: Array.isArray(payload?.assignees) ? payload.assignees.map(String) : [],
       files: [],
       createdAt: new Date(),
       updatedAt: new Date(),

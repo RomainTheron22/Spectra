@@ -381,22 +381,36 @@ export default function MonPlanning() {
   }
 
   function handleEventClick(e, ev) {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     setSelectedEvent(ev);
+    const dateStr = selectedDate ? toYMD(selectedDate) : toYMD(new Date());
+
     if (ev.type === "gcal" && ev.gcalId) {
-      // Open edit modal for Google event
-      const dateStr = selectedDate ? toYMD(selectedDate) : toYMD(new Date());
       setNoteForm({
         contenu: ev.title || "", dateDebut: dateStr,
         heureDebut: ev.startHour != null ? `${String(Math.floor(ev.startHour)).padStart(2,"0")}:${String(Math.round((ev.startHour%1)*60)).padStart(2,"0")}` : "09:00",
         heureFin: ev.endHour != null ? `${String(Math.floor(ev.endHour)).padStart(2,"0")}:${String(Math.round((ev.endHour%1)*60)).padStart(2,"0")}` : "10:00",
-        lieu: "", participants: "", allDay: ev.isAllDay || false, gcalEditId: ev.gcalId,
+        lieu: ev.location || "", participants: "", allDay: ev.isAllDay || false, gcalEditId: ev.gcalId,
       });
-      setModalType("editGcal"); setModalOpen(true);
-    } else if (ev.type === "absence" && ev.statut === "en_attente" && ev.dateDebut >= today) {
-      openEdit(ev);
+      setForm({ type: "", dateDebut: dateStr, dateFin: dateStr, demiJournee: "", commentaire: "" });
+      setProjForm({ nomContrat: "", clientNom: "", branche: "", dateDebut: dateStr, dateFin: dateStr, lieu: "", brief: "" });
+      setEditId(null); setModalType("editGcal"); setModalOpen(true);
+    } else if (ev.type === "absence") {
+      if (ev.statut === "en_attente" && ev.dateDebut >= today) {
+        openEdit(ev);
+      }
+      // Si validé/passé, on pourrait afficher un détail read-only — pour l'instant on ne fait rien
+    } else if (ev.type === "projet" || ev.type === "mission") {
+      // Ouvrir en mode projet avec les données pré-remplies
+      setProjForm({
+        nomContrat: ev.title || "", clientNom: ev.clientNom || "", branche: ev.branche || "",
+        dateDebut: ev.dateDebut || dateStr, dateFin: ev.dateFin || dateStr,
+        lieu: ev.lieu || "", brief: "",
+      });
+      setForm({ type: "", dateDebut: dateStr, dateFin: dateStr, demiJournee: "", commentaire: "" });
+      setNoteForm({ contenu: "", dateDebut: dateStr, heureDebut: "09:00", heureFin: "10:00", lieu: "", participants: "", allDay: true });
+      setEditId(null); setModalType("projet"); setModalOpen(true);
     }
-    // For projects, just show in panel (no edit yet)
   }
 
   // Render cell events for MONTH view — compact, hierarchical, CLICKABLE
@@ -692,10 +706,10 @@ export default function MonPlanning() {
           return (
             <aside className={styles.panel}>
               <div className={styles.pHead}><div><div className={styles.pDay}>{dayOfWeekFr(selectedDate)}</div><div className={styles.pDate}>{selectedDate.getDate()} {MOIS[selectedDate.getMonth()]}</div></div><button className={styles.pClose} onClick={() => setSelectedDate(null)}>✕</button></div>
-              {selectedEvents.projs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🎬 Projets</h3>{selectedEvents.projs.map((p, j) => <div key={j} className={styles.pEvt} style={{ "--pc": p.color }}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div></div>)}</div>)}
-              {selectedEvents.missions.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>👤 Mes missions</h3>{selectedEvents.missions.map((p, j) => <div key={j} className={styles.pEvt} style={{ "--pc": p.color }}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div></div>)}</div>)}
-              {selectedEvents.abs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🌴 Absences</h3>{selectedEvents.abs.map((a, j) => { const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" }; const canMod = a.statut === "en_attente" && a.dateDebut >= today; return (<div key={j} className={styles.pEvt} style={{ "--pc": a.absType?.color || "#888" }}><div className={styles.pEvtTitle}>{a.absType?.icon} {a.absType?.label}</div><span className={`${styles.pStatut} ${styles[s.cls]}`}>{s.label}</span>{canMod && <div className={styles.pActions}><button className={styles.pEditBtn} onClick={() => openEdit(a)}>Modifier</button><button className={styles.pDelBtn} onClick={() => handleDelete(String(a._id))}>Supprimer</button></div>}</div>); })}</div>)}
-              {Object.keys(selectedEvents.gcalByBranch).length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>📅 Agenda</h3>{Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (<div key={branch} className={styles.pBranch}><div className={styles.pBranchHead}><span className={styles.pBranchDot} style={{ background: data.color }} /><span className={styles.pBranchName}>{branch}</span><span className={styles.pBranchN}>{data.events.length}</span></div>{data.events.map((g, j) => <div key={j} className={styles.pRdv}><span className={styles.pRdvTitle}>{g.title}</span>{g.gcalId && <div className={styles.pRdvBtns}><button className={styles.pMiniBtn} onClick={() => { const d = toYMD(selectedDate); setNoteForm({ contenu: g.title, dateDebut: d, heureDebut: g.startHour != null ? `${String(Math.floor(g.startHour)).padStart(2,"0")}:${String(Math.round((g.startHour%1)*60)).padStart(2,"0")}` : "09:00", heureFin: g.endHour != null ? `${String(Math.floor(g.endHour)).padStart(2,"0")}:${String(Math.round((g.endHour%1)*60)).padStart(2,"0")}` : "10:00", lieu: "", participants: "", allDay: g.isAllDay || false, gcalEditId: g.gcalId }); setModalType("editGcal"); setModalOpen(true); }}>✏️</button><button className={styles.pMiniBtn} onClick={() => handleDeleteGcalEvent(g.gcalId)}>🗑</button></div>}</div>)}</div>))}</div>)}
+              {selectedEvents.projs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🎬 Projets</h3>{selectedEvents.projs.map((p, j) => <div key={j} className={`${styles.pEvt} ${styles.pEvtClickable}`} style={{ "--pc": p.color }} onClick={() => handleEventClick(null, p)}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div></div>)}</div>)}
+              {selectedEvents.missions.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>👤 Mes missions</h3>{selectedEvents.missions.map((p, j) => <div key={j} className={`${styles.pEvt} ${styles.pEvtClickable}`} style={{ "--pc": p.color }} onClick={() => handleEventClick(null, p)}><div className={styles.pEvtTitle}>{p.title}</div><div className={styles.pEvtMeta}>{p.branche} · {p.statut}</div></div>)}</div>)}
+              {selectedEvents.abs.length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>🌴 Absences</h3>{selectedEvents.abs.map((a, j) => { const s = STATUT_LABELS[a.statut] || { label: a.statut, cls: "" }; return (<div key={j} className={`${styles.pEvt} ${styles.pEvtClickable}`} style={{ "--pc": a.absType?.color || "#888" }} onClick={() => handleEventClick(null, a)}><div className={styles.pEvtTitle}>{a.absType?.icon} {a.absType?.label}</div><span className={`${styles.pStatut} ${styles[s.cls]}`}>{s.label}</span></div>); })}</div>)}
+              {Object.keys(selectedEvents.gcalByBranch).length > 0 && (<div className={styles.pSec}><h3 className={styles.pSecTitle}>📅 Agenda</h3>{Object.entries(selectedEvents.gcalByBranch).map(([branch, data]) => (<div key={branch} className={styles.pBranch}><div className={styles.pBranchHead}><span className={styles.pBranchDot} style={{ background: data.color }} /><span className={styles.pBranchName}>{branch}</span><span className={styles.pBranchN}>{data.events.length}</span></div>{data.events.map((g, j) => <div key={j} className={`${styles.pRdv} ${styles.pRdvClickable}`} onClick={() => handleEventClick(null, g)}><span className={styles.pRdvTitle}>{g.title}</span></div>)}</div>))}</div>)}
               {selectedEvents.projs.length === 0 && selectedEvents.missions.length === 0 && selectedEvents.abs.length === 0 && Object.keys(selectedEvents.gcalByBranch).length === 0 && <div className={styles.pEmpty}>Rien de prévu</div>}
               {isFuture && (<div className={styles.pAddSec}><h3 className={styles.pSecTitle}>Ajouter</h3><button className={styles.pAddBtn} style={{ "--pab": "#10b981" }} onClick={() => openAbsenceForm(dateStr)}>🌴 Absence</button><button className={styles.pAddBtn} style={{ "--pab": "#7c3aed" }} onClick={() => openProjForm(dateStr)}>🎬 Projet</button><button className={styles.pAddBtn} style={{ "--pab": "#f59e0b" }} onClick={() => openNoteForm(dateStr)}>📅 Événement</button></div>)}
             </aside>
@@ -757,7 +771,7 @@ export default function MonPlanning() {
                 try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: typeLabel, start: data.dateDebut, end: data.dateFin, allDay: true, calendarId: planningCal?.id, attendees: data.assignees || [] }) }); await refetchGcalEvents(); } catch {}
               }
             } else if (data.mode === "projet") {
-              const body = { nomContrat: data.title, clientNom: data.clientNom, branche: data.branche, dateDebut: data.dateDebut, dateFin: data.dateFin, lieu: data.lieu, brief: data.description, statut: "En cours" };
+              const body = { nomContrat: data.title, clientNom: data.clientNom, branche: data.branche, dateDebut: data.dateDebut, dateFin: data.dateFin, lieu: data.lieu, brief: data.description, statut: "En cours", assignees: data.assignees || [] };
               const res = await fetch("/api/contrats", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
               const result = await res.json(); setSaving(false); if (!res.ok) { alert(result.error || "Erreur"); return; }
               const np = normalizeProject(result.item || result); if (np.dateDebut && np.dateFin) setProjects((prev) => [...prev, np]);

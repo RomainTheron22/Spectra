@@ -180,6 +180,8 @@
 .pSec { margin-bottom: 12px; }
 .pSecTitle { font-size: 10px; font-weight: 800; color: var(--color-text-muted); margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.3px; }
 .pEvt { padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--pc) 5%, white); border-left: 3px solid var(--pc); margin-bottom: 4px; }
+.pEvtClickable { cursor: pointer; transition: all 100ms; }
+.pEvtClickable:hover { background: color-mix(in srgb, var(--pc) 10%, white); transform: translateX(2px); }
 .pEvtTitle { font-size: 12px; font-weight: 800; color: var(--color-text); }
 .pEvtMeta { font-size: 10px; color: var(--color-text-muted); }
 .pStatut { display: inline-block; font-size: 9px; font-weight: 800; border-radius: 4px; padding: 2px 6px; margin-top: 3px; }
@@ -197,7 +199,9 @@
 .pBranchDot { width: 6px; height: 6px; border-radius: 50%; }
 .pBranchName { font-size: 10px; font-weight: 800; color: var(--color-text); text-transform: uppercase; letter-spacing: 0.2px; }
 .pBranchN { font-size: 8px; font-weight: 800; opacity: 0.4; }
-.pRdv { font-size: 11px; color: var(--color-text-muted); padding: 4px 0 4px 14px; border-left: 1px solid var(--color-border); margin-left: 2px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.pRdv { font-size: 11px; color: var(--color-text-muted); padding: 4px 0 4px 14px; border-left: 1px solid var(--color-border); margin-left: 2px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.pRdvClickable { cursor: pointer; transition: all 100ms; border-radius: 4px; }
+.pRdvClickable:hover { background: rgba(124,58,237,0.04); color: var(--color-text); padding-left: 16px; }
 .pRdvTitle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pRdvBtns { display: flex; gap: 2px; flex-shrink: 0; }
 .pMiniBtn { background: none; border: none; cursor: pointer; font-size: 11px; padding: 2px 4px; border-radius: 4px; transition: background 100ms; }
