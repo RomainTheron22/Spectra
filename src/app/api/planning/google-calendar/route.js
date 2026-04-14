@@ -111,6 +111,7 @@ export async function POST(request) {
             location: body.location || "",
             attendees: body.attendees || [],
             allDay: body.allDay || false,
+            recurrence: body.recurrence || "none",
         }, targetCalId);
 
         return Response.json({ item: { ...event, calendarId: targetCalId } });

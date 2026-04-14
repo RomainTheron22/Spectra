@@ -200,6 +200,11 @@ export async function createEvent(accessToken, event, calendarId = "primary") {
     if (Array.isArray(event.attendees) && event.attendees.length > 0) {
         body.attendees = event.attendees.map((email) => ({ email }));
     }
+    // Récurrence (RRULE)
+    if (event.recurrence && event.recurrence !== "none") {
+        const rules = { daily: "RRULE:FREQ=DAILY", weekly: "RRULE:FREQ=WEEKLY", biweekly: "RRULE:FREQ=WEEKLY;INTERVAL=2", monthly: "RRULE:FREQ=MONTHLY" };
+        if (rules[event.recurrence]) body.recurrence = [rules[event.recurrence]];
+    }
 
     const res = await fetch(`${GCAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events`, {
         method: "POST",

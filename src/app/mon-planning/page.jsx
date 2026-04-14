@@ -833,7 +833,7 @@ export default function MonPlanning() {
               const branchCal = data.branche ? gcalCalendars.find((c) => c.summary.toLowerCase().includes(data.branche.toLowerCase())) : null;
               try { await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `🎬 ${data.title}`, start: data.dateDebut, end: data.dateFin, allDay: true, calendarId: branchCal?.id, attendees: data.assignees || [] }) }); await refetchGcalEvents(); } catch {}
             } else if (data.mode === "event") {
-              const body = { title: data.title, allDay: data.allDay, start: data.allDay ? data.dateDebut : `${data.dateDebut}T${data.heureDebut}:00`, end: data.allDay ? data.dateDebut : `${data.dateDebut}T${data.heureFin}:00`, location: data.lieu, attendees: data.assignees || [], description: data.description };
+              const body = { title: data.title, allDay: data.allDay, start: data.allDay ? data.dateDebut : `${data.dateDebut}T${data.heureDebut}:00`, end: data.allDay ? data.dateDebut : `${data.dateDebut}T${data.heureFin}:00`, location: data.lieu, attendees: data.assignees || [], description: data.description, recurrence: data.recurrence || "none" };
               const res = await fetch("/api/planning/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
               const result = await res.json(); setSaving(false); if (!res.ok) { alert(result.error || "Erreur Google Agenda"); return; }
               if (result.item) setGcalEvents((prev) => [...prev, result.item]);

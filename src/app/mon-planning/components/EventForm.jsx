@@ -12,6 +12,16 @@ const ABSENCE_TYPES = [
 
 const BRANCHES = ["Agency", "CreativeGen", "Entertainment", "SFX", "Atelier", "Communication"];
 
+// Groupes d'équipe — pour assigner une équipe entière en un clic
+const TEAM_GROUPS = [
+  { label: "Direction", members: ["tom@fantasmagorie.com", "laurent@fantasmagorie.com"] },
+  { label: "Production AV", members: ["alexis@creativgen.com", "clement@creativgen.com", "derhen@fantasmagorie.com", "lilibirambeau@gmail.com", "perrine.esteben@efap.com", "theronone22@gmail.com", "thuanh2128@gmail.com"] },
+  { label: "Scénographie", members: ["lucas@creativgen.com", "ondinecharon@msn.com"] },
+  { label: "Communication", members: ["julie@fantasmagorie.com", "amanndynelheureux@gmail.com", "lucie.garrigues@emicparis.com", "daniotmarilou@gmail.com"] },
+  { label: "Atelier / FabLab", members: ["theo.unterstock@gmail.com", "a.duret@live.fr", "restoux.mathis@gmail.com", "justineculie5@gmail.com"] },
+  { label: "Studio CreativGen", members: ["alexis@creativgen.com", "lucas@creativgen.com", "clement@creativgen.com", "milan.salachas@gmail.com", "tiagofs0904@gmail.com"] },
+];
+
 // L'équipe Fantasmagorie
 const TEAM = [
   { id: "tom", name: "Tom", email: "tom@fantasmagorie.com" },
@@ -73,6 +83,10 @@ export default function EventForm({ mode: initialMode, initialData = {}, onSubmi
     clientNom: initialData.clientNom || "",
     // Google Calendar
     gcalEditId: initialData.gcalEditId || null,
+    // Récurrence
+    recurrence: initialData.recurrence || "none", // none, daily, weekly, biweekly, monthly
+    // Temporaire / permanent
+    eventNature: initialData.eventNature || "permanent", // permanent, temporaire
   });
 
   const [assigneeSearch, setAssigneeSearch] = useState("");
@@ -241,6 +255,44 @@ export default function EventForm({ mode: initialMode, initialData = {}, onSubmi
           )}
         </div>
       </div>
+
+      {/* Boutons équipe rapide */}
+      {mode !== "absence" && (
+        <div className={styles.teamGroups}>
+          <span className={styles.teamGroupsLabel}>Ajouter une équipe :</span>
+          {TEAM_GROUPS.map((g) => (
+            <button key={g.label} type="button" className={styles.teamGroupBtn}
+              onClick={() => { const newAssignees = [...new Set([...data.assignees, ...g.members])]; set("assignees", newAssignees); }}>
+              {g.label} ({g.members.length})
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Récurrence */}
+      {mode !== "absence" && (
+        <label className={styles.field}>Récurrence
+          <select value={data.recurrence} onChange={(e) => set("recurrence", e.target.value)}>
+            <option value="none">Unique (pas de récurrence)</option>
+            <option value="daily">Tous les jours</option>
+            <option value="weekly">Chaque semaine</option>
+            <option value="biweekly">Toutes les 2 semaines</option>
+            <option value="monthly">Chaque mois</option>
+          </select>
+        </label>
+      )}
+
+      {/* Temporaire / Permanent */}
+      {mode !== "absence" && (
+        <div className={styles.natureRow}>
+          <button type="button" className={`${styles.natureBtn} ${data.eventNature === "permanent" ? styles.natureBtnOn : ""}`} onClick={() => set("eventNature", "permanent")}>
+            Permanent
+          </button>
+          <button type="button" className={`${styles.natureBtn} ${data.eventNature === "temporaire" ? styles.natureBtnOn : ""}`} onClick={() => set("eventNature", "temporaire")}>
+            Temporaire
+          </button>
+        </div>
+      )}
 
       {/* Description / commentaire */}
       <label className={styles.field}>{mode === "absence" ? "Un petit mot ?" : "Description"} <span className={styles.opt}>(optionnel)</span>
