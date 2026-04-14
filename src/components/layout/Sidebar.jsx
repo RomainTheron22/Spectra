@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "./Sidebar.module.css";
@@ -79,7 +80,7 @@ const MENU = [
     label: "RH & Planning",
     items: [
       { label: "Profils Employés", to: "/rh/profils", resource: "employeeProfiles" },
-      { label: "Pilotage RH", to: "/rh/pilotage", resource: "pilotageRh" },
+      { label: "Pilotage RH", to: "/rh/pilotage", resource: "pilotageRh", badge: true },
       { label: "Planning Équipe", to: "/rh/planning-equipe", resource: "pilotageRh" },
       { label: "Vue Entreprise", to: "/rh/entreprise", resource: "pilotageRh" },
     ],
@@ -100,6 +101,19 @@ export default function Sidebar({ session, authz, loading }) {
   const router = useRouter();
   const isAuthenticated = Boolean(session?.user && authz?.authenticated);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [pendingAbsences, setPendingAbsences] = useState(0);
+
+  // Fetch pending absences count for admin badge
+  useEffect(() => {
+    if (!isAuthenticated || authz?.role?.name !== ROLE_NAMES.ADMIN) return;
+    (async () => {
+      try {
+        const res = await fetch("/api/employee-absences?all=true&statut=en_attente", { cache: "no-store" });
+        const data = await res.json();
+        setPendingAbsences((data.items || []).length);
+      } catch {}
+    })();
+  }, [isAuthenticated, authz]);
 
   const canView = (resource) => {
     if (!isAuthenticated) return false;
@@ -276,6 +290,7 @@ export default function Sidebar({ session, authz, loading }) {
                           className={active ? `${styles.item} ${styles.active}` : styles.item}
                         >
                           {item.label}
+                          {item.badge && pendingAbsences > 0 && <span className={styles.badge}>{pendingAbsences}</span>}
                         </Link>
                       );
                     })}

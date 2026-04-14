@@ -79,6 +79,30 @@ export default function EntreprisePage() {
       <h1 className={styles.title}>Fantasmagorie</h1>
       <p className={styles.subtitle}>Vue d'ensemble du groupe — pôles, équipe, projets</p>
 
+      {/* Score santé */}
+      {(() => {
+        const presenceScore = stats.totalEmployees > 0 ? Math.round((stats.todayPresent / stats.totalEmployees) * 100) : 100;
+        const projectLoadScore = stats.activeProjects <= stats.totalEmployees ? 100 : Math.max(0, 100 - (stats.activeProjects - stats.totalEmployees) * 10);
+        const contractAlerts = profiles.filter((p) => p.dateFin && (new Date(p.dateFin) - new Date()) / 86400000 < 60).length;
+        const contractScore = Math.max(0, 100 - contractAlerts * 20);
+        const healthScore = Math.round((presenceScore + projectLoadScore + contractScore) / 3);
+        const healthColor = healthScore >= 80 ? "#10b981" : healthScore >= 60 ? "#f59e0b" : "#e11d48";
+        const healthLabel = healthScore >= 80 ? "L'équipe va bien" : healthScore >= 60 ? "Attention requise" : "Situation tendue";
+        return (
+          <div className={styles.healthCard} style={{ "--hc": healthColor }}>
+            <div className={styles.healthScore}>{healthScore}</div>
+            <div className={styles.healthInfo}>
+              <span className={styles.healthLabel}>{healthLabel}</span>
+              <div className={styles.healthDetails}>
+                <span>Présence : {presenceScore}%</span>
+                <span>Charge : {projectLoadScore}%</span>
+                <span>Contrats : {contractScore}%</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* KPIs */}
       <div className={styles.kpiRow}>
         <div className={styles.kpi}>

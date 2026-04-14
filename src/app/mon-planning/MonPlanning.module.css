@@ -43,6 +43,9 @@
 .tgN { font-size: 9px; font-weight: 800; opacity: 0.5; }
 .gearBtn { background: none; border: 1px solid var(--color-border); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; transition: all 100ms; }
 .gearBtn:hover { border-color: #4285f4; }
+.brancheFilter { font-size: 11px; font-weight: 700; padding: 5px 10px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-text); cursor: pointer; transition: border-color 100ms; }
+.brancheFilter:hover { border-color: #7c3aed; }
+.brancheFilter:focus { outline: none; border-color: #7c3aed; }
 .addBtn { background: linear-gradient(135deg, #7c3aed, #a855f6); color: white; font-weight: 800; font-size: 11px; border: 0; border-radius: 8px; padding: 7px 14px; cursor: pointer; box-shadow: 0 3px 10px rgba(124,58,237,0.15); transition: transform 100ms, box-shadow 100ms; }
 .addBtn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(124,58,237,0.22); }
 

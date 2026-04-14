@@ -127,6 +127,7 @@ export default function MonPlanning() {
   const [showCalPicker, setShowCalPicker] = useState(false);
   const [projects, setProjects] = useState([]);
   const [branchesDb, setBranchesDb] = useState([]);
+  const [filterBranche, setFilterBranche] = useState("");
   const dayGridRef = useRef(null);
   const weekGridRef = useRef(null);
   const [dragStart, setDragStart] = useState(null);
@@ -192,7 +193,7 @@ export default function MonPlanning() {
   const calEvents = useMemo(() => {
     const map = {};
     const add = (dateStr, event) => { if (!map[dateStr]) map[dateStr] = []; map[dateStr].push(event); };
-    if (showProjets) { for (const p of projects) { const d = new Date(p.dateDebut + "T12:00:00"); const end = new Date(p.dateFin + "T12:00:00"); while (d <= end) { add(toYMD(d), { type: "projet", ...p }); d.setDate(d.getDate() + 1); } } }
+    if (showProjets) { for (const p of projects) { if (filterBranche && p.branche !== filterBranche) continue; const d = new Date(p.dateDebut + "T12:00:00"); const end = new Date(p.dateFin + "T12:00:00"); while (d <= end) { add(toYMD(d), { type: "projet", ...p }); d.setDate(d.getDate() + 1); } } }
     if (showMissions) { for (const p of myMissions) { const d = new Date(p.dateDebut + "T12:00:00"); const end = new Date(p.dateFin + "T12:00:00"); while (d <= end) { const k = toYMD(d); const ex = map[k]?.find((e) => e.type === "projet" && e.id === p.id); if (ex) ex.isMine = true; else add(k, { type: "mission", ...p, isMine: true }); d.setDate(d.getDate() + 1); } } }
     if (showAbsences) { for (const a of absences) { const d = new Date(a.dateDebut + "T12:00:00"); const end = new Date(a.dateFin + "T12:00:00"); while (d <= end) { add(toYMD(d), { type: "absence", ...a, absType: ABSENCE_TYPES.find((t) => t.value === a.type) }); d.setDate(d.getDate() + 1); } } }
     if (showGcal) {
@@ -210,6 +211,11 @@ export default function MonPlanning() {
         const sourceCal = gcalCalendars.find((c) => c.id === ev.calendarId);
         const evColor = sourceCal?.backgroundColor || "#4285f4";
         const calName = sourceCal?.summary || "";
+        // Filtre par branche — match le nom du calendrier avec le keyword de la branche
+        if (filterBranche) {
+          const branchMatch = branchesDb.find((br) => br.key === filterBranche);
+          if (branchMatch?.gcalKeyword && !calName.toLowerCase().includes(branchMatch.gcalKeyword.toLowerCase())) continue;
+        }
         const classification = classifyGcalEvent(ev.title);
         const forceAllDay = classification === "absence" || classification === "tt" || classification === "maladie" || isAllDay;
         const tag = EVENT_TAGS[classification] || EVENT_TAGS.rdv;
@@ -218,7 +224,7 @@ export default function MonPlanning() {
       }
     }
     return map;
-  }, [projects, myMissions, absences, gcalEvents, gcalCalendars, showProjets, showMissions, showAbsences, showGcal]);
+  }, [projects, myMissions, absences, gcalEvents, gcalCalendars, branchesDb, showProjets, showMissions, showAbsences, showGcal, filterBranche]);
 
   const calDays = useMemo(() => {
     const y = calDate.getFullYear(), m = calDate.getMonth();
@@ -480,6 +486,11 @@ export default function MonPlanning() {
             </button>
           )}
         </div>
+        <select className={styles.brancheFilter} value={filterBranche} onChange={(e) => setFilterBranche(e.target.value)}>
+          <option value="">Toutes les branches</option>
+          {branchesDb.map((b) => <option key={b.key} value={b.key}>{b.label}</option>)}
+          {branchesDb.length === 0 && ["Agency","CreativeGen","Entertainment","SFX","Atelier","Communication"].map((b) => <option key={b} value={b}>{b}</option>)}
+        </select>
         <button className={styles.addBtn} onClick={openNew}>+ Ajouter</button>
       </div>
 

@@ -30,7 +30,8 @@ export async function POST(request, { params }) {
     employeeId,
     text: payload.text.trim(),
     date: payload.date || new Date().toISOString().slice(0, 10),
-    type: payload.type || "note", // note, reunion, feedback, alerte
+    type: payload.type || "note", // note, reunion, feedback, alerte, rappel
+    rappelDate: payload.rappelDate || null, // date du rappel si type = rappel
     authorId: String(gate.authz?.user?.id || ""),
     authorName: gate.authz?.user?.name || "Admin",
     createdAt: new Date(),

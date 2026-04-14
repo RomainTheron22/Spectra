@@ -242,7 +242,7 @@ export default function FicheEmployePage() {
             <h2 className={styles.cardTitle}>Journal de bord</h2>
             <div className={styles.journalForm}>
               <div className={styles.journalTypes}>
-                {[{ key: "note", label: "Note", shape: "●" }, { key: "reunion", label: "Réunion", shape: "■" }, { key: "feedback", label: "Feedback", shape: "◆" }, { key: "alerte", label: "Alerte", shape: "▲" }].map((t) => (
+                {[{ key: "note", label: "Note", shape: "●" }, { key: "reunion", label: "Réunion", shape: "■" }, { key: "feedback", label: "Feedback", shape: "◆" }, { key: "alerte", label: "Alerte", shape: "▲" }, { key: "rappel", label: "Rappel", shape: "⏰" }].map((t) => (
                   <button key={t.key} type="button" className={`${styles.journalTypeBtn} ${noteType === t.key ? styles.journalTypeBtnOn : ""}`} onClick={() => setNoteType(t.key)}>
                     <span className={styles.journalTypeShape}>{t.shape}</span> {t.label}
                   </button>
@@ -253,9 +253,9 @@ export default function FicheEmployePage() {
             </div>
             {journal.length === 0 && <p className={styles.empty}>Aucune note pour le moment</p>}
             {journal.map((entry) => {
-              const typeColors = { note: "#7c3aed", reunion: "#0891b2", feedback: "#10b981", alerte: "#f43f5e" };
-              const typeShapes = { note: "●", reunion: "■", feedback: "◆", alerte: "▲" };
-              const typeLabels = { note: "Note", reunion: "Réunion", feedback: "Feedback", alerte: "Alerte" };
+              const typeColors = { note: "#7c3aed", reunion: "#0891b2", feedback: "#10b981", alerte: "#f43f5e", rappel: "#f59e0b" };
+              const typeShapes = { note: "●", reunion: "■", feedback: "◆", alerte: "▲", rappel: "⏰" };
+              const typeLabels = { note: "Note", reunion: "Réunion", feedback: "Feedback", alerte: "Alerte", rappel: "Rappel" };
               return (
                 <div key={String(entry._id)} className={styles.journalEntry} style={{ "--jc": typeColors[entry.type] || "#7c3aed" }}>
                   <div className={styles.journalEntryHead}>
