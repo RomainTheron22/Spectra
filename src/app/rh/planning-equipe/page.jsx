@@ -31,6 +31,45 @@ const DEFAULT_BRANCHES = [
 const BRANCH_COLORS_FALLBACK = { Agency: "#e11d48", CreativeGen: "#7c3aed", Entertainment: "#0891b2", SFX: "#ca8a04", Atelier: "#059669", Communication: "#0284c7", default: "#6b7280" };
 
 function toYMD(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+function daysFromNow(n) { const d = new Date(); d.setDate(d.getDate() + n); return toYMD(d); }
+
+function generateMockData() {
+  const profiles = [
+    { _id: "m1", prenom: "Thomas", nom: "Bernard", pole: "Production Audiovisuelle", contrat: "CDI", isActive: true },
+    { _id: "m2", prenom: "Marie", nom: "Dupont", pole: "Production Audiovisuelle", contrat: "CDI", isActive: true },
+    { _id: "m3", prenom: "Lucas", nom: "Martin", pole: "Scénographie", contrat: "CDD", isActive: true },
+    { _id: "m4", prenom: "Emma", nom: "Leroy", pole: "Scénographie", contrat: "CDI", isActive: true },
+    { _id: "m5", prenom: "Hugo", nom: "Moreau", pole: "Communication", contrat: "CDI", isActive: true },
+    { _id: "m6", prenom: "Léa", nom: "Simon", pole: "Communication", contrat: "Alternance", isActive: true },
+    { _id: "m7", prenom: "Nathan", nom: "Laurent", pole: "Atelier", contrat: "CDI", isActive: true },
+    { _id: "m8", prenom: "Chloé", nom: "Garcia", pole: "Atelier", contrat: "CDD", isActive: true },
+    { _id: "m9", prenom: "Jules", nom: "Roux", pole: "FabLab", contrat: "CDI", isActive: true },
+    { _id: "m10", prenom: "Alice", nom: "Petit", pole: "Administration", contrat: "CDI", isActive: true },
+    { _id: "m11", prenom: "Raphaël", nom: "Blanc", pole: "Production Audiovisuelle", contrat: "CDD", isActive: true },
+    { _id: "m12", prenom: "Camille", nom: "Faure", pole: "Scénographie", contrat: "CDI", isActive: true },
+  ];
+  const contrats = [
+    { _id: "p1", nomContrat: "Festival Lumières", branche: "Entertainment", dateDebut: daysFromNow(-3), dateFin: daysFromNow(8), assignees: ["m1", "m3", "m4", "m7", "m8"] },
+    { _id: "p2", nomContrat: "Clip Artiste X", branche: "CreativeGen", dateDebut: daysFromNow(-1), dateFin: daysFromNow(5), assignees: ["m1", "m2", "m11", "m9"] },
+    { _id: "p3", nomContrat: "Campagne Été", branche: "Agency", dateDebut: daysFromNow(0), dateFin: daysFromNow(12), assignees: ["m5", "m6", "m1", "m10"] },
+    { _id: "p4", nomContrat: "Expo Immersive", branche: "Entertainment", dateDebut: daysFromNow(2), dateFin: daysFromNow(14), assignees: ["m3", "m4", "m7", "m12"] },
+    { _id: "p5", nomContrat: "Podcast Studio", branche: "CreativeGen", dateDebut: daysFromNow(-5), dateFin: daysFromNow(3), assignees: ["m2", "m11", "m1"] },
+    { _id: "p6", nomContrat: "Décor Spectacle", branche: "SFX", dateDebut: daysFromNow(1), dateFin: daysFromNow(7), assignees: ["m7", "m8", "m9"] },
+  ];
+  const absences = [
+    { _id: "a1", employeeProfileId: "m1", type: "conge", dateDebut: daysFromNow(2), dateFin: daysFromNow(4), statut: "valide" },
+    { _id: "a2", employeeProfileId: "m5", type: "maladie", dateDebut: daysFromNow(0), dateFin: daysFromNow(2), statut: "valide" },
+    { _id: "a3", employeeProfileId: "m6", type: "maladie", dateDebut: daysFromNow(0), dateFin: daysFromNow(1), statut: "valide" },
+    { _id: "a4", employeeProfileId: "m3", type: "tt", dateDebut: daysFromNow(1), dateFin: daysFromNow(1), statut: "valide" },
+    { _id: "a5", employeeProfileId: "m8", type: "conge", dateDebut: daysFromNow(3), dateFin: daysFromNow(6), statut: "valide" },
+    { _id: "a6", employeeProfileId: "m12", type: "conge", dateDebut: daysFromNow(5), dateFin: daysFromNow(9), statut: "valide" },
+    { _id: "a7", employeeProfileId: "m9", type: "absence_autre", dateDebut: daysFromNow(4), dateFin: daysFromNow(4), statut: "valide" },
+    { _id: "a8", employeeProfileId: "m4", type: "conge", dateDebut: daysFromNow(7), dateFin: daysFromNow(10), statut: "valide" },
+    { _id: "a9", employeeProfileId: "m2", type: "tt", dateDebut: daysFromNow(3), dateFin: daysFromNow(3), statut: "valide" },
+    { _id: "a10", employeeProfileId: "m10", type: "conge", dateDebut: daysFromNow(6), dateFin: daysFromNow(8), statut: "en_attente" },
+  ];
+  return { profiles, contrats, absences };
+}
 function getBranchColor(br, db) { if (db?.length) { const f = db.find((b) => b.key === br); if (f) return f.color; } return BRANCH_COLORS_FALLBACK[br] || BRANCH_COLORS_FALLBACK.default; }
 function getWeekNumber(d) { const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); dt.setUTCDate(dt.getUTCDate() + 4 - (dt.getUTCDay() || 7)); return Math.ceil(((dt - new Date(Date.UTC(dt.getUTCFullYear(), 0, 1))) / 86400000 + 1) / 7); }
 
@@ -62,9 +101,22 @@ export default function PlanningEquipePage() {
         fetch("/api/employee-absences?all=true", { cache: "no-store" }),
         fetch("/api/contrats", { cache: "no-store" }),
       ]);
-      setProfiles(((await profRes.json()).items || []).filter((p) => p.isActive !== false));
-      setAbsences((await absRes.json()).items || []);
-      setContrats((await projRes.json()).items || []);
+      const realProfiles = ((await profRes.json()).items || []).filter((p) => p.isActive !== false);
+      const realAbsences = (await absRes.json()).items || [];
+      const realContrats = (await projRes.json()).items || [];
+
+      // Si pas de données réelles, injecter le mock pour preview UX
+      if (realProfiles.length === 0) {
+        const mock = generateMockData();
+        setProfiles(mock.profiles);
+        setAbsences(mock.absences);
+        setContrats(mock.contrats);
+      } else {
+        setProfiles(realProfiles);
+        setAbsences(realAbsences);
+        setContrats(realContrats);
+      }
+
       try { const r = await fetch("/api/branches", { cache: "no-store" }); if (r.ok) { const d = await r.json(); setBranches(d.items?.length ? d.items : DEFAULT_BRANCHES); } else setBranches(DEFAULT_BRANCHES); } catch { setBranches(DEFAULT_BRANCHES); }
       setLoading(false);
     })();
