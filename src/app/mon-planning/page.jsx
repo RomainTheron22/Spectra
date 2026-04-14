@@ -839,15 +839,15 @@ export default function MonPlanning() {
                 })}
               </div>
               {/* Time body */}
-              <div className="grid max-h-[560px] overflow-y-auto" style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin" }} ref={weekGridRef}>
-                <div className="flex flex-col">
+              <div className="grid max-h-[560px] overflow-y-auto border-t border-border/50" style={{ gridTemplateColumns: "48px 1fr", scrollbarWidth: "thin" }} ref={weekGridRef}>
+                <div className="flex flex-col border-r border-border/50">
                   {hoursWeek.map((h) => (
-                    <div key={h} className="flex items-start justify-end pr-2" style={{ height: `${slotHeight}px` }}>
+                    <div key={h} className="flex items-start justify-end pr-2 border-b border-border/30" style={{ height: `${slotHeight}px` }}>
                       <span className="text-[10px] font-semibold text-muted-foreground -translate-y-1.5 tabular-nums">{String(h).padStart(2, "0")}:00</span>
                     </div>
                   ))}
                 </div>
-                <div className="grid gap-px" style={{ gridTemplateColumns: "repeat(7, 1fr)" }}>
+                <div className="grid" style={{ gridTemplateColumns: "repeat(7, 1fr)" }}>
                   {weekDays.map((d, i) => {
                     const key = toYMD(d); const isToday2 = key === today;
                     const timed = (calEvents[key] || []).filter((e) => e.type === "gcal" && !e.isAllDay && e.startHour != null)
@@ -875,12 +875,12 @@ export default function MonPlanning() {
                     return (
                       <div
                         key={i}
-                        className={`relative border-l border-border/20 cursor-pointer transition-colors duration-200 ${isToday2 ? "bg-violet-50/30" : ""} hover:bg-violet-50/20`}
+                        className={`relative border-l border-border/50 cursor-pointer transition-colors duration-200 ${isToday2 ? "bg-violet-50/30" : ""} hover:bg-violet-50/20`}
                         onClick={() => handleDayClick(d)}
                       >
                         {hoursWeek.map((h) => (
-                          <div key={h} className="border-b border-border/40 relative cursor-crosshair" style={{ height: `${slotHeight}px` }}>
-                            <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/20" />
+                          <div key={h} className="border-b border-border/50 relative cursor-crosshair" style={{ height: `${slotHeight}px` }}>
+                            <div className="absolute left-0 right-0 top-1/2 border-b border-dotted border-border/25" />
                           </div>
                         ))}
                         {/* Ligne heure actuelle */}
