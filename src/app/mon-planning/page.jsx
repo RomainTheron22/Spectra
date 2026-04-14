@@ -497,8 +497,8 @@ export default function MonPlanning() {
         {projs.slice(0, 3).map((p, j) => (
           <div
             key={`p${j}`}
-            className="text-[10px] font-bold py-0.5 px-1.5 rounded-lg border-l-[3px] whitespace-nowrap overflow-hidden text-ellipsis leading-snug cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.03] hover:-translate-y-px"
-            style={{ backgroundColor: `color-mix(in srgb, ${p.color} 12%, white)`, borderLeftColor: p.color, color: p.color }}
+            className="text-[10px] font-bold py-0.5 px-1.5 rounded border-l-[3px] whitespace-nowrap overflow-hidden text-ellipsis leading-snug text-white cursor-pointer transition-all duration-150 hover:brightness-[1.1]"
+            style={{ backgroundColor: `color-mix(in srgb, ${p.color} 82%, white)`, borderLeftColor: p.color }}
             onClick={(e) => handleEventClick(e, p)}
           >
             {p.isMine ? "👤 " : ""}{p.title.length > 14 ? p.title.slice(0, 14) + "..." : p.title}
@@ -507,8 +507,8 @@ export default function MonPlanning() {
         {abs.slice(0, 1).map((a, j) => (
           <div
             key={`a${j}`}
-            className="text-[9px] font-bold py-0.5 px-1.5 rounded-lg border-l-2 whitespace-nowrap overflow-hidden text-ellipsis leading-snug cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.03] hover:-translate-y-px"
-            style={{ backgroundColor: `color-mix(in srgb, ${a.absType?.color || "#888"} 10%, white)`, borderLeftColor: a.absType?.color || "#888", color: a.absType?.color || "#888" }}
+            className="text-[10px] font-bold py-0.5 px-1.5 rounded border-l-2 whitespace-nowrap overflow-hidden text-ellipsis leading-snug text-white cursor-pointer transition-all duration-150 hover:brightness-[1.1]"
+            style={{ backgroundColor: `color-mix(in srgb, ${a.absType?.color || "#888"} 75%, white)`, borderLeftColor: a.absType?.color || "#888" }}
             onClick={(e) => handleEventClick(e, a)}
           >
             {a.absType?.icon} {a.absType?.label}
@@ -517,11 +517,11 @@ export default function MonPlanning() {
         {gcals.slice(0, 3).map((g, j) => (
           <div
             key={`g${j}`}
-            className="text-[9px] font-semibold py-0.5 px-1.5 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1 leading-tight cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.03] hover:-translate-y-px"
-            style={{ backgroundColor: `color-mix(in srgb, ${g.color} 10%, white)`, color: g.color }}
+            className="text-[10px] font-semibold py-0.5 px-1.5 rounded whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1 leading-snug cursor-pointer transition-all duration-150 hover:brightness-95"
+            style={{ backgroundColor: `color-mix(in srgb, ${g.color} 14%, white)`, color: g.color }}
             onClick={(e) => handleEventClick(e, g)}
           >
-            <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: g.color }} />
+            <span className="w-1 h-1 rounded-full shrink-0" style={{ background: g.color }} />
             {g.title.length > 14 ? g.title.slice(0, 14) + "..." : g.title}
           </div>
         ))}
@@ -537,29 +537,14 @@ export default function MonPlanning() {
 
       {/* ═══ VIBE BAR — Project Hot Quote ═══ */}
       <div
-        className={`relative flex items-center gap-4 py-4 px-7 rounded-2xl mb-4 border border-white/40 overflow-hidden transition-all duration-300 ease-out ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
-        style={{
-          background: "linear-gradient(135deg, rgba(237,233,254,0.7), rgba(243,232,255,0.4), rgba(253,244,255,0.25))",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          boxShadow: "0 8px 30px rgba(124,58,237,0.06), inset 0 1px 0 rgba(255,255,255,0.7)",
-        }}
+        className={`relative flex items-center gap-4 py-4 px-6 rounded-2xl mb-4 border border-violet-100 overflow-hidden transition-all duration-300 ease-out bg-gradient-to-r from-violet-50 via-purple-50/60 to-fuchsia-50/30 ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
         onMouseEnter={() => setVibeHover(true)}
         onMouseLeave={() => setVibeHover(false)}
       >
-        {/* Shimmer effect */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-40"
-          style={{
-            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)",
-            backgroundSize: "200% 100%",
-            animation: vibeHover ? "shimmer 2s ease-in-out infinite" : "none",
-          }}
-        />
         <Sparkles active={vibeHover} />
-        <span className="text-2xl shrink-0 animate-[float-gentle_3s_ease-in-out_infinite] relative z-[2]">{projectQuote.icon}</span>
+        <span className="text-xl shrink-0 animate-[float-gentle_3s_ease-in-out_infinite] relative z-[2]">{projectQuote.icon}</span>
         <span className="text-sm font-bold text-foreground flex-1 leading-snug relative z-[2]">{projectQuote.msg}</span>
-        {projectQuote.color && <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm relative z-[2]" style={{ background: projectQuote.color, boxShadow: `0 0 8px ${projectQuote.color}40` }} />}
+        {projectQuote.color && <span className="w-2 h-2 rounded-full shrink-0 relative z-[2]" style={{ background: projectQuote.color }} />}
       </div>
 
       {/* ═══ TOOLBAR ═══ */}
@@ -636,7 +621,7 @@ export default function MonPlanning() {
             <ChevronRight className="size-4" />
           </Button>
         </div>
-        <h2 className="text-xl font-black tracking-tight m-0 bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-500 bg-clip-text text-transparent">{calLabel()}</h2>
+        <h2 className="text-lg font-black tracking-tight m-0 text-foreground">{calLabel()}</h2>
         <div className="flex items-center gap-2.5">
           {view !== "month" && (
             <div className="flex gap-0.5">
@@ -814,8 +799,8 @@ export default function MonPlanning() {
                         return (
                           <div
                             key={j}
-                            className="text-[10px] font-bold py-0.5 px-2 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis border-l-[3px] cursor-pointer transition-all duration-200 hover:shadow-sm hover:scale-[1.02]"
-                            style={{ backgroundColor: `color-mix(in srgb, ${c} 12%, white)`, borderLeftColor: c, color: c }}
+                            className="text-[10px] font-bold py-1 px-2 rounded whitespace-nowrap overflow-hidden text-ellipsis border-l-[3px] text-white cursor-pointer transition-all duration-150 hover:brightness-[1.1]"
+                            style={{ backgroundColor: `color-mix(in srgb, ${c} 80%, white)`, borderLeftColor: c }}
                             title={label}
                             onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}
                           >
@@ -903,14 +888,11 @@ export default function MonPlanning() {
                           return (
                             <div
                               key={j}
-                              className="absolute rounded-xl px-2 py-1.5 overflow-hidden z-[1] cursor-pointer flex flex-col gap-px border-l-4 shadow-sm transition-all duration-200 hover:shadow-lg hover:z-10 hover:scale-[1.02] min-w-0"
+                              className="absolute rounded-lg px-2 py-1.5 overflow-hidden z-[1] cursor-pointer flex flex-col gap-px border-l-4 shadow-sm text-white transition-all duration-150 hover:shadow-md hover:z-10 min-w-0"
                               style={{
                                 top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`,
-                                backgroundColor: `color-mix(in srgb, ${ev.color} 15%, white)`,
+                                backgroundColor: `color-mix(in srgb, ${ev.color} 85%, white)`,
                                 borderLeftColor: ev.color,
-                                backdropFilter: "blur(8px)",
-                                WebkitBackdropFilter: "blur(8px)",
-                                color: ev.color,
                               }}
                               title={tooltip}
                               onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}
@@ -945,8 +927,8 @@ export default function MonPlanning() {
                       return (
                         <div
                           key={j}
-                          className="text-[11px] font-bold py-1.5 px-3 rounded-xl border-l-4 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
-                          style={{ backgroundColor: `color-mix(in srgb, ${c} 12%, white)`, borderLeftColor: c, color: c }}
+                          className="text-[11px] font-bold py-1.5 px-3 rounded-lg border-l-4 text-white shadow-sm transition-all duration-150 hover:brightness-[1.1]"
+                          style={{ backgroundColor: `color-mix(in srgb, ${c} 80%, white)`, borderLeftColor: c }}
                         >
                           {label}
                         </div>
@@ -1021,14 +1003,11 @@ export default function MonPlanning() {
                             return (
                               <div
                                 key={j}
-                                className="absolute rounded-xl px-3 py-2 overflow-hidden z-[1] cursor-pointer flex flex-col gap-0.5 border-l-4 shadow-md transition-all duration-200 hover:shadow-xl hover:z-10 hover:scale-[1.01]"
+                                className="absolute rounded-lg px-3 py-2 overflow-hidden z-[1] cursor-pointer flex flex-col gap-0.5 border-l-4 text-white shadow-sm transition-all duration-150 hover:shadow-md hover:z-10"
                                 style={{
                                   top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`,
-                                  backgroundColor: `color-mix(in srgb, ${ev.color} 15%, white)`,
+                                  backgroundColor: `color-mix(in srgb, ${ev.color} 85%, white)`,
                                   borderLeftColor: ev.color,
-                                  backdropFilter: "blur(8px)",
-                                  WebkitBackdropFilter: "blur(8px)",
-                                  color: ev.color,
                                 }}
                                 title={`${ev.title}\n${ttS} — ${ttE}${ev.calendarName ? `\n${ev.calendarName}` : ""}${ev.tag?.label ? ` · ${ev.tag.label}` : ""}`}
                                 onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}
