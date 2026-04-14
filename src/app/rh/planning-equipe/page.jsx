@@ -599,59 +599,59 @@ export default function PlanningEquipePage() {
 
           {/* VUE: PAR BRANCHE */}
           {viewMode === "branche" && (
-            <div className="rounded-lg border overflow-hidden" style={{ backgroundColor: "var(--border)" }}>
+            <div className="rounded-lg overflow-hidden" style={{ backgroundColor: "#d4d4d8" }}>
               {/* Day headers */}
               <div className="grid" style={{ gridTemplateColumns: gridCols, gap: "1px" }}>
-                <div className="sticky left-0 z-30 bg-card px-3 py-2 text-[11px] font-medium text-muted-foreground">Équipe</div>
-                {days.map((d) => { const key = toYMD(d), isT = key === today, isFocus = key === focusDay, isWE = d.getDay() === 0 || d.getDay() === 6, isFri = d.getDay() === 5;
-                  return <div key={key} className={cn("text-center py-1.5 select-none bg-card", isFocus && "!bg-violet-100", isT && !isFocus && "!bg-violet-50/80", isWE && !isFocus && "!bg-muted/40", isFri && !isFocus && "border-r-2 border-border/40")}>
-                    <div className={cn("text-[9px] font-medium", isFocus ? "text-violet-600" : isWE ? "text-muted-foreground/40" : "text-muted-foreground")}>{JOURS_SHORT[d.getDay()]}</div>
-                    <div className={cn("text-[11px] font-semibold", isFocus ? "text-violet-700" : isT ? "text-violet-600" : isWE ? "text-muted-foreground/40" : "text-foreground")}>{d.getDate()}</div>
-                    {d.getDate() === 1 && <div className="text-[8px] font-medium text-violet-500">{MOIS[d.getMonth()].slice(0, 3)}</div>}
+                <div className="sticky left-0 z-30 px-3 py-2.5 text-[11px] font-semibold text-muted-foreground" style={{ backgroundColor: "#f4f4f5" }}>Équipe</div>
+                {days.map((d) => { const key = toYMD(d), isT = key === today, isFocus = key === focusDay, isWE = d.getDay() === 0 || d.getDay() === 6, isSun = d.getDay() === 0;
+                  return <div key={key} className={cn("text-center py-2 select-none", isSun ? "border-l border-zinc-300" : "")} style={{ backgroundColor: isFocus ? "#ddd6fe" : isT ? "#ede9fe" : isWE ? "#e4e4e7" : "#f4f4f5" }}>
+                    <div className={cn("text-[9px] font-semibold uppercase", isFocus ? "text-violet-600" : isWE ? "text-zinc-400" : "text-zinc-500")}>{JOURS_SHORT[d.getDay()]}</div>
+                    <div className={cn("text-[12px] font-bold", isFocus ? "text-violet-700" : isT ? "text-violet-600" : isWE ? "text-zinc-400" : "text-zinc-700")}>{d.getDate()}</div>
+                    {d.getDate() === 1 && <div className="text-[8px] font-bold text-violet-500">{MOIS[d.getMonth()].slice(0, 3)}</div>}
                   </div>;
                 })}
               </div>
               {/* Charge row */}
               <div className="grid" style={{ gridTemplateColumns: gridCols, gap: "1px" }}>
-                <div className="sticky left-0 z-10 bg-muted/30 px-3 py-0.5 text-[10px] font-medium text-muted-foreground">Charge</div>
-                {days.map((d) => { const key = toYMD(d), isWE = d.getDay() === 0 || d.getDay() === 6, isFri = d.getDay() === 5, absC = filteredProfiles.filter((p) => { const a = absMap[String(p._id)]?.[key]; return a && a.statut === "valide"; }).length, presC = filteredProfiles.length - absC, ratio = filteredProfiles.length > 0 ? presC / filteredProfiles.length : 1;
-                  return <div key={key} className={cn("text-center py-0.5 text-[9px] font-medium tabular-nums bg-muted/30", isWE && "opacity-25", isFri && "border-r-2 border-border/40", !isWE && ratio < 0.5 && "text-rose-500 !bg-rose-50/80", !isWE && ratio >= 0.5 && ratio < 0.75 && "text-amber-500", !isWE && ratio >= 0.75 && "text-muted-foreground")}>{presC}/{filteredProfiles.length}</div>;
+                <div className="sticky left-0 z-10 px-3 py-1 text-[10px] font-semibold text-zinc-500" style={{ backgroundColor: "#ebebed" }}>Charge</div>
+                {days.map((d) => { const key = toYMD(d), isWE = d.getDay() === 0 || d.getDay() === 6, isSun = d.getDay() === 0, absC = filteredProfiles.filter((p) => { const a = absMap[String(p._id)]?.[key]; return a && a.statut === "valide"; }).length, presC = filteredProfiles.length - absC, ratio = filteredProfiles.length > 0 ? presC / filteredProfiles.length : 1;
+                  return <div key={key} className={cn("text-center py-1 text-[9px] font-bold tabular-nums", isSun && "border-l border-zinc-300")} style={{ backgroundColor: !isWE && ratio < 0.5 ? "#ffe4e6" : !isWE && ratio < 0.75 ? "#fef3c7" : "#ebebed", color: !isWE && ratio < 0.5 ? "#be123c" : !isWE && ratio < 0.75 ? "#b45309" : isWE ? "#a1a1aa" : "#71717a" }}>{presC}/{filteredProfiles.length}</div>;
                 })}
               </div>
               {/* Groups */}
-              {employeeGroups.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground bg-card">Aucun membre</div>}
+              {employeeGroups.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground" style={{ backgroundColor: "#fafafa" }}>Aucun membre</div>}
               {employeeGroups.map((group) => {
                 const gP = group.employees.filter((e) => { const a = absMap[String(e._id)]?.[today]; return !(a && a.statut === "valide"); }).length;
                 return (
                   <Collapsible key={group.key} open={isGroupOpen(group.key)} onOpenChange={(o) => setOpenGroups((p) => ({ ...p, [group.key]: o }))}>
-                    <CollapsibleTrigger className="flex items-center w-full px-3 py-1.5 bg-card hover:bg-muted/20 transition-colors cursor-pointer gap-2">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
-                      <span className="text-[13px] font-semibold text-foreground">{group.label}</span>
-                      <span className="text-[11px] text-muted-foreground">{group.employees.length}</span>
+                    <CollapsibleTrigger className="flex items-center w-full px-3 py-2 hover:brightness-95 transition-all cursor-pointer gap-2" style={{ backgroundColor: "#f0f0f2" }}>
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
+                      <span className="text-[13px] font-bold text-zinc-800">{group.label}</span>
+                      <span className="text-[11px] font-medium text-zinc-500">{group.employees.length}</span>
                       <div className="flex items-center gap-1 ml-1.5">
-                        <div className="w-10 h-1 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full" style={{ width: `${group.employees.length > 0 ? (gP / group.employees.length) * 100 : 0}%`, backgroundColor: gP / group.employees.length >= 0.75 ? "#10b981" : gP / group.employees.length >= 0.5 ? "#f59e0b" : "#f43f5e" }} /></div>
-                        <span className="text-[9px] font-medium text-muted-foreground tabular-nums">{gP}/{group.employees.length}</span>
+                        <div className="w-12 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#d4d4d8" }}><div className="h-full rounded-full" style={{ width: `${group.employees.length > 0 ? (gP / group.employees.length) * 100 : 0}%`, backgroundColor: gP / group.employees.length >= 0.75 ? "#10b981" : gP / group.employees.length >= 0.5 ? "#f59e0b" : "#f43f5e" }} /></div>
+                        <span className="text-[9px] font-bold text-zinc-500 tabular-nums">{gP}/{group.employees.length}</span>
                       </div>
-                      <ChevronDown className={cn("ml-auto w-3.5 h-3.5 text-muted-foreground transition-transform duration-150", isGroupOpen(group.key) ? "" : "-rotate-90")} />
+                      <ChevronDown className={cn("ml-auto w-3.5 h-3.5 text-zinc-400 transition-transform duration-150", isGroupOpen(group.key) ? "" : "-rotate-90")} />
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       {group.employees.map((emp, empIdx) => { const pid = String(emp._id), isEven = empIdx % 2 === 0;
+                        const rowBg = isEven ? "#ffffff" : "#f8f8fa";
                         return (
-                          <div key={pid} className="grid group/row hover:!bg-accent/30 transition-colors" style={{ gridTemplateColumns: gridCols, gap: "1px" }}>
-                            <button onClick={() => openSheet(emp)} className={cn("sticky left-0 z-10 flex items-center gap-2 px-3 py-1.5 text-left transition-colors cursor-pointer", isEven ? "bg-card" : "bg-muted/8")} style={{ backgroundColor: undefined }}>
+                          <div key={pid} className="grid group/row" style={{ gridTemplateColumns: gridCols, gap: "1px" }}>
+                            <button onClick={() => openSheet(emp)} className="sticky left-0 z-10 flex items-center gap-2 px-3 py-1.5 text-left transition-colors cursor-pointer hover:brightness-95" style={{ backgroundColor: rowBg, borderLeft: `3px solid ${group.color}` }}>
                               <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0" style={{ backgroundColor: `${group.color}18`, color: group.color }}>{(emp.prenom || "?")[0].toUpperCase()}</span>
-                              <div className="min-w-0"><div className="text-[12px] font-medium text-foreground truncate">{emp.prenom} {emp.nom?.[0]}.</div><div className="text-[10px] text-muted-foreground truncate">{emp.contrat || "—"}</div></div>
+                              <div className="min-w-0"><div className="text-[12px] font-medium text-zinc-800 truncate">{emp.prenom} {emp.nom?.[0]}.</div><div className="text-[10px] text-zinc-400 truncate">{emp.contrat || "—"}</div></div>
                             </button>
-                            {days.map((d) => { const key = toYMD(d), isWE = d.getDay() === 0 || d.getDay() === 6, isT = key === today, isFocus = key === focusDay, isFri = d.getDay() === 5, { projs, abs, projCount, isAbsent, isPending, isOverloaded } = getCellData(pid, key);
-                              let cls = cn("h-9 flex items-center justify-center text-[10px] font-medium cursor-pointer transition-all select-none", isEven ? "bg-card" : "bg-muted/8", isFri && "border-r-2 border-border/40");
-                              let content = null, style = {};
-                              if (isWE && !isFocus) { cls = cn(cls, "!bg-muted/25"); }
-                              else if (isAbsent) { const m = ABSENCE_META[abs.type] || ABSENCE_META.absence_autre; style = { backgroundColor: isFocus ? `${m.color}25` : `${m.color}15` }; content = <span className="text-sm leading-none">{m.icon}</span>; }
-                              else if (isPending) { cls = cn(cls, "!bg-amber-50/50 text-amber-500"); content = "?"; }
-                              else if (projCount > 0) { const bc = getBranchColor(projs[0]?.branche, branches); style = { backgroundColor: isFocus ? `${bc}1a` : `${bc}0e` }; content = projCount > 1 ? <span className="text-[9px] font-bold" style={{ color: bc }}>{projCount}</span> : <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: bc }} />; if (isOverloaded) cls = cn(cls, "ring-1 ring-inset ring-rose-300"); }
-                              if (isFocus) cls = cn(cls, "!bg-violet-50 border-b-2 border-violet-500");
-                              else if (isT) cls = cn(cls, "border-b-2 border-violet-400/50");
-                              return <div key={key} className={cls} style={style} onClick={() => { openSheet(emp, key); setFocusDay(key); }}>{content}</div>;
+                            {days.map((d) => { const key = toYMD(d), isWE = d.getDay() === 0 || d.getDay() === 6, isT = key === today, isFocus = key === focusDay, isSun = d.getDay() === 0, { projs, abs, projCount, isAbsent, isPending, isOverloaded } = getCellData(pid, key);
+                              let bg = rowBg, content = null, extraCls = "";
+                              if (isWE && !isFocus) { bg = isEven ? "#f0f0f2" : "#eaeaed"; }
+                              else if (isAbsent) { const m = ABSENCE_META[abs.type] || ABSENCE_META.absence_autre; bg = isFocus ? `${m.color}30` : `${m.color}18`; content = <span className="text-sm leading-none">{m.icon}</span>; }
+                              else if (isPending) { bg = "#fef9c3"; content = <span className="text-amber-500 font-bold">?</span>; }
+                              else if (projCount > 0) { const bc = getBranchColor(projs[0]?.branche, branches); bg = isFocus ? `${bc}22` : `${bc}12`; content = projCount > 1 ? <span className="text-[9px] font-bold" style={{ color: bc }}>{projCount}</span> : <span className="w-2 h-2 rounded-full" style={{ backgroundColor: bc, opacity: 0.6 }} />; if (isOverloaded) extraCls = "ring-2 ring-inset ring-rose-400/50"; }
+                              if (isFocus) { bg = projCount > 0 || isAbsent ? bg : "#ede9fe"; extraCls += " border-b-[3px] border-violet-500"; }
+                              else if (isT) { extraCls += " border-b-2 border-violet-400"; }
+                              return <div key={key} className={cn("h-10 flex items-center justify-center text-[10px] font-medium cursor-pointer transition-all select-none", extraCls, isSun && "border-l border-zinc-300/60")} style={{ backgroundColor: bg }} onClick={() => { openSheet(emp, key); setFocusDay(key); }}>{content}</div>;
                             })}
                           </div>
                         );
