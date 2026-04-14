@@ -63,14 +63,31 @@ function getProjectQuote(projects) {
   return { msg: `Prochain projet : ${hot.title} — ${hot.branche}`, icon: "📌", color: hot.color };
 }
 
-// IA catégorisation — détecte si un event Google est une absence/TT/indispo
+// IA catégorisation — détecte le type d'event + tag
 const ABSENCE_KEYWORDS = ["absence", "congé", "conge", "congés", "vacances", "off", "repos", "jour off", "indispo", "indisponible", "maladie", "malade", "arrêt", "arret"];
 const TT_KEYWORDS = ["télétravail", "teletravail", "tt", "remote", "home office", "wfh", "travail maison"];
+const REUNION_KEYWORDS = ["réunion", "reunion", "meeting", "point", "standup", "stand-up", "sync", "debrief", "brief"];
+const VISIO_KEYWORDS = ["visio", "zoom", "meet", "google meet", "teams", "discord", "call"];
+const TOURNAGE_KEYWORDS = ["tournage", "shoot", "prod", "production", "montage", "clip"];
+
+const EVENT_TAGS = {
+  reunion: { label: "Réunion", icon: "🤝", color: "#7c3aed" },
+  visio: { label: "Visio", icon: "📹", color: "#0891b2" },
+  tournage: { label: "Tournage", icon: "🎬", color: "#e11d48" },
+  rdv: { label: "RDV", icon: "📍", color: "#6b7280" },
+  tt: { label: "TT", icon: "🏡", color: "#8b5cf6" },
+  absence: { label: "Absent", icon: "🌴", color: "#10b981" },
+  maladie: { label: "Maladie", icon: "🤧", color: "#f43f5e" },
+};
 
 function classifyGcalEvent(title) {
   const t = (title || "").toLowerCase();
+  if (t.includes("maladie") || t.includes("malade")) return "maladie";
   if (TT_KEYWORDS.some((kw) => t.includes(kw))) return "tt";
   if (ABSENCE_KEYWORDS.some((kw) => t.includes(kw))) return "absence";
+  if (TOURNAGE_KEYWORDS.some((kw) => t.includes(kw))) return "tournage";
+  if (VISIO_KEYWORDS.some((kw) => t.includes(kw))) return "visio";
+  if (REUNION_KEYWORDS.some((kw) => t.includes(kw))) return "reunion";
   return "rdv";
 }
 
@@ -111,6 +128,7 @@ export default function MonPlanning() {
   const [dragStart, setDragStart] = useState(null);
   const [dragEnd, setDragEnd] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [slotHeight, setSlotHeight] = useState(48);
 
   const myMissions = useMemo(() => {
     if (!profile?.userId) return [];
@@ -187,9 +205,10 @@ export default function MonPlanning() {
         const evColor = sourceCal?.backgroundColor || "#4285f4";
         const calName = sourceCal?.summary || "";
         const classification = classifyGcalEvent(ev.title);
-        const forceAllDay = classification === "absence" || classification === "tt" || isAllDay;
+        const forceAllDay = classification === "absence" || classification === "tt" || classification === "maladie" || isAllDay;
+        const tag = EVENT_TAGS[classification] || EVENT_TAGS.rdv;
         const d = new Date(startDate + "T12:00:00"); const end = new Date(endDate + "T12:00:00");
-        while (d <= end) { add(toYMD(d), { type: "gcal", title: ev.title, color: evColor, gcalId: ev.gcalId, calendarName: calName, startHour: forceAllDay ? null : startHour, endHour: forceAllDay ? null : endHour, isAllDay: forceAllDay, classification }); d.setDate(d.getDate() + 1); }
+        while (d <= end) { add(toYMD(d), { type: "gcal", title: ev.title, color: evColor, gcalId: ev.gcalId, calendarName: calName, startHour: forceAllDay ? null : startHour, endHour: forceAllDay ? null : endHour, isAllDay: forceAllDay, classification, tag }); d.setDate(d.getDate() + 1); }
       }
     }
     return map;
@@ -219,10 +238,9 @@ export default function MonPlanning() {
   useEffect(() => {
     const ref = view === "day" ? dayGridRef : weekGridRef;
     if (ref.current) {
-      const slotH = 48; // px per hour
-      ref.current.scrollTop = DAY_SCROLL_TO * slotH;
+      ref.current.scrollTop = DAY_SCROLL_TO * slotHeight;
     }
-  }, [view, calDate]);
+  }, [view, calDate, slotHeight]);
 
   // Drag to create event
   function handleGridMouseDown(date, hour) {
@@ -486,12 +504,20 @@ export default function MonPlanning() {
           <button className={styles.navBtn} onClick={navNext}>›</button>
         </div>
         <h2 className={styles.calLabel}>{calLabel()}</h2>
-        <div className={styles.viewSw}>
-          {["day", "week", "month"].map((v) => (
-            <button key={v} className={`${styles.vBtn} ${view === v ? styles.vBtnOn : ""}`} onClick={() => setView(v)}>
-              {v === "day" ? "Jour" : v === "week" ? "Semaine" : "Mois"}
-            </button>
-          ))}
+        <div className={styles.viewControls}>
+          {view !== "month" && (
+            <div className={styles.zoomBtns}>
+              <button className={styles.zoomBtn} onClick={() => setSlotHeight((h) => Math.max(32, h - 16))} title="Réduire">−</button>
+              <button className={styles.zoomBtn} onClick={() => setSlotHeight((h) => Math.min(96, h + 16))} title="Agrandir">+</button>
+            </div>
+          )}
+          <div className={styles.viewSw}>
+            {["day", "week", "month"].map((v) => (
+              <button key={v} className={`${styles.vBtn} ${view === v ? styles.vBtnOn : ""}`} onClick={() => setView(v)}>
+                {v === "day" ? "Jour" : v === "week" ? "Semaine" : "Mois"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -584,7 +610,7 @@ export default function MonPlanning() {
                   </div>);
                 })}
               </div>
-              <div className={styles.tgBody} ref={weekGridRef}>
+              <div className={styles.tgBody} ref={weekGridRef} style={{ "--slot-h": `${slotHeight}px` }}>
                 <div className={styles.tgTimes}>{hoursWeek.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
                 <div className={styles.tgCols}>
                   {weekDays.map((d, i) => {
@@ -620,9 +646,8 @@ export default function MonPlanning() {
                         const left = ev.col * width;
                         return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
                           onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
-                          <span className={styles.tgEvtTitle}>{ev.title}</span>
-                          <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")}</span>
-                          {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName}</span>}
+                          <span className={styles.tgEvtTitle}>{ev.tag?.icon || ""} {ev.title}</span>
+                          <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} {ev.calendarName ? `· ${ev.calendarName}` : ""}</span>
                         </div>);
                       })}
                     </div>);
@@ -648,7 +673,7 @@ export default function MonPlanning() {
                     })}
                   </div>
                 )}
-                <div className={styles.dayGrid} ref={dayGridRef} onMouseUp={handleGridMouseUp} onMouseLeave={() => { if (isDragging) handleGridMouseUp(); }}>
+                <div className={styles.dayGrid} ref={dayGridRef} style={{ "--slot-h": `${slotHeight}px` }} onMouseUp={handleGridMouseUp} onMouseLeave={() => { if (isDragging) handleGridMouseUp(); }}>
                   <div className={styles.tgTimes}>{hoursDay.map((h) => <div key={h} className={styles.tgTLine}><span className={styles.tgTText}>{String(h).padStart(2, "0")}:00</span></div>)}</div>
                   <div className={styles.dayCol}>
                     {hoursDay.map((h) => (
@@ -691,9 +716,9 @@ export default function MonPlanning() {
                         const left = ev.col * width;
                         return (<div key={j} className={styles.tgEvtDay} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
                           onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
-                          <span className={styles.tgEvtTitle}>{ev.title}</span>
+                          <span className={styles.tgEvtTitle}>{ev.tag?.icon || ""} {ev.title}</span>
                           <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} — {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
-                          {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName}</span>}
+                          {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName} {ev.tag ? `· ${ev.tag.label}` : ""}</span>}
                         </div>);
                       })}</>);
                     })()}

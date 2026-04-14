@@ -66,6 +66,10 @@
 .todayBtn { background: none; border: 1px solid var(--color-border); border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: var(--color-text-muted); cursor: pointer; transition: all 100ms; }
 .todayBtn:hover { border-color: #7c3aed; color: #7c3aed; }
 .calLabel { font-size: 16px; font-weight: 900; color: var(--color-text); margin: 0; letter-spacing: -0.3px; }
+.viewControls { display: flex; align-items: center; gap: 8px; }
+.zoomBtns { display: flex; gap: 2px; }
+.zoomBtn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); cursor: pointer; font-size: 16px; font-weight: 900; color: var(--color-text-muted); transition: all 100ms; }
+.zoomBtn:hover { border-color: #7c3aed; color: #7c3aed; }
 .viewSw { display: flex; background: rgba(0,0,0,0.025); border-radius: 6px; padding: 2px; }
 .vBtn { padding: 4px 12px; border: none; border-radius: 4px; background: transparent; font-size: 11px; font-weight: 700; color: var(--color-text-muted); cursor: pointer; transition: all 100ms; }
 .vBtn:hover { color: var(--color-text); }
@@ -141,14 +145,14 @@
 
 .tgBody { display: grid; grid-template-columns: 48px 1fr; max-height: 560px; overflow-y: auto; scrollbar-width: thin; }
 .tgTimes { display: flex; flex-direction: column; }
-.tgTLine { height: 48px; display: flex; align-items: flex-start; justify-content: flex-end; padding-right: 6px; }
+.tgTLine { height: var(--slot-h, 48px); display: flex; align-items: flex-start; justify-content: flex-end; padding-right: 6px; }
 .tgTText { font-size: 9px; font-weight: 700; color: var(--color-text-muted); transform: translateY(-5px); font-variant-numeric: tabular-nums; }
 
 .tgCols { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
 .tgCol { position: relative; border-left: 1px solid rgba(0,0,0,0.04); cursor: pointer; }
 .tgCol:hover { background: rgba(124,58,237,0.01); }
 .tgColToday { background: rgba(124,58,237,0.02); }
-.tgSlot { height: 48px; border-bottom: 1px solid rgba(0,0,0,0.03); position: relative; cursor: crosshair; }
+.tgSlot { height: var(--slot-h, 48px); border-bottom: 1px solid rgba(0,0,0,0.03); position: relative; cursor: crosshair; }
 .tgSlotHalf { position: absolute; bottom: 0; left: 0; right: 0; height: 50%; }
 .dragPreview { position: absolute; left: 4px; right: 4px; background: rgba(124,58,237,0.12); border: 2px dashed rgba(124,58,237,0.4); border-radius: 6px; z-index: 5; pointer-events: none; }
 
