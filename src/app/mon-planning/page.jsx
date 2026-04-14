@@ -23,9 +23,12 @@ const HOUR_START_DAY = 0;
 const HOUR_END_DAY = 24;
 const DAY_SCROLL_TO = 8; // scroll auto vers 8h à l'ouverture
 
-const BRANCH_COLORS = { "Agency": "#e11d48", "CreativeGen": "#7c3aed", "Entertainment": "#0891b2", "SFX": "#ca8a04", "default": "#6b7280" };
-function projectColor(b) { return BRANCH_COLORS[b] || BRANCH_COLORS.default; }
-function normalizeProject(c) { return { id: String(c._id), title: c.nomContrat || c.nom || "Sans nom", branche: c.branche || "—", color: projectColor(c.branche), statut: c.statut || "—", dateDebut: c.dateDebut || null, dateFin: c.dateFin || null, assignees: c.assignees || c.equipe || [], clientNom: c.clientNom || "", lieu: c.lieu || "" }; }
+const BRANCH_COLORS_FALLBACK = { "Agency": "#e11d48", "CreativeGen": "#7c3aed", "Entertainment": "#0891b2", "SFX": "#ca8a04", "Atelier": "#059669", "Communication": "#0284c7", "default": "#6b7280" };
+function projectColor(b, branchesDb) {
+  if (branchesDb?.length) { const found = branchesDb.find((br) => br.key === b); if (found) return found.color; }
+  return BRANCH_COLORS_FALLBACK[b] || BRANCH_COLORS_FALLBACK.default;
+}
+function normalizeProject(c, bDb) { return { id: String(c._id), title: c.nomContrat || c.nom || "Sans nom", branche: c.branche || "—", color: projectColor(c.branche, bDb), statut: c.statut || "—", dateDebut: c.dateDebut || null, dateFin: c.dateFin || null, assignees: c.assignees || c.equipe || [], clientNom: c.clientNom || "", lieu: c.lieu || "" }; }
 
 const CONGE_VIBES = [
   { min: 30, emoji: "🌍", msg: "Le monde entier est à toi" }, { min: 25, emoji: "🌅", msg: "Un mois de soleil t'attend" },
@@ -123,6 +126,7 @@ export default function MonPlanning() {
   const [gcalConnected, setGcalConnected] = useState(false);
   const [showCalPicker, setShowCalPicker] = useState(false);
   const [projects, setProjects] = useState([]);
+  const [branchesDb, setBranchesDb] = useState([]);
   const dayGridRef = useRef(null);
   const weekGridRef = useRef(null);
   const [dragStart, setDragStart] = useState(null);
@@ -138,15 +142,17 @@ export default function MonPlanning() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [absRes, profRes, projRes] = await Promise.all([
+      const [absRes, profRes, projRes, brRes] = await Promise.all([
         fetch("/api/employee-absences", { cache: "no-store" }),
         fetch("/api/employee-profiles?mine=true", { cache: "no-store" }),
         fetch("/api/contrats", { cache: "no-store" }),
+        fetch("/api/branches", { cache: "no-store" }).catch(() => ({ json: () => ({ items: [] }) })),
       ]);
       if (cancelled) return;
       const absData = await absRes.json(); setAbsences(absData.items || []);
       try { const profData = await profRes.json(); if (profData.items?.length) setProfile(profData.items[0]); } catch {}
-      try { const projData = await projRes.json(); setProjects((projData.items || []).map(normalizeProject).filter((p) => p.dateDebut && p.dateFin)); } catch {}
+      try { const brData = await brRes.json(); setBranchesDb(brData.items || []); } catch {}
+      try { const projData = await projRes.json(); setProjects((projData.items || []).map((c) => normalizeProject(c, [])).filter((p) => p.dateDebut && p.dateFin)); } catch {}
       try {
         const calRes = await fetch("/api/planning/google-calendar/calendars", { cache: "no-store" });
         const calData = await calRes.json();
