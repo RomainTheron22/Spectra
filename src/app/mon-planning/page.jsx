@@ -71,13 +71,13 @@ const VISIO_KEYWORDS = ["visio", "zoom", "meet", "google meet", "teams", "discor
 const TOURNAGE_KEYWORDS = ["tournage", "shoot", "prod", "production", "montage", "clip"];
 
 const EVENT_TAGS = {
-  reunion: { label: "Réunion", icon: "🤝", color: "#7c3aed" },
-  visio: { label: "Visio", icon: "📹", color: "#0891b2" },
-  tournage: { label: "Tournage", icon: "🎬", color: "#e11d48" },
-  rdv: { label: "RDV", icon: "📍", color: "#6b7280" },
-  tt: { label: "TT", icon: "🏡", color: "#8b5cf6" },
-  absence: { label: "Absent", icon: "🌴", color: "#10b981" },
-  maladie: { label: "Maladie", icon: "🤧", color: "#f43f5e" },
+  reunion: { label: "Réunion", shape: "square", color: "#7c3aed" },
+  visio: { label: "Visio", shape: "diamond", color: "#0891b2" },
+  tournage: { label: "Tournage", shape: "triangle", color: "#e11d48" },
+  rdv: { label: "RDV", shape: "circle", color: "#6b7280" },
+  tt: { label: "TT", shape: "dash", color: "#8b5cf6" },
+  absence: { label: "Absent", shape: "dash", color: "#10b981" },
+  maladie: { label: "Maladie", shape: "dash", color: "#f43f5e" },
 };
 
 function classifyGcalEvent(title) {
@@ -646,7 +646,7 @@ export default function MonPlanning() {
                         const left = ev.col * width;
                         return (<div key={j} className={styles.tgEvt} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
                           onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
-                          <span className={styles.tgEvtTitle}>{ev.tag?.icon || ""} {ev.title}</span>
+                          <span className={styles.tgEvtTitle}>{ev.tag?.shape && <span className={`${styles.shape} ${styles[`shape_${ev.tag.shape}`]}`} />} {ev.title}</span>
                           <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} {ev.calendarName ? `· ${ev.calendarName}` : ""}</span>
                         </div>);
                       })}
@@ -716,7 +716,7 @@ export default function MonPlanning() {
                         const left = ev.col * width;
                         return (<div key={j} className={styles.tgEvtDay} style={{ top: `${top}%`, height: `${height}%`, left: `${left}%`, width: `${width}%`, "--evc": ev.color }}
                           onClick={(e) => { e.stopPropagation(); handleEventClick(e, ev); }}>
-                          <span className={styles.tgEvtTitle}>{ev.tag?.icon || ""} {ev.title}</span>
+                          <span className={styles.tgEvtTitle}>{ev.tag?.shape && <span className={`${styles.shape} ${styles[`shape_${ev.tag.shape}`]}`} />} {ev.title}</span>
                           <span className={styles.tgEvtTime}>{String(Math.floor(ev.startHour)).padStart(2, "0")}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, "0")} — {String(Math.floor(ev.endHour)).padStart(2, "0")}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, "0")}</span>
                           {ev.calendarName && <span className={styles.tgEvtCal}>{ev.calendarName} {ev.tag ? `· ${ev.tag.label}` : ""}</span>}
                         </div>);
