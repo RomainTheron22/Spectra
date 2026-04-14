@@ -25,7 +25,18 @@ export default function EntreprisePage() {
         fetch("/api/contrats", { cache: "no-store" }),
         fetch("/api/employee-absences?all=true", { cache: "no-store" }),
       ]);
-      const profData = await profRes.json(); setProfiles((profData.items || []).filter((p) => p.isActive !== false));
+      let profData = await profRes.json();
+      let profs = (profData.items || []).filter((p) => p.isActive !== false);
+      // Auto-seed si aucun profil
+      if (profs.length === 0) {
+        try {
+          await fetch("/api/seed-employees", { method: "POST" });
+          const refetch = await fetch("/api/employee-profiles", { cache: "no-store" });
+          profData = await refetch.json();
+          profs = (profData.items || []).filter((p) => p.isActive !== false);
+        } catch {}
+      }
+      setProfiles(profs);
       const projData = await projRes.json(); setContrats(projData.items || []);
       const absData = await absRes.json(); setAbsences(absData.items || []);
     })();
