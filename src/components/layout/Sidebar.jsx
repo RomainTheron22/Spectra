@@ -81,6 +81,7 @@ const MENU = [
       { label: "Profils Employés", to: "/rh/profils", resource: "employeeProfiles" },
       { label: "Pilotage RH", to: "/rh/pilotage", resource: "pilotageRh" },
       { label: "Planning Équipe", to: "/rh/planning-equipe", resource: "pilotageRh" },
+      { label: "Vue Entreprise", to: "/rh/entreprise", resource: "pilotageRh" },
     ],
   },
   {

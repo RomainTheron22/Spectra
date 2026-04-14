@@ -5,8 +5,9 @@ import styles from "./PlanningEquipe.module.css";
 
 const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 const JOURS_SHORT = ["L","M","M","J","V","S","D"];
-const BRANCH_COLORS = { "Agency": "#e11d48", "CreativeGen": "#7c3aed", "Entertainment": "#0891b2", "SFX": "#ca8a04", "default": "#6b7280" };
+const BRANCH_COLORS = { "Agency": "#e11d48", "CreativeGen": "#7c3aed", "Entertainment": "#0891b2", "SFX": "#ca8a04", "Atelier": "#059669", "Communication": "#0284c7", "default": "#6b7280" };
 const ABSENCE_COLORS = { conge: "#10b981", tt: "#8b5cf6", maladie: "#f43f5e", absence_autre: "#f59e0b" };
+const ABSENCE_ICONS = { conge: "🌴", tt: "🏡", maladie: "🤧", absence_autre: "—" };
 
 function toYMD(d) { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, "0"); const day = String(d.getDate()).padStart(2, "0"); return `${y}-${m}-${day}`; }
 
@@ -15,7 +16,10 @@ export default function PlanningEquipePage() {
   const [absences, setAbsences] = useState([]);
   const [contrats, setContrats] = useState([]);
   const [calDate, setCalDate] = useState(new Date());
-  const [viewWeeks, setViewWeeks] = useState(2); // 1, 2, or 4 weeks
+  const [viewWeeks, setViewWeeks] = useState(2);
+  const [filterBranche, setFilterBranche] = useState("");
+  const [filterPole, setFilterPole] = useState("");
+  const [selectedCell, setSelectedCell] = useState(null); // { empId, date }
 
   useEffect(() => {
     (async () => {
@@ -30,17 +34,14 @@ export default function PlanningEquipePage() {
     })();
   }, []);
 
-  // Generate days for the view
   const days = useMemo(() => {
     const d = new Date(calDate); const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     const mon = new Date(d); mon.setDate(diff);
-    return Array.from({ length: viewWeeks * 7 }, (_, i) => {
-      const dd = new Date(mon); dd.setDate(dd.getDate() + i); return dd;
-    });
+    return Array.from({ length: viewWeeks * 7 }, (_, i) => { const dd = new Date(mon); dd.setDate(dd.getDate() + i); return dd; });
   }, [calDate, viewWeeks]);
 
-  // Build absence map: employeeProfileId → { dateStr → absence }
+  // Absence map: profileId → { date → absence }
   const absMap = useMemo(() => {
     const map = {};
     for (const a of absences) {
@@ -53,51 +54,75 @@ export default function PlanningEquipePage() {
     return map;
   }, [absences]);
 
-  // Build project map: dateStr → [{ project, assignees }]
-  const projMap = useMemo(() => {
+  // Project assignments: profileId → { date → [projects] }
+  const projAssignMap = useMemo(() => {
     const map = {};
     for (const c of contrats) {
       if (!c.dateDebut || !c.dateFin) continue;
+      const assignees = c.assignees || c.equipe || [];
+      if (assignees.length === 0) continue;
       const d = new Date(c.dateDebut + "T12:00:00"); const end = new Date(c.dateFin + "T12:00:00");
       while (d <= end) {
         const key = toYMD(d);
-        if (!map[key]) map[key] = [];
-        map[key].push(c);
+        for (const aId of assignees) {
+          const id = String(aId._id || aId.id || aId);
+          if (!map[id]) map[id] = {};
+          if (!map[id][key]) map[id][key] = [];
+          map[id][key].push(c);
+        }
         d.setDate(d.getDate() + 1);
       }
     }
     return map;
   }, [contrats]);
 
-  // Charge par jour
-  const chargeByDay = useMemo(() => {
+  // Project map by date (all projects, for charge indicator)
+  const projByDate = useMemo(() => {
     const map = {};
-    for (const d of days) {
-      const key = toYMD(d);
-      const presentCount = profiles.filter((p) => {
-        const pid = String(p._id);
-        const abs = absMap[pid]?.[key];
-        return !abs || abs.statut !== "valide";
-      }).length;
-      const projCount = (projMap[key] || []).length;
-      map[key] = { present: presentCount, total: profiles.length, projets: projCount };
+    for (const c of contrats) {
+      if (!c.dateDebut || !c.dateFin) continue;
+      const d = new Date(c.dateDebut + "T12:00:00"); const end = new Date(c.dateFin + "T12:00:00");
+      while (d <= end) { const k = toYMD(d); if (!map[k]) map[k] = []; map[k].push(c); d.setDate(d.getDate() + 1); }
     }
     return map;
-  }, [days, profiles, absMap, projMap]);
+  }, [contrats]);
+
+  // Filtered profiles
+  const filteredProfiles = useMemo(() => {
+    let list = profiles;
+    if (filterPole) list = list.filter((p) => p.pole === filterPole);
+    return list;
+  }, [profiles, filterPole]);
+
+  // Get unique poles
+  const poles = useMemo(() => [...new Set(profiles.map((p) => p.pole).filter(Boolean))].sort(), [profiles]);
+  const branches = useMemo(() => [...new Set(contrats.map((c) => c.branche).filter(Boolean))].sort(), [contrats]);
 
   const today = toYMD(new Date());
 
   function navPrev() { setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() - viewWeeks * 7); return n; }); }
   function navNext() { setCalDate((d) => { const n = new Date(d); n.setDate(n.getDate() + viewWeeks * 7); return n; }); }
 
+  // Charge par personne par jour
+  function getPersonCharge(profileId, dateStr) {
+    const userProjs = projAssignMap[profileId]?.[dateStr] || [];
+    const abs = absMap[profileId]?.[dateStr];
+    return { projs: userProjs, abs, projCount: userProjs.length, isAbsent: abs && abs.statut === "valide" };
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Planning Équipe</h1>
-          <p className={styles.subtitle}>Vue d'ensemble — qui fait quoi, qui est là</p>
+          <p className={styles.subtitle}>{filteredProfiles.length} membres · {contrats.filter((c) => c.dateDebut && c.dateFin).length} projets actifs</p>
         </div>
         <div className={styles.controls}>
+          {/* Filtres */}
+          <select className={styles.filterSelect} value={filterPole} onChange={(e) => setFilterPole(e.target.value)}>
+            <option value="">Tous les pôles</option>
+            {poles.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
           <div className={styles.weekSwitch}>
             {[1, 2, 4].map((w) => (
               <button key={w} className={`${styles.weekBtn} ${viewWeeks === w ? styles.weekBtnOn : ""}`} onClick={() => setViewWeeks(w)}>
@@ -113,86 +138,95 @@ export default function PlanningEquipePage() {
         </div>
       </div>
 
-      {/* Charge indicator */}
+      {/* Charge globale */}
       <div className={styles.chargeRow}>
         <div className={styles.chargeLabel}>Charge</div>
         {days.map((d) => {
           const key = toYMD(d);
-          const ch = chargeByDay[key] || { present: 0, total: 0, projets: 0 };
           const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-          const ratio = ch.total > 0 ? ch.present / ch.total : 1;
-          const isRed = ratio < 0.5 && !isWeekend;
-          const isOrange = ratio < 0.75 && ratio >= 0.5 && !isWeekend;
+          const absentCount = filteredProfiles.filter((p) => { const a = absMap[String(p._id)]?.[key]; return a && a.statut === "valide"; }).length;
+          const presentCount = filteredProfiles.length - absentCount;
+          const projCount = (projByDate[key] || []).length;
+          const ratio = filteredProfiles.length > 0 ? presentCount / filteredProfiles.length : 1;
           return (
-            <div key={key} className={`${styles.chargeCell} ${isRed ? styles.chargeRed : isOrange ? styles.chargeOrange : ""} ${isWeekend ? styles.chargeWeekend : ""}`}>
-              <span className={styles.chargeNum}>{ch.present}/{ch.total}</span>
-              {ch.projets > 0 && <span className={styles.chargeProjets}>{ch.projets}p</span>}
+            <div key={key} className={`${styles.chargeCell} ${ratio < 0.5 && !isWeekend ? styles.chargeRed : ratio < 0.75 && !isWeekend ? styles.chargeOrange : ""} ${isWeekend ? styles.chargeWE : ""}`}>
+              <span className={styles.chargePresent}>{presentCount}/{filteredProfiles.length}</span>
+              {projCount > 0 && <span className={styles.chargeProj}>{projCount}p</span>}
             </div>
           );
         })}
       </div>
 
-      {/* Grid */}
+      {/* Grille */}
       <div className={styles.grid} style={{ "--cols": days.length }}>
-        {/* Header */}
-        <div className={styles.nameCol} />
+        <div className={styles.cornerCell} />
         {days.map((d) => {
-          const key = toYMD(d); const isToday2 = key === today;
-          const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+          const key = toYMD(d); const isToday2 = key === today; const isWeekend = d.getDay() === 0 || d.getDay() === 6;
           return (
-            <div key={key} className={`${styles.dayHeader} ${isToday2 ? styles.dayHeaderToday : ""} ${isWeekend ? styles.dayHeaderWeekend : ""}`}>
-              <span className={styles.dayHeaderDay}>{JOURS_SHORT[(d.getDay() + 6) % 7]}</span>
-              <span className={styles.dayHeaderNum}>{d.getDate()}</span>
-              {d.getDate() === 1 && <span className={styles.dayHeaderMonth}>{MOIS[d.getMonth()].slice(0, 3)}</span>}
+            <div key={key} className={`${styles.dayH} ${isToday2 ? styles.dayHToday : ""} ${isWeekend ? styles.dayHWE : ""}`}>
+              <span className={styles.dayHDay}>{JOURS_SHORT[(d.getDay() + 6) % 7]}</span>
+              <span className={`${styles.dayHNum} ${isToday2 ? styles.dayHNumToday : ""}`}>{d.getDate()}</span>
+              {d.getDate() === 1 && <span className={styles.dayHMonth}>{MOIS[d.getMonth()].slice(0, 3)}</span>}
             </div>
           );
         })}
 
-        {/* Employees */}
-        {profiles.map((p) => {
+        {filteredProfiles.map((p) => {
           const pid = String(p._id);
+          // Calculer la charge max de cette personne sur la période
+          const maxCharge = Math.max(1, ...days.map((d) => getPersonCharge(pid, toYMD(d)).projCount));
+
           return (
             <React.Fragment key={pid}>
-              <div className={styles.nameCol}>
-                <span className={styles.empName}>{p.prenom} {p.nom?.[0]}.</span>
-                <span className={styles.empPole}>{p.pole || "—"}</span>
+              <div className={styles.nameCell}>
+                <div className={styles.empRow}>
+                  <span className={styles.empAvatar}>{(p.prenom || "?")[0].toUpperCase()}</span>
+                  <div>
+                    <span className={styles.empName}>{p.prenom} {p.nom?.[0]}.</span>
+                    <span className={styles.empInfo}>{p.pole || "—"} · {p.contrat || "—"}</span>
+                  </div>
+                </div>
               </div>
               {days.map((d) => {
-                const key = toYMD(d);
-                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                const key = toYMD(d); const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                 const isToday2 = key === today;
-                const abs = absMap[pid]?.[key];
-                const dayProjs = (projMap[key] || []).filter((c) => {
-                  const assignees = c.assignees || c.equipe || [];
-                  return assignees.some((a) => String(a) === String(p.userId) || String(a._id || a.id || a) === String(p.userId));
-                });
+                const { projs, abs, projCount, isAbsent } = getPersonCharge(pid, key);
+                const isPending = abs && abs.statut === "en_attente";
+                const isOverloaded = projCount >= 3;
 
                 let cellClass = styles.cell;
-                let content = "";
+                let cellContent = "";
                 let cellStyle = {};
+                let cellTitle = "Disponible";
 
                 if (isWeekend) {
-                  cellClass += ` ${styles.cellWeekend}`;
-                } else if (abs && abs.statut === "valide") {
-                  cellClass += ` ${styles.cellAbsence}`;
+                  cellClass += ` ${styles.cellWE}`;
+                  cellTitle = "Week-end";
+                } else if (isAbsent) {
+                  cellClass += ` ${styles.cellAbs}`;
                   cellStyle = { "--cc": ABSENCE_COLORS[abs.type] || "#888" };
-                  content = abs.type === "tt" ? "🏡" : abs.type === "conge" ? "🌴" : abs.type === "maladie" ? "🤧" : "—";
-                } else if (abs && abs.statut === "en_attente") {
+                  cellContent = ABSENCE_ICONS[abs.type] || "—";
+                  cellTitle = `${abs.type} (validé)`;
+                } else if (isPending) {
                   cellClass += ` ${styles.cellPending}`;
-                  content = "?";
-                } else if (dayProjs.length > 0) {
-                  cellClass += ` ${styles.cellProjet}`;
-                  cellStyle = { "--cc": BRANCH_COLORS[dayProjs[0].branche] || BRANCH_COLORS.default };
-                  content = dayProjs.length > 1 ? `${dayProjs.length}p` : "";
+                  cellContent = "?";
+                  cellTitle = `${abs.type} (en attente)`;
+                } else if (projCount > 0) {
+                  cellClass += ` ${styles.cellProj}`;
+                  if (isOverloaded) cellClass += ` ${styles.cellOverload}`;
+                  cellStyle = { "--cc": BRANCH_COLORS[projs[0]?.branche] || BRANCH_COLORS.default, "--intensity": Math.min(1, projCount / 4) };
+                  cellContent = projCount > 1 ? projCount : "";
+                  cellTitle = projs.map((c) => c.nomContrat || c.nom).join(", ");
                 } else {
-                  cellClass += ` ${styles.cellPresent}`;
+                  cellClass += ` ${styles.cellFree}`;
                 }
 
                 if (isToday2) cellClass += ` ${styles.cellToday}`;
 
                 return (
-                  <div key={key} className={cellClass} style={cellStyle} title={abs ? `${abs.type} (${abs.statut})` : dayProjs.length > 0 ? dayProjs.map((c) => c.nomContrat || c.nom).join(", ") : "Disponible"}>
-                    {content}
+                  <div key={key} className={cellClass} style={cellStyle} title={cellTitle}
+                    onClick={() => setSelectedCell(selectedCell?.empId === pid && selectedCell?.date === key ? null : { empId: pid, date: key })}>
+                    {cellContent}
                   </div>
                 );
               })}
@@ -201,14 +235,42 @@ export default function PlanningEquipePage() {
         })}
       </div>
 
+      {/* Détail cellule sélectionnée */}
+      {selectedCell && (() => {
+        const p = profiles.find((p) => String(p._id) === selectedCell.empId);
+        const { projs, abs } = getPersonCharge(selectedCell.empId, selectedCell.date);
+        return (
+          <div className={styles.detail}>
+            <div className={styles.detailHead}>
+              <strong>{p?.prenom} {p?.nom}</strong> — {selectedCell.date}
+              <button className={styles.detailClose} onClick={() => setSelectedCell(null)}>✕</button>
+            </div>
+            {abs && <div className={styles.detailAbs}>{ABSENCE_ICONS[abs.type]} {abs.type} ({abs.statut})</div>}
+            {projs.length > 0 && (
+              <div className={styles.detailProjs}>
+                <strong>{projs.length} projet{projs.length > 1 ? "s" : ""} :</strong>
+                {projs.map((c, i) => (
+                  <div key={i} className={styles.detailProj} style={{ "--dc": BRANCH_COLORS[c.branche] || "#888" }}>
+                    <span className={styles.detailProjName}>{c.nomContrat || c.nom}</span>
+                    <span className={styles.detailProjBranch}>{c.branche}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!abs && projs.length === 0 && <div className={styles.detailEmpty}>Disponible</div>}
+          </div>
+        );
+      })()}
+
       {/* Légende */}
       <div className={styles.legend}>
-        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(16,185,129,0.15)" }} /> Présent</span>
-        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(16,185,129,0.5)" }} /> 🌴 Congé</span>
-        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(139,92,246,0.5)" }} /> 🏡 TT</span>
-        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(244,63,94,0.5)" }} /> 🤧 Maladie</span>
-        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(225,29,72,0.15)", borderLeft: "3px solid #e11d48" }} /> Sur projet</span>
-        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(245,158,11,0.15)", borderStyle: "dashed" }} /> ? En attente</span>
+        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(16,185,129,0.08)" }} /> Disponible</span>
+        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(16,185,129,0.4)" }} /> 🌴 Congé</span>
+        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(139,92,246,0.4)" }} /> 🏡 TT</span>
+        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(244,63,94,0.4)" }} /> 🤧 Maladie</span>
+        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(124,58,237,0.15)", borderLeft: "3px solid #7c3aed" }} /> Sur projet</span>
+        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(225,29,72,0.2)", border: "2px solid #e11d48" }} /> Surcharge (3+)</span>
+        <span className={styles.legendItem}><span className={styles.legendBox} style={{ background: "rgba(245,158,11,0.15)", borderStyle: "dashed", borderColor: "#f59e0b" }} /> ? En attente</span>
       </div>
     </div>
   );

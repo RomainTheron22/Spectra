@@ -1,0 +1,50 @@
+.page { padding: 24px; max-width: 1200px; margin: 0 auto; }
+.title { font-size: 28px; font-weight: 900; background: linear-gradient(135deg, #7c3aed, #e11d48); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+.subtitle { font-size: 14px; color: var(--color-text-muted); margin: 4px 0 24px; }
+.secTitle { font-size: 18px; font-weight: 900; color: var(--color-text); margin: 28px 0 14px; }
+
+/* KPIs */
+.kpiRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px; }
+.kpi { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+.kpiValue { font-size: 36px; font-weight: 900; color: var(--color-text); line-height: 1; }
+.kpiRed { color: #e11d48; }
+.kpiLabel { font-size: 12px; font-weight: 800; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-top: 4px; }
+.kpiDetail { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
+
+/* Branches */
+.branchGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.branchCard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 18px; border-left: 4px solid var(--bc); transition: all 120ms; cursor: default; }
+.branchCard:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); transform: translateY(-1px); }
+.branchHead { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.branchIcon { font-size: 28px; }
+.branchName { display: block; font-size: 16px; font-weight: 900; color: var(--color-text); }
+.branchDesc { display: block; font-size: 11px; color: var(--color-text-muted); }
+.branchStats { display: flex; gap: 16px; }
+.branchStat { display: flex; flex-direction: column; }
+.branchStatVal { font-size: 20px; font-weight: 900; color: var(--bc); }
+.branchStatLabel { font-size: 9px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+
+/* Team */
+.teamGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.teamCard { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; transition: all 100ms; }
+.teamCard:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+.teamAvatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #a855f6); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+.teamName { display: block; font-size: 13px; font-weight: 800; color: var(--color-text); }
+.teamMeta { display: block; font-size: 10px; color: var(--color-text-muted); }
+.teamEntite { display: inline-block; font-size: 9px; font-weight: 700; background: rgba(124,58,237,0.08); color: #7c3aed; padding: 1px 6px; border-radius: 4px; margin-top: 2px; }
+
+/* Projects */
+.projList { display: flex; flex-direction: column; gap: 8px; }
+.projCard { padding: 14px 18px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; border-left: 4px solid var(--pc); transition: all 100ms; }
+.projCard:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+.projHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.projName { font-size: 14px; font-weight: 800; color: var(--color-text); }
+.projBranch { font-size: 10px; font-weight: 800; color: var(--pc); background: color-mix(in srgb, var(--pc) 8%, white); padding: 2px 8px; border-radius: 6px; }
+.projMeta { display: flex; gap: 12px; font-size: 11px; color: var(--color-text-muted); flex-wrap: wrap; }
+.projStatut { font-weight: 700; }
+.projAssignees { display: flex; gap: 2px; margin-top: 6px; }
+.projAssignee { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #a855f6); color: white; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; border: 2px solid white; margin-left: -4px; }
+.projAssignee:first-child { margin-left: 0; }
+.projAssigneeMore { font-size: 10px; font-weight: 800; color: var(--color-text-muted); display: flex; align-items: center; margin-left: 4px; }
+
+@media (max-width: 768px) { .kpiRow, .branchGrid { grid-template-columns: 1fr; } }
