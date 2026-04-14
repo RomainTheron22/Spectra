@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -87,7 +87,7 @@ export default function PlanningEquipePage() {
   const [openGroups, setOpenGroups] = useState({});
   const [sheetEmployee, setSheetEmployee] = useState(null);
   const [sheetDate, setSheetDate] = useState(null);
-  const [miniCalDate, setMiniCalDate] = useState(() => new Date());
+  // (miniCalDate removed — replaced by horizontal calendar strip)
   const [focusDay, setFocusDay] = useState(() => toYMD(new Date()));
   const [selectedProject, setSelectedProject] = useState(null);
 
@@ -238,20 +238,28 @@ export default function PlanningEquipePage() {
     return { overloads, understaffed, conflicts, poleEmpty, total, score };
   }, [profiles, projAssignMap, absMap, days, today, contrats, branches]);
 
-  /* Mini calendar */
-  const miniCalDays = useMemo(() => {
-    const year = miniCalDate.getFullYear(), month = miniCalDate.getMonth(), first = new Date(year, month, 1);
-    const startDow = (first.getDay() + 6) % 7, start = new Date(first); start.setDate(start.getDate() - startDow);
-    const rS = days.length ? toYMD(days[0]) : "", rE = days.length ? toYMD(days[days.length - 1]) : "";
+  /* ── Calendar strip (horizontal, swipeable) ── */
+  const stripRef = useRef(null);
+  const calStrip = useMemo(() => {
     const result = [];
-    for (let i = 0; i < 42; i++) {
-      const d = new Date(start); d.setDate(d.getDate() + i); const key = toYMD(d), inM = d.getMonth() === month;
+    const start = new Date(); start.setDate(start.getDate() - 30);
+    const rS = days.length ? toYMD(days[0]) : "", rE = days.length ? toYMD(days[days.length - 1]) : "";
+    for (let i = 0; i < 120; i++) {
+      const d = new Date(start); d.setDate(d.getDate() + i);
+      const key = toYMD(d);
       let pC = 0, aC = 0;
-      if (inM) { for (const p of profiles) { const pid = String(p._id); if (projAssignMap[pid]?.[key]?.length) pC++; const abs = absMap[pid]?.[key]; if (abs && abs.statut === "valide") aC++; } }
-      result.push({ date: d, key, inMonth: inM, projectCount: pC, absenceCount: aC, isDeadline: contrats.some((c) => c.dateDebut === key || c.dateFin === key), inRange: key >= rS && key <= rE });
+      for (const p of profiles) { const pid = String(p._id); if (projAssignMap[pid]?.[key]?.length) pC++; const abs = absMap[pid]?.[key]; if (abs && abs.statut === "valide") aC++; }
+      result.push({ date: d, key, projectCount: pC, absenceCount: aC, inRange: key >= rS && key <= rE, isNewMonth: i === 0 || d.getDate() === 1 });
     }
     return result;
-  }, [miniCalDate, profiles, projAssignMap, absMap, contrats, days]);
+  }, [profiles, projAssignMap, absMap, days]);
+
+  // Auto-scroll strip to focused day
+  useEffect(() => {
+    if (!stripRef.current || !focusDay) return;
+    const el = stripRef.current.querySelector(`[data-strip="${focusDay}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [focusDay]);
 
   /* Projects with health data */
   const projectsHealth = useMemo(() => {
@@ -375,8 +383,53 @@ export default function PlanningEquipePage() {
         {filterStatus && <button onClick={() => setFilterStatus("")} className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">Réinitialiser ✕</button>}
         <div className="flex items-center gap-0.5">
           <button onClick={() => { navPrev(); setFocusDay(""); }} className="p-1.5 rounded-md hover:bg-accent text-muted-foreground transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-          <button onClick={() => { setCalDate(new Date()); setFocusDay(toYMD(new Date())); setMiniCalDate(new Date()); }} className="px-2.5 py-1 rounded-md text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">Aujourd&apos;hui</button>
+          <button onClick={() => { setCalDate(new Date()); setFocusDay(toYMD(new Date())); }} className="px-2.5 py-1 rounded-md text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">Aujourd&apos;hui</button>
           <button onClick={() => { navNext(); setFocusDay(""); }} className="p-1.5 rounded-md hover:bg-accent text-muted-foreground transition-colors"><ChevronRight className="w-4 h-4" /></button>
+        </div>
+      </div>
+
+      {/* ── CALENDAR STRIP (swipeable) ── */}
+      <div className="rounded-lg border bg-card">
+        <div
+          ref={stripRef}
+          className="flex overflow-x-auto py-1.5 px-1 gap-px"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+        >
+          {calStrip.map((day) => {
+            const isWE = day.date.getDay() === 0 || day.date.getDay() === 6;
+            const isFocus = day.key === focusDay;
+            const isT = day.key === today;
+            return (
+              <React.Fragment key={day.key}>
+                {day.isNewMonth && (
+                  <div className="flex items-center px-1.5 flex-shrink-0">
+                    <span className="text-[10px] font-bold text-violet-500 whitespace-nowrap -rotate-0">{MOIS[day.date.getMonth()].slice(0, 3)}</span>
+                  </div>
+                )}
+                <button
+                  data-strip={day.key}
+                  onClick={() => { setCalDate(new Date(day.date)); setFocusDay(day.key); }}
+                  className={cn(
+                    "flex flex-col items-center w-9 py-1 rounded-md flex-shrink-0 transition-all",
+                    isFocus && "bg-violet-600 text-white shadow-sm",
+                    !isFocus && day.inRange && "bg-violet-50",
+                    isT && !isFocus && "ring-1 ring-violet-400 font-bold",
+                    !isFocus && !day.inRange && "hover:bg-accent/50",
+                    isWE && !isFocus && !day.inRange && "opacity-35",
+                  )}
+                >
+                  <span className={cn("text-[9px] font-medium", isFocus ? "text-violet-200" : "text-muted-foreground")}>{JOURS_SHORT[day.date.getDay()]}</span>
+                  <span className={cn("text-[13px] font-bold tabular-nums leading-tight", isFocus ? "text-white" : isT ? "text-violet-600" : "text-foreground")}>{day.date.getDate()}</span>
+                  {(day.projectCount > 0 || day.absenceCount > 0) && (
+                    <div className="flex gap-[2px] mt-0.5 h-[5px] items-center">
+                      {day.projectCount > 0 && <span className={cn("w-[4px] h-[4px] rounded-full", isFocus ? "bg-violet-200" : "bg-violet-500")} />}
+                      {day.absenceCount > 0 && <span className={cn("w-[4px] h-[4px] rounded-full", isFocus ? "bg-rose-200" : "bg-rose-400")} />}
+                    </div>
+                  )}
+                </button>
+              </React.Fragment>
+            );
+          })}
         </div>
       </div>
 
@@ -388,44 +441,7 @@ export default function PlanningEquipePage() {
         {/* ── SIDEBAR ── */}
         <div className="w-[272px] flex-shrink-0 space-y-3 hidden lg:block">
 
-          {/* Mini Calendar */}
-          <div className="rounded-lg border bg-card p-3">
-            <div className="flex items-center justify-between mb-2">
-              <button onClick={() => setMiniCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })} className="p-1 rounded hover:bg-accent text-muted-foreground"><ChevronLeft className="w-3.5 h-3.5" /></button>
-              <span className="text-xs font-semibold">{MOIS[miniCalDate.getMonth()]} {miniCalDate.getFullYear()}</span>
-              <button onClick={() => setMiniCalDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })} className="p-1 rounded hover:bg-accent text-muted-foreground"><ChevronRight className="w-3.5 h-3.5" /></button>
-            </div>
-            <div className="grid grid-cols-7 mb-0.5">
-              {["L","M","M","J","V","S","D"].map((d, i) => <div key={i} className="text-center text-[9px] font-medium text-muted-foreground py-0.5">{d}</div>)}
-            </div>
-            <div className="grid grid-cols-7 gap-px">
-              {miniCalDays.map((day, i) => (
-                <button key={i} onClick={() => { setCalDate(new Date(day.date)); setMiniCalDate(new Date(day.date.getFullYear(), day.date.getMonth(), 1)); setFocusDay(day.key); }}
-                  className={cn("flex flex-col items-center py-1 rounded text-[10px] font-medium transition-all",
-                    !day.inMonth && "opacity-15",
-                    day.key === focusDay && day.inMonth && "bg-violet-600 text-white font-bold",
-                    day.key !== focusDay && day.inRange && "bg-violet-100/60 text-violet-700",
-                    day.key === today && day.key !== focusDay && "font-bold ring-1 ring-violet-500 text-violet-600",
-                    day.inMonth && !day.inRange && day.key !== focusDay && "hover:bg-accent/60",
-                    day.projectCount >= 3 && day.inMonth && day.key !== focusDay && !day.inRange && "bg-violet-50"
-                  )}>
-                  {day.date.getDate()}
-                  {day.inMonth && (day.projectCount > 0 || day.absenceCount > 0 || day.isDeadline) && (
-                    <div className="flex gap-[2px] h-[5px] items-center">
-                      {day.projectCount > 0 && <span className="w-[4px] h-[4px] rounded-full bg-violet-500" />}
-                      {day.absenceCount > 0 && <span className="w-[4px] h-[4px] rounded-full bg-rose-400" />}
-                      {day.isDeadline && <span className="w-[4px] h-[4px] rounded-full bg-amber-400" />}
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2.5 mt-2 pt-2 border-t text-[9px] font-medium text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-violet-500" />Projets</span>
-              <span className="flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-rose-400" />Absences</span>
-              <span className="flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-amber-400" />Deadlines</span>
-            </div>
-          </div>
+          {/* (mini calendar moved to horizontal strip above) */}
 
           {/* Santé de l'équipe */}
           {friction.total > 0 && (
