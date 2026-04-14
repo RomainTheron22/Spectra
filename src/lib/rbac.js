@@ -17,7 +17,6 @@ export const PERMISSION_RESOURCES = Object.freeze([
   { key: "dashboard",          label: "Tableau de bord",         group: "general" },
   { key: "meteoDuJour",        label: "Météo de la semaine",      group: "general" },
   { key: "meteoQuotidien",     label: "Météo du jour",            group: "general" },
-  { key: "planningPerso",      label: "Planning Perso",           group: "general" },
   { key: "drive",              label: "Drive",                    group: "general" },
   { key: "admin",              label: "Admin",                    group: "general" },
   // ── Contrats & Projets ──
@@ -59,7 +58,6 @@ const SUPPORTED_ACTIONS_BY_RESOURCE = Object.freeze({
   dashboard:          ["view"],
   meteoDuJour:        ["view"],
   meteoQuotidien:     ["view"],
-  planningPerso:      ["view", "create", "edit", "delete"],
   drive:              ["view", "create", "edit", "delete"],
   admin:              ["view", "create", "edit", "delete"],
   brief:              ["view", "create", "edit", "delete", "export"],
@@ -85,7 +83,6 @@ const PATH_RESOURCE_RULES = [
   { test: (p) => p === "/",                                         resource: "dashboard" },
   { test: (p) => p.startsWith("/meteo-du-jour"),                    resource: "meteoQuotidien" },
   { test: (p) => p.startsWith("/meteo-de-la-semaine"),              resource: "meteoDuJour" },
-  { test: (p) => p.startsWith("/planning-perso"),                   resource: "planningPerso" },
   { test: (p) => p.startsWith("/drive"),                            resource: "drive" },
   { test: (p) => p.startsWith("/admin"),                            resource: "admin" },
   { test: (p) => p.startsWith("/brief"),                            resource: "brief" },
@@ -354,6 +351,13 @@ export const RESOURCE_FIELDS = Object.freeze({
     { key: "dateDebut",       label: "Date d'entrée" },
     { key: "dateFin",         label: "Date de fin de contrat" },
     { key: "congesAnnuels",   label: "Crédit congés annuel" },
+    { key: "telephone",       label: "Téléphone" },
+    { key: "poste",           label: "Poste / Intitulé" },
+    { key: "dateNaissance",   label: "Date de naissance" },
+    { key: "adresse",         label: "Adresse" },
+    { key: "contactUrgence",  label: "Contact d'urgence" },
+    { key: "notesRH",         label: "Notes RH" },
+    { key: "contrats",        label: "Historique des contrats" },
   ],
   employeeAbsences: [
     { key: "type",            label: "Type d'absence" },
@@ -368,12 +372,6 @@ export const RESOURCE_FIELDS = Object.freeze({
     { key: "demandes",        label: "Demandes en attente" },
     { key: "finsContrat",     label: "Fins de contrat proches" },
     { key: "tendances",       label: "Tendances absences" },
-  ],
-  // ── Planning Perso ──
-  planningPerso: [
-    { key: "evenements",      label: "Mes événements" },
-    { key: "disponibilites",  label: "Disponibilités" },
-    { key: "notesPerso",      label: "Notes personnelles" },
   ],
   // ── Drive ──
   drive: [

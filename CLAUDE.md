@@ -71,7 +71,7 @@ src/
 
 ### Navigation sidebar
 
-**Liens directs** : Tableau de bord / Météo du jour / Météo de la semaine / Planning Perso / Drive / Admin
+**Liens directs** : Tableau de bord / Météo du jour / Météo de la semaine / Drive / Admin
 
 **Groupes collapsibles** :
 - Contrats & Projets → `/brief`, `/contrats-projets`, `/calendrier-projets`
@@ -286,7 +286,7 @@ if (!gate.ok) return gate.response;
 `dashboard`, `brief`, `contrats`, `calendrier`, `commandes`, `inventaire`,
 `personnel`, `fournisseurs`, `prestataires`, `comptabiliteProjet`,
 `pilotageBudgetaire`, `facturationRevenus`, `kitsMachines`, `checklistsEpi`,
-`historiqueEquip`, `planningPerso`, `drive`, `admin`, `meteoQuotidien`, `meteoDuJour`
+`historiqueEquip`, `drive`, `admin`, `meteoQuotidien`, `meteoDuJour`
 
 ---
 
