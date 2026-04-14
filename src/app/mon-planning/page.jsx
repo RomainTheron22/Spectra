@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import Link from "next/link";
 import Modal from "../../components/ui/Modal";
 import EventForm from "./components/EventForm";
 import { Card } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, ChevronRight, Plus, X, Settings2, ZoomIn, ZoomOut, Pencil, Trash2, Calendar, ExternalLink, PanelRightOpen, PanelRightClose } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, Settings2, ZoomIn, ZoomOut, Pencil, Trash2, Calendar, ExternalLink, PanelRightOpen, PanelRightClose, Palette } from "lucide-react";
 
 /* ═══ CONSTANTS ═══ */
 const ABSENCE_TYPES = [
@@ -22,10 +23,10 @@ const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août"
 const JOURS_HEAD = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 const JOURS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
 const DEFAULT_CONGES = 30;
-const HOUR_START_WEEK = 1;
-const HOUR_END_WEEK = 24;
-const HOUR_START_DAY = 0;
-const HOUR_END_DAY = 24;
+const HOUR_START_WEEK = 7;
+const HOUR_END_WEEK = 22;
+const HOUR_START_DAY = 7;
+const HOUR_END_DAY = 22;
 const DAY_SCROLL_TO = 8; // scroll auto vers 8h à l'ouverture
 
 const BRANCH_COLORS_FALLBACK = { "Agency": "#e11d48", "CreativeGen": "#7c3aed", "Entertainment": "#0891b2", "SFX": "#ca8a04", "Atelier": "#059669", "Communication": "#0284c7", "default": "#6b7280" };
@@ -757,6 +758,10 @@ export default function MonPlanning() {
                   </button>
                 ))}
               </div>
+              <Link href="/admin/branches" className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold text-muted-foreground hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all">
+                <Palette className="size-3.5" />
+                <span className="hidden xl:inline">Couleurs</span>
+              </Link>
               <div className="w-px h-5 bg-border" />
               <Button
                 variant={selectedDate ? "default" : "outline"}
@@ -813,13 +818,13 @@ export default function MonPlanning() {
           {view === "week" && (
             <div className="flex flex-col">
               {/* All-day row */}
-              <div className="grid border-b border-border bg-slate-50/40" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
-                <div className="w-12 shrink-0 border-r border-border" />
+              <div className="grid border-b border-zinc-200 bg-zinc-50/50" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+                <div className="w-12 shrink-0 border-r border-zinc-200" />
                 {weekDays.map((d, i) => {
                   const key = toYMD(d); const events = calEvents[key] || [];
                   const allDay = events.filter((e) => (e.type === "gcal" && e.isAllDay) || e.type === "projet" || e.type === "mission" || e.type === "absence");
                   return (
-                    <div key={i} className="flex flex-col gap-0.5 px-0.5 py-1 border-l border-border">
+                    <div key={i} className="flex flex-col gap-0.5 px-0.5 py-1 border-l border-zinc-200">
                       {allDay.slice(0, 4).map((ev, j) => {
                         const c = ev.type === "absence" ? (ev.absType?.color || "#888") : ev.color || "#4285f4";
                         const label = ev.type === "projet" || ev.type === "mission" ? `${ev.isMine ? "👤 " : ""}${ev.title}` : ev.type === "absence" ? `${ev.absType?.icon} ${ev.absType?.label}` : ev.title;
@@ -841,14 +846,14 @@ export default function MonPlanning() {
                 })}
               </div>
               {/* Header */}
-              <div className="grid border-b border-border bg-slate-50/80" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
-                <div className="w-12 shrink-0 border-r border-border" />
+              <div className="grid border-b border-zinc-200 bg-zinc-50/80" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+                <div className="w-12 shrink-0 border-r border-zinc-200" />
                 {weekDays.map((d, i) => {
                   const key = toYMD(d); const isToday2 = key === today; const isSel = selectedDate && toYMD(selectedDate) === key;
                   return (
                     <div
                       key={i}
-                      className={`text-center py-2.5 px-0.5 cursor-pointer transition-all duration-200 border-l border-border ${isToday2 ? "bg-violet-50" : ""} ${isSel ? "bg-violet-100/50" : ""} hover:bg-violet-50/60`}
+                      className={`text-center py-2.5 px-0.5 cursor-pointer transition-all duration-200 border-l border-zinc-200 ${isToday2 ? "bg-violet-50" : ""} ${isSel ? "bg-violet-100/50" : ""} hover:bg-violet-50/60`}
                       onClick={() => handleDayClick(d)}
                       role="button"
                       tabIndex={0}
@@ -898,7 +903,7 @@ export default function MonPlanning() {
                     return (
                       <div
                         key={i}
-                        className={`relative border-l border-border cursor-pointer transition-colors duration-200 ${isToday2 ? "bg-violet-50/40" : ""} hover:bg-violet-50/20`}
+                        className={`relative border-l border-zinc-200 cursor-pointer transition-colors duration-200 ${isToday2 ? "bg-violet-50/40" : ""} hover:bg-violet-50/20`}
                         onClick={() => handleDayClick(d)}
                       >
                         {hoursWeek.map((h) => (
@@ -994,7 +999,7 @@ export default function MonPlanning() {
                       </div>
                     ))}
                   </div>
-                  <div className="relative border-l border-zinc-200">
+                  <div className="relative">
                     {hoursDay.map((h) => (
                       <div
                         key={h}
